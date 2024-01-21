@@ -3,12 +3,16 @@ const bcrypt = require( 'bcrypt' );
 const db = require( '../db' );
 const express = require( 'express' );
 const Joi = require( 'joi' );
+const jwt = require ( 'jsonwebtoken' );
 const moment = require( 'moment' );
 const router = express.Router();
 const { v4: uuidv4 } = require( 'uuid' );
 router.use( express.json() );
 
-const { API_ACCESS_TOKEN } = process.env;
+const { 
+  API_ACCESS_TOKEN,
+  JWT_KEY
+} = process.env;
 const { 
   containsHTML,
   getLinkedGlobals,
@@ -19,6 +23,102 @@ const {
   validateSchema,
   validateUUID
 } = require( '../functions.js' );
+
+router.post( "/users/login-standard", async ( req, res ) => { 
+
+  const nowRunning = "utilities/users/login-standard";
+  console.log( nowRunning + ": running" );
+  let success = false;
+  const errorNumber = 2;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      email: Joi.string().required().email(),
+      masterKey: Joi.string().required().uuid(),
+      passPhrase: Joi.string()
+        .required()
+        .min(8)
+        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
+        .message('Password must contain at least 1 uppercase character, 1 lowercase character, and 1 number'),
+      userId: Joi.any() // ignored
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+   }
+
+    const { 
+      email,
+      masterKey,
+      passPhrase
+    } = req.body; 
+
+    const queryText = " SELECT * FROM users WHERE active = true AND email ILIKE '" + email + "' ";
+    const { rowCount, rows } = await db.noTransaction( queryText, errorNumber, nowRunning, masterKey );
+
+    if ( !rows ) {
+
+      console.log( nowRunning + ": failed\n" );
+      return res.status( 200 ).send( { failure: 'database error when getting the user via a login key', success } );
+  
+    } else if ( rowCount < 1 ) {
+
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: 'invalid email for user login: ' + email,
+        errorNumber,
+        userId: API_ACCESS_TOKEN
+      } );
+      console.log ( nowRunning + ": invalid email" );
+      return res.status( 200 ).send( { failure: 'invalid email', success } );
+
+    }
+
+    const userRecord = rows[0];
+    const passwordCheck = await bcrypt.compare( email + passPhrase, userRecord.login_hash );
+    
+    if ( !passwordCheck ) { // this is not logged as an error
+
+      console.log ( nowRunning + ': password check failed' );
+      return res.status( 400 ).send( { failure: 'password check failed' });
+
+    }
+
+    token = jwt.sign ( { userRecord }, JWT_KEY, { expiresIn: "1h" } );
+    
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { token, success: true } );
+
+ } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+   } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+ }
+
+} );
 
 router.post( "/users/new", async ( req, res ) => { 
 
