@@ -129,7 +129,7 @@ async function transactionRequired( query, errorNumber, nowRunning, userId, apiT
 
      } );
 
-      let logfile = process.env.UNITI_LOGS + moment().format( "YYYY.MM.DD" );
+      let logfile = process.env.MESSAGINE_LOGS + moment().format( "YYYY.MM.DD" );
 
       if ( logStatements ) {
 
