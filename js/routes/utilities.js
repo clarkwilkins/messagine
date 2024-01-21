@@ -24,6 +24,83 @@ const {
   validateUUID
 } = require( '../functions.js' );
 
+router.post( "/users/login-key", async ( req, res ) => {
+
+  const nowRunning = "utilities/users/login-key";
+  console.log( nowRunning + ": running" );
+
+  let success = false;
+  const errorNumber = 3;
+  
+  try {
+
+    const schema = Joi.object( { 
+      key: Joi.string().required().uuid(),
+      masterKey: Joi.string().required().uuid(),
+      userId: Joi.any() // this is ignored if present
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, recordError, req, res, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    const { key } = req.body;
+    
+    const { rowCount, rows } = await db.noTransaction( " SELECT * FROM users WHERE active = true AND token = '" + key + "' ", errorNumber, nowRunning, API_ACCESS_TOKEN );
+
+    if ( !rows ) {
+
+      console.log( nowRunning + ": failed\n" );
+      return res.status( 200 ).send( { failure: 'database error when getting the user via a login key', success } );
+  
+    }
+
+    let userRecord;
+    
+    if ( rowCount > 0 ) {
+
+      userRecord = rows[0];
+      userRecord.token = jwt.sign ( { userRecord }, JWT_KEY, { expiresIn: "1h" } );
+
+    } else {
+
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: null,
+        errorMessage: 'invalid token for login: ' + req.body.key,
+        errorNumber,
+        userId: req.body.userId
+      } );
+      console.log ( nowRunning + ": failed" );
+      return res.status( 400 ).send( { failure: 'token not found' } );
+
+    }
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { token, success: true } )
+
+  } catch (e) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner(  e.message ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: API_ACCESS_TOKEN
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    console.log ( e );
+    res.status( 500 ).send( newException );
+
+  }
+
+} );
+
 router.post( "/users/login-standard", async ( req, res ) => { 
 
   const nowRunning = "utilities/users/login-standard";
