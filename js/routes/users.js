@@ -40,7 +40,7 @@ router.post( "/login-key", async ( req, res ) => {
       userId: Joi.any() // this is ignored if present
     } );
 
-    const errorMessage = validateSchema ( nowRunning, recordError, req, res, schema );
+    const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -590,6 +590,15 @@ router.post( "/update", async ( req, res ) => {
       userId,
       userName
     } = req.body;
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
 
     let queryText = " UPDATE users SET "
 
