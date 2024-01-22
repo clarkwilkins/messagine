@@ -101,6 +101,34 @@ exports.getUsers = async () => {
 
 }
 
+exports.randomString = () => { // c/o ChatGPT3.5
+
+  const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+  const numberChars = '0123456789';
+
+  const randomUppercase = uppercaseChars[Math.floor( Math.random() * uppercaseChars.length )];
+  const randomLowercase = lowercaseChars[Math.floor( Math.random() * lowercaseChars.length )];
+  const randomNumber = numberChars[Math.floor( Math.random() * numberChars.length )];
+
+  const randomChars = uppercaseChars + lowercaseChars + numberChars;
+  let randomString = randomUppercase + randomLowercase + randomNumber;
+
+  for ( let i = 0; i < 5; i++ ) { // inser an additional five random characters
+
+    const randomChar = randomChars[Math.floor( Math.random() * randomChars.length )];
+    randomString += randomChar;
+
+  }
+
+  // shuffle the string to make it more random
+
+  randomString = randomString.split('').sort( () => Math.random() - 0.5 ).join( '' );
+
+  return randomString;
+
+}
+
 exports.recordError = async data => { // data should be { context, details, errorMessage, errorNumber, userId }
 
   const nowRunning = 'functions/recordError';

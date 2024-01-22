@@ -13,7 +13,7 @@ const {
 const cert = fs.readFileSync( sslCertificate );
 const key = fs.readFileSync( sslKey );
 
-const utilities = require( "./routes/utilities" );
+const users = require( "./routes/users" );
 
 app.use(function ( req, res, next ) {
   res.header( "Access-Control-Allow-Origin", "*" ); // update to match the domain you will make the request from
@@ -25,7 +25,7 @@ app.use(function ( req, res, next ) {
   next();
 });
 
-app.use( "/utilities", utilities ); // utility services
+app.use( "/users", users ); // utility services
 
 const httpsServer = https.createServer(
   {
