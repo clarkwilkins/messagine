@@ -24,6 +24,229 @@ const {
   validateSchema
 } = require( '../functions.js' );
 
+router.post( "/all", async ( req, res ) => { 
+
+  const nowRunning = "/users/all";
+  console.log( nowRunning + ": running" );
+
+  const errorNumber = 1;
+  const success = false;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      active: Joi.boolean(),
+      masterKey: Joi.any(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+   }
+
+    const { 
+      active,
+      userId 
+    } = req.body;
+
+    // comment out level check if creating the first user and do not supply userId in the JSON
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    let queryText = " SELECT * FROM users ";
+
+    if ( typeof active === 'boolean' ) queryText += "WHERE active = " + active;
+
+    queryText += " ORDER BY active DESC, user_name; ";
+    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+    if ( !results ) {
+
+      const failure = 'database error when getting users';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId: API_ACCESS_TOKEN
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    const users = {};
+    const usersSelector = [];
+    Object.values( results.rows ).map( row => {
+
+      let {
+        active,
+        email,
+        level,
+        user_id: userId,
+        user_name: userName
+      } = row;
+
+      userName = stringCleaner( userName );
+
+      users[userId] = {
+        active,
+        email,
+        level: +level,
+        userName
+      }
+
+      if ( !active ) userName += '*';
+
+      usersSelector.push( {
+        label: userName,
+        value: userId
+      })
+
+    })
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true, users, usersSelector } )
+
+ } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+   } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+ }
+
+} );
+
+router.post( "/load", async ( req, res ) => { 
+
+  const nowRunning = "/users/load";
+  console.log( nowRunning + ": running" );
+
+  const errorNumber = 12;
+  const success = false;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      masterKey: Joi.any(),
+      thisUser: Joi.string().required().uuid(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+   }
+
+    const { 
+      thisUser,
+      userId 
+    } = req.body;
+
+    // comment out level check if creating the first user and do not supply userId in the JSON
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    const queryText = " SELECT * FROM users WHERE user_id = '" + thisUser + "' AND level <= " + userLevel + "; ";
+    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+    if ( !results ) {
+
+      const failure = 'database error when getting the user record';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId: API_ACCESS_TOKEN
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    } else if ( results.rowCount !== 1 ) {
+
+      return res.status( 200 ).send( { failure: 'user info restricted', success } );
+    }
+
+    const {
+      active,
+      email,
+      level,
+      user_name: userName
+    } = results.rows[0];    
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { 
+      active,
+      email,
+      level: +level,
+      success: true, 
+      thisUser,
+      userName: stringCleaner( userName )
+    } );
+
+ } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+   } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+ }
+
+} );
+
 router.post( "/login-key", async ( req, res ) => {
 
   const nowRunning = "users/login-key";
