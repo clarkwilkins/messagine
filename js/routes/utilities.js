@@ -2,45 +2,40 @@ console.log( "loading utilities routes now..." );
 const bcrypt = require( 'bcrypt' );
 const db = require( '../db' );
 const express = require( 'express' );
+const fs = require( 'fs' );
 const Joi = require( 'joi' );
 const jwt = require ( 'jsonwebtoken' );
 const moment = require( 'moment' );
+const { replace } = require( 'lodash' );
 const router = express.Router();
 const { v4: uuidv4 } = require( 'uuid' );
 router.use( express.json() );
 
+const { API_ACCESS_TOKEN } = process.env;
 const { 
-  API_ACCESS_TOKEN,
-  JWT_KEY
-} = process.env;
-const { 
-  containsHTML,
-  getLinkedGlobals,
   getUserLevel,
   recordError,
-  recordEvent,
   stringCleaner,
-  validateSchema,
-  validateUUID
+  validateSchema
 } = require( '../functions.js' );
 
-router.post( "/users/login-key", async ( req, res ) => {
+router.post( "/hashtags/all", async ( req, res ) => {
 
-  const nowRunning = "utilities/users/login-key";
+  const nowRunning = "utilities/hashtags/all";
   console.log( nowRunning + ": running" );
 
   let success = false;
-  const errorNumber = 3;
+  const errorNumber = 9;
   
   try {
 
     const schema = Joi.object( { 
-      key: Joi.string().required().uuid(),
-      masterKey: Joi.string().required().uuid(),
-      userId: Joi.any() // this is ignored if present
+      active: Joi.boolean(),
+      masterKey: Joi.any(),
+      userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, recordError, req, res, schema );
+    const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -49,40 +44,75 @@ router.post( "/users/login-key", async ( req, res ) => {
 
     }
 
-    const { key } = req.body;
-    
-    const { rowCount, rows } = await db.noTransaction( " SELECT * FROM users WHERE active = true AND token = '" + key + "' ", errorNumber, nowRunning, API_ACCESS_TOKEN );
+    const {
+      active,
+      userId
+    } = req.body
 
-    if ( !rows ) {
+    const { level: userLevel } = await getUserLevel( userId );
 
-      console.log( nowRunning + ": failed\n" );
-      return res.status( 200 ).send( { failure: 'database error when getting the user via a login key', success } );
-  
-    }
+    if ( userLevel < 1 ) {
 
-    let userRecord;
-    
-    if ( rowCount > 0 ) {
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
 
-      userRecord = rows[0];
-      userRecord.token = jwt.sign ( { userRecord }, JWT_KEY, { expiresIn: "1h" } );
+    } 
 
-    } else {
+    let queryText = " SELECT * FROM tags ";
 
+    if ( typeof active === 'boolean' ) queryText += "WHERE active = " + active;
+
+    queryText += " ORDER BY active DESC, tag_text; ";
+    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+    if ( !results ) {
+
+      const failure = 'database error when getting tags';
+      console.log( nowRunning + ": " + failure + "\n" );
       recordError ( {
         context: 'api: ' + nowRunning,
-        details: null,
-        errorMessage: 'invalid token for login: ' + req.body.key,
+        details: queryText,
+        errorMessage: failure,
         errorNumber,
-        userId: req.body.userId
+        userId: API_ACCESS_TOKEN
       } );
-      console.log ( nowRunning + ": failed" );
-      return res.status( 400 ).send( { failure: 'token not found' } );
-
+      return res.status( 200 ).send( { failure, success } );
+      
     }
 
+    const tags = {};
+    const tagsSelector = [];
+    Object.values( results.rows ).map( row => {
+
+      let {
+        active,
+        notes,
+        tag_id: tagId,
+        tag_text: tagText
+      } = row;
+
+      notes = stringCleaner( notes );
+      tagText = stringCleaner( tagText );
+
+      tags[tagId] = {
+        active,
+        notes,
+        tagText
+      }
+
+      tagText = '#' + tagText;
+
+      if ( !active ) tagText += '*';
+
+      tagsSelector.push( {
+        label: tagText,
+        value: tagId
+      })
+
+    })
+
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { token, success: true } )
+    return res.status( 200 ).send( { success: true, tags, tagsSelector } );
 
   } catch (e) {
 
@@ -101,176 +131,55 @@ router.post( "/users/login-key", async ( req, res ) => {
 
 } );
 
-router.post( "/users/login-standard", async ( req, res ) => { 
+router.post( "/hashtags/create", async ( req, res ) => {
 
-  const nowRunning = "utilities/users/login-standard";
+  const nowRunning = "utilities/hashtags/create";
   console.log( nowRunning + ": running" );
-  let success = false;
-  const errorNumber = 2;
 
+  let success = false;
+  const errorNumber = 7;
+  
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
-
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
-
-    }
-
-    const schema = Joi.object( {
-      email: Joi.string().required().email(),
-      masterKey: Joi.string().required().uuid(),
-      passPhrase: Joi.string()
-        .required()
-        .min(8)
-        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
-        .message('Password must contain at least 1 uppercase character, 1 lowercase character, and 1 number'),
-      userId: Joi.any() // ignored
+    const schema = Joi.object( { 
+      apiTesting: Joi.boolean(),
+      notes: Joi.string().optional().allow( '', null ),
+      masterKey: Joi.any(),
+      tagText: Joi.string().required().min( 3 ).max( 30 ),
+      userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
       console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
       return res.status( 422 ).send( { failure: errorMessage, success } );
 
-   }
-
-    const { 
-      email,
-      masterKey,
-      passPhrase
-    } = req.body; 
-
-    const queryText = " SELECT * FROM users WHERE active = true AND email ILIKE '" + email + "' ";
-    const { rowCount, rows } = await db.noTransaction( queryText, errorNumber, nowRunning, masterKey );
-
-    if ( !rows ) {
-
-      console.log( nowRunning + ": failed\n" );
-      return res.status( 200 ).send( { failure: 'database error when getting the user via a login key', success } );
-  
-    } else if ( rowCount < 1 ) {
-
-      recordError ( {
-        context: 'api: ' + nowRunning,
-        details: queryText,
-        errorMessage: 'invalid email for user login: ' + email,
-        errorNumber,
-        userId: API_ACCESS_TOKEN
-      } );
-      console.log ( nowRunning + ": invalid email" );
-      return res.status( 200 ).send( { failure: 'invalid email', success } );
-
     }
 
-    const userRecord = rows[0];
-    const passwordCheck = await bcrypt.compare( email + passPhrase, userRecord.login_hash );
-    
-    if ( !passwordCheck ) { // this is not logged as an error
-
-      console.log ( nowRunning + ': password check failed' );
-      return res.status( 400 ).send( { failure: 'password check failed' });
-
-    }
-
-    token = jwt.sign ( { userRecord }, JWT_KEY, { expiresIn: "1h" } );
-    
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { token, success: true } );
-
- } catch ( e ) {
-
-    recordError ( {
-      context: 'api: ' + nowRunning,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-   } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
-
- }
-
-} );
-
-router.post( "/users/new", async ( req, res ) => { 
-
-  const nowRunning = "utilities/users/new";
-  console.log( nowRunning + ": running" );
-  let success = false;
-  const errorNumber = 1;
-
-  try {
-
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
-
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
-
-    }
-
-    const schema = Joi.object( {
-      apiTesting: Joi.boolean().optional().default( false ),
-      email: Joi.string().required().email(),
-      level: Joi.number().optional().min( 1 ).max( 9 ).default( 1 ),
-      masterKey: Joi.string().required().uuid(),
-      passPhrase: Joi.string()
-        .required()
-        .min(8)
-        .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
-        .message('Password must contain at least 1 uppercase character, 1 lowercase character, and 1 number'),
-      userId: Joi.string().required().uuid(),
-      userName: Joi.string().required()
-    } );
-
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
-  
-    if ( errorMessage ) {
-
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
-
-   }
-
-    const { 
+    const {
       apiTesting,
-      email,
-      level,
-      passPhrase,
-      userId,
-      userName 
-    } = req.body;
-
-    // comment out level check if creating the first user and do not supply userId in the JSON
+      notes,
+      tagText,
+      userId
+    } = req.body
 
     const { level: userLevel } = await getUserLevel( userId );
 
-    if ( userLevel < 7 ) {
+    if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
       return res.status( 404 ).send( { failure: 'invalid user ID', success } );
 
     } 
 
-    // don't allow current user to add a new one at a higher level
-    
-    if ( level > userLevel ) level = userLevel;
+    const queryText = " INSERT INTO tags ( notes, tag_id, tag_text ) VALUES( '" + stringCleaner( notes, true ) + "', '" + uuidv4() + "', '" + stringCleaner( tagText, true ) + "' ); ";
+    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    // create the user
+    if ( !results ) {
 
-    const loginHash = await bcrypt.hash( email + passPhrase, 10 );
-    const newId = uuidv4();
-    const token = uuidv4();
-    const queryText = " INSERT INTO users ( active, email, level, login_hash, token, user_id, user_name ) VALUES ( true, '" + email + "', " + level + ", '" + loginHash + "', '" + newId + "', '" + token + "', '" + stringCleaner( userName, true ) + "' ) RETURNING * ";
-    const { rowCount } = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
-
-    if ( !rowCount ) {
-
-      const failure = 'database error when registering a new user';
+      const failure = 'database error when creating a new tag record';
       console.log( nowRunning + ": " + failure + "\n" );
       recordError ( {
         context: 'api: ' + nowRunning,
@@ -282,24 +191,190 @@ router.post( "/users/new", async ( req, res ) => {
       return res.status( 200 ).send( { failure, success } );
       
     }
-    
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { newId, success: true, token } );
 
- } catch ( e ) {
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } )
+
+  } catch (e) {
 
     recordError ( {
       context: 'api: ' + nowRunning,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
+      details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: req.body.userId
-   } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
-    console.log ( e ); 
+      userId: API_ACCESS_TOKEN
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    console.log ( e );
     res.status( 500 ).send( newException );
 
- }
+  }
+
+} );
+
+router.post( "/hashtags/delete", async ( req, res ) => {
+
+  const nowRunning = "utilities/hashtags/delete";
+  console.log( nowRunning + ": running" );
+
+  let success = false;
+  const errorNumber = 8;
+  
+  try {
+
+    const schema = Joi.object( { 
+      apiTesting: Joi.boolean(),
+      masterKey: Joi.any(),
+      tagId: Joi.string().required().uuid(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    const {
+      apiTesting,
+      tagId,
+      userId
+    } = req.body
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    const queryText = " DELETE FROM tags WHERE tag_id = '" + tagId + "'; DELETE FROM tag_connects WHERE tag_id = '" + tagId + "'; ";
+    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if ( !results ) {
+
+      const failure = 'database error when creating a new tag record';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId: API_ACCESS_TOKEN
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } )
+
+  } catch (e) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner(  e.message ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: API_ACCESS_TOKEN
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    console.log ( e );
+    res.status( 500 ).send( newException );
+
+  }
+
+} );
+
+router.post( "/hashtags/update", async ( req, res ) => {
+
+  const nowRunning = "utilities/hashtags/update";
+  console.log( nowRunning + ": running" );
+
+  let success = false;
+  const errorNumber = 10;
+  
+  try {
+
+    const schema = Joi.object( { 
+      apiTesting: Joi.boolean(),
+      active: Joi.boolean().required(),
+      notes: Joi.string().optional().allow( '', null ),
+      masterKey: Joi.any(),
+      tagId: Joi.string().required().uuid(),
+      tagText: Joi.string().required().min( 3 ).max( 30 ),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    const {
+      active,
+      apiTesting,
+      notes,
+      tagId,
+      tagText,
+      userId
+    } = req.body
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    if ( !notes ) notes = ''; 
+
+    const queryText = " UPDATE tags SET active = " + active + ", notes = '" + stringCleaner( notes, true ) + "', tag_text = '" + stringCleaner( tagText, true ) + "' WHERE tag_id = '" + tagId + "'; ";
+    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if ( !results ) {
+
+      const failure = 'database error when updating the tag record';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId: API_ACCESS_TOKEN
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } )
+
+  } catch (e) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner(  e.message ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: API_ACCESS_TOKEN
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    console.log ( e );
+    res.status( 500 ).send( newException );
+
+  }
 
 } );
 
