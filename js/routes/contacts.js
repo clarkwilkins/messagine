@@ -40,7 +40,7 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -68,19 +68,11 @@ router.post( "/all", async ( req, res ) => {
 
     if ( stringFilter.length > 2 ) stringFilter = stringCleaner( stringFilter, true );
 
-    let queryText = " SELECT c.*, u.user_name FROM contacts c, users u ";
+    let queryText = " SELECT c.*, u.user_name FROM contacts c, users u WHERE c.updated_by = u.user_id ";
 
-    if ( typeof active === 'boolean' ) {
-      
-      queryText += "WHERE c.active = " + active;
+    if ( typeof active === 'boolean' ) queryText += " AND c.active = " + active;
 
-      if ( stringFilter.length > 2 ) queryText += " AND ( c.company_name ILIKE '%" + stringFilter + "%' OR c.contact_name ILIKE '%" + stringFilter + "%' OR c.email ILIKE '%" + stringFilter + "%' ) ";
-
-    } else if ( stringFilter.length > 2 ) {
-
-      queryText += "AND c.updated_by = u.user_id WHERE  ( c.company_name ILIKE '%" + stringFilter + "%' OR c.contact_name ILIKE '%" + stringFilter + "%' OR c.email ILIKE '%" + stringFilter + "%' ) ";
-
-    }
+    if ( stringFilter.length > 2 ) queryText += " AND ( c.company_name ILIKE '%" + stringFilter + "%' OR c.contact_name ILIKE '%" + stringFilter + "%' OR c.email ILIKE '%" + stringFilter + "%' ) ";
 
     queryText += " ORDER BY block_all, active DESC, contact_name; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
@@ -186,12 +178,12 @@ router.post( "/load", async ( req, res ) => {
     }
 
     const schema = Joi.object( {
-      contactId: Joi.string().required(),
+      contactId: Joi.string().required().uuid(),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -323,7 +315,7 @@ router.post( "/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -437,7 +429,7 @@ router.post( "/search", async ( req, res ) => {
     } )
     .or( 'active', 'blockAll', 'companyName', 'contactName', 'contactNotes', 'sms', 'url');
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -606,7 +598,7 @@ router.post( "/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -685,9 +677,21 @@ router.post( "/update", async ( req, res ) => {
 
     if ( typeof blockAll === 'boolean' && +userLevel > 6 ) queryText += " , block_all = " + blockAll ; // note this requires level 7+
 
-    if ( locked === true ) { queryText += " , locked = " + userLevel; } else if ( locked === false ) { queryText += " , locked = 0"; }
+    if ( locked && locked === true  ) { 
+      
+      queryText += ", locked = " + userLevel + " "; 
     
-    queryText += " WHERE contact_id = '" + contactId + "' RETURNING contact_id; ";
+    } else if ( locked === false ) { 
+
+      queryText += ", locked = 0 ";
+
+    } else {
+      
+      queryText += ", locked = locked "; 
+  
+    }
+        
+    queryText += " WHERE contact_id = '" + contactId + "' AND locked <= " + userLevel + " RETURNING contact_id; ";
     results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
     if ( !results.rows ) {
