@@ -215,7 +215,7 @@ exports.stringCleaner = ( string, toDb, nl2br ) => {
 
 }
 
-exports.validateSchema = ( nowRunning, recordError, req, schema) => {
+exports.validateSchema = ( nowRunning, recordError, req, schema ) => {
 
   try {
 

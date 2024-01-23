@@ -47,7 +47,7 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -167,7 +167,7 @@ router.post( "/load", async ( req, res ) => {
       userId: Joi.string().required().uuid().uuid()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -353,7 +353,7 @@ router.post( "/login-standard", async ( req, res ) => {
       userId: Joi.any() // ignored
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
@@ -454,7 +454,7 @@ router.post( "/new", async ( req, res ) => {
       userName: Joi.string().required()
     } );
 
-    const errorMessage = validateSchema ( nowRunning, req, res, schema );
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
   
     if ( errorMessage ) {
 
