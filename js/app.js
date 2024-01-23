@@ -13,6 +13,8 @@ const {
 const cert = fs.readFileSync( sslCertificate );
 const key = fs.readFileSync( sslKey );
 
+const contacts = require( "./routes/contacts" );
+const email = require( "./routes/email" );
 const users = require( "./routes/users" );
 const utilities = require( "./routes/utilities" );
 
@@ -26,6 +28,8 @@ app.use(function ( req, res, next ) {
   next();
 });
 
+app.use( "/contacts", contacts ); // contact services
+app.use( "/email", email ); // email services
 app.use( "/users", users ); // user services
 app.use( "/utilities", utilities ); // utility services
 
