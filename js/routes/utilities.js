@@ -32,7 +32,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
     const schema = Joi.object( { 
       active: Joi.boolean(),
       masterKey: Joi.any(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -65,7 +65,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
     queryText += " ORDER BY active DESC, tag_text; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when getting tags';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -146,7 +146,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
       notes: Joi.string().optional().allow( '', null ),
       masterKey: Joi.any(),
       tagText: Joi.string().required().min( 3 ).max( 30 ),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -177,7 +177,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
     const queryText = " INSERT INTO tags ( notes, tag_id, tag_text ) VALUES( '" + stringCleaner( notes, true ) + "', '" + uuidv4() + "', '" + stringCleaner( tagText, true ) + "' ); ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when creating a new tag record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -226,7 +226,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
       apiTesting: Joi.boolean(),
       masterKey: Joi.any(),
       tagId: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -256,7 +256,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
     const queryText = " DELETE FROM tags WHERE tag_id = '" + tagId + "'; DELETE FROM tag_connects WHERE tag_id = '" + tagId + "'; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when creating a new tag record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -308,7 +308,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
       masterKey: Joi.any(),
       tagId: Joi.string().required().uuid(),
       tagText: Joi.string().required().min( 3 ).max( 30 ),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -343,7 +343,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
     const queryText = " UPDATE tags SET active = " + active + ", notes = '" + stringCleaner( notes, true ) + "', tag_text = '" + stringCleaner( tagText, true ) + "' WHERE tag_id = '" + tagId + "'; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when updating the tag record';
       console.log( nowRunning + ": " + failure + "\n" );

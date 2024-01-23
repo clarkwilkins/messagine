@@ -44,7 +44,7 @@ router.post( "/signatures/all", async ( req, res ) => {
     const schema = Joi.object( {
       active: Joi.boolean().optional(),
       masterKey: Joi.any(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -78,7 +78,7 @@ router.post( "/signatures/all", async ( req, res ) => {
 
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when removing a signature record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -166,7 +166,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
       apiTesting: Joi.boolean().optional(),
       masterKey: Joi.any(),
       signatureId: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -196,7 +196,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
     const queryText = " DELETE FROM email_signatures WHERE signature_id = '" + signatureId + "' AND ( owner = '" + userId + "' OR owner IN ( SELECT user_id FROM users WHERE active = false OR level < " + userLevel + " ) ) RETURNING *; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when removing a signature record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -257,7 +257,7 @@ router.post( "/signatures/load", async ( req, res ) => {
     const schema = Joi.object( {
       masterKey: Joi.any(),
       signatureId: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -286,7 +286,7 @@ router.post( "/signatures/load", async ( req, res ) => {
     const queryText = " SELECT e.*, u.user_name FROM email_signatures e, users u WHERE e.signature_id = '" + signatureId + "' AND e.owner = u.user_id; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when getting a signature record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -367,7 +367,7 @@ router.post( "/signatures/new", async ( req, res ) => {
       private: Joi.boolean().optional(),
       signatureName: Joi.string().required(),
       signatureText: Joi.string().required(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -402,7 +402,7 @@ router.post( "/signatures/new", async ( req, res ) => {
     const queryText = " INSERT INTO email_signatures( owner, private, signature_id, signature_name, signature_text ) VALUES( '" + userId + "', " + private + ", '" + signatureId + "', '" + stringCleaner( signatureName, true ) + "', '" + stringCleaner( signatureText, true ) + "' ); ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when creating a new signature record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -461,7 +461,7 @@ router.post( "/signatures/update", async ( req, res ) => {
       private: Joi.boolean().optional(),
       signatureName: Joi.string().required(),
       signatureText: Joi.string().required(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -503,7 +503,7 @@ router.post( "/signatures/update", async ( req, res ) => {
 
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when creating a new signature record';
       console.log( nowRunning + ": " + failure + "\n" );

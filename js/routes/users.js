@@ -44,7 +44,7 @@ router.post( "/all", async ( req, res ) => {
     const schema = Joi.object( {
       active: Joi.boolean(),
       masterKey: Joi.any(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -79,7 +79,7 @@ router.post( "/all", async ( req, res ) => {
     queryText += " ORDER BY active DESC, user_name; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when getting users';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -164,7 +164,7 @@ router.post( "/load", async ( req, res ) => {
     const schema = Joi.object( {
       masterKey: Joi.any(),
       thisUser: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid()
+      userId: Joi.string().required().uuid().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, req, res, schema );
@@ -195,7 +195,7 @@ router.post( "/load", async ( req, res ) => {
     const queryText = " SELECT * FROM users WHERE user_id = '" + thisUser + "' AND level <= " + userLevel + "; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when getting the user record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -276,7 +276,7 @@ router.post( "/login-key", async ( req, res ) => {
     const queryText = " SELECT * FROM users WHERE active = true AND token = '" + key + "'; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when checking for an active user with this login key';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -371,7 +371,7 @@ router.post( "/login-standard", async ( req, res ) => {
     const queryText = " SELECT * FROM users WHERE active = true AND email ILIKE '" + email + "' ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, masterKey );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when checking for an active user with this email address';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -450,7 +450,7 @@ router.post( "/new", async ( req, res ) => {
         .min(8)
         .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
         .message('Password must contain at least 1 uppercase character, 1 lowercase character, and 1 number'),
-      userId: Joi.string().required().uuid(),
+      userId: Joi.string().required().uuid().uuid(),
       userName: Joi.string().required()
     } );
 
@@ -495,7 +495,7 @@ router.post( "/new", async ( req, res ) => {
     const queryText = " INSERT INTO users ( active, email, level, login_hash, token, user_id, user_name ) VALUES ( true, '" + email + "', " + level + ", '" + loginHash + "', '" + newId + "', '" + token + "', '" + stringCleaner( userName, true ) + "' ) RETURNING *; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when creating a new user record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -562,7 +562,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
     let queryText = " SELECT user_id FROM users WHERE active = true AND email ILIKE '" + email + "'; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -665,7 +665,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     let queryText = " SELECT * FROM resets WHERE code = '" + resetCode + "' AND expires >= " + moment().format( 'X' ) + "; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
     
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -691,7 +691,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     queryText = " SELECT email FROM users WHERE user_id = '" + userId + "'; ";
     results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when getting the user\'s email address';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -791,7 +791,7 @@ router.post( "/update", async ( req, res ) => {
           'string.pattern.base': 'Password must contain at least 1 upper-case character, 1 lower-case character, and 1 number.',
         }),
       thisUser: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid(),
+      userId: Joi.string().required().uuid().uuid(),
       userName: Joi.string().required()
     } );
     
@@ -839,7 +839,7 @@ router.post( "/update", async ( req, res ) => {
     queryText += "user_name = '" + stringCleaner( userName, true ) + "' WHERE user_id = '" + thisUser + "' RETURNING *; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results ) {
+    if ( !results.rows ) {
 
       const failure = 'database error when updating the user record';
       console.log( nowRunning + ": " + failure + "\n" );
