@@ -44,7 +44,7 @@ router.post( "/signatures/all", async ( req, res ) => {
     const schema = Joi.object( {
       active: Joi.boolean().optional(),
       masterKey: Joi.any(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -87,7 +87,7 @@ router.post( "/signatures/all", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -166,7 +166,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
       apiTesting: Joi.boolean().optional(),
       masterKey: Joi.any(),
       signatureId: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -205,7 +205,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -257,7 +257,7 @@ router.post( "/signatures/load", async ( req, res ) => {
     const schema = Joi.object( {
       masterKey: Joi.any(),
       signatureId: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -295,7 +295,7 @@ router.post( "/signatures/load", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -367,7 +367,7 @@ router.post( "/signatures/new", async ( req, res ) => {
       private: Joi.boolean().optional(),
       signatureName: Joi.string().required(),
       signatureText: Joi.string().required(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -411,7 +411,7 @@ router.post( "/signatures/new", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -461,7 +461,7 @@ router.post( "/signatures/update", async ( req, res ) => {
       private: Joi.boolean().optional(),
       signatureName: Joi.string().required(),
       signatureText: Joi.string().required(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -512,7 +512,7 @@ router.post( "/signatures/update", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       

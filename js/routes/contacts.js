@@ -86,7 +86,7 @@ router.post( "/all", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -218,7 +218,7 @@ router.post( "/load", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -367,7 +367,7 @@ router.post( "/new", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -491,7 +491,7 @@ router.post( "/search", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -645,7 +645,7 @@ router.post( "/update", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -703,7 +703,7 @@ router.post( "/update", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       

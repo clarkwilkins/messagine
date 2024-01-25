@@ -86,7 +86,7 @@ router.post( "/all", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -130,6 +130,108 @@ router.post( "/all", async ( req, res ) => {
     
     console.log( nowRunning + ": finished\n" );
     return res.status( 200 ).send( { lists, listsSelector, success: true } );
+
+  } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+  }
+
+} );
+
+router.post( "/contact-linking", async ( req, res ) => { 
+
+  const nowRunning = "/lists/contact-linking";
+  console.log( nowRunning + ": running" );
+
+  const errorNumber = 27;
+  const success = false;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      apiTesting: Joi.boolean().optional(),
+      contactId: Joi.string().required().uuid(),
+      link: Joi.boolean().required(),
+      listId: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    let { 
+      apiTesting,
+      contactId,
+      link,
+      listId,
+      userId 
+    } = req.body;
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+    
+    let queryText;
+
+    if ( link === false ) {
+
+      queryText = " DELETE FROM list_contacts WHERE contact_id = '" + contactId + "' AND list_id = '" + listId + "'; ";
+
+    } else {
+
+      const now = moment().format( 'X' );
+      queryText = " INSERT INTO list_contacts ( contact_id, created, list_id, updated, updated_by ) VALUES ( '" + contactId + "', " + now + ", '" + listId + "', " + now + ", '" + userId + "' ); "
+
+    }
+
+    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if ( !results.rows ) {
+
+      const failure = 'database error when getting list records';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+    
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } );
 
   } catch ( e ) {
 
@@ -194,8 +296,8 @@ router.post( "/load", async ( req, res ) => {
 
     } 
 
-    const queryText = " SELECT l.*, u.user_name FROM lists l, users u WHERE l.list_id = '" + listId + "' AND l.updated_by = u.user_id; ";
-    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    let queryText = " SELECT l.*, u.user_name FROM lists l, users u WHERE l.list_id = '" + listId + "' AND l.updated_by = u.user_id; ";
+    let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
     if ( !results.rows ) {
 
@@ -206,7 +308,7 @@ router.post( "/load", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -228,12 +330,59 @@ router.post( "/load", async ( req, res ) => {
       updated_by: updatedBy,
       user_name: updatedBy2
     } = results.rows[0];
-    
+
+    // now get contacts on this list
+
+    const linkedContacts = {};
+
+    queryText = " SELECT c.* FROM contacts c, list_contacts lc WHERE c.contact_id = lc.contact_id AND lc.list_id = '" + listId + "' AND c.active = true AND c.block_all = false ORDER BY c.contact_name, c.company_name, c.email; "
+    results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+    if ( !results.rows ) {
+
+      const failure = 'database error when getting the linked contacts';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    Object.values( results.rows ).map( row=> {
+
+      const {
+        company_name: companyName,
+        contact_id: contactId,
+        contact_name: contactName,
+        contact_notes: contactNotes,
+        email,
+        updated
+      } = row;
+
+      fullName = contactName;
+
+      if ( companyName ) fullName += ',' + companyName;
+
+      linkedContacts[contactId] = {
+        contactNotes: stringCleaner( contactNotes, false, !containsHTML( contactNotes ) ),
+        email,
+        fullName: stringCleaner( fullName ),
+        updated: moment.unix( updated ).format( 'YYYY.MM.DD' )
+      }
+
+    })
+
     console.log( nowRunning + ": finished\n" );
     return res.status( 200 ).send( { 
       acceptContacts,
       active,
       created: +created,
+      linkedContacts,
       listName: stringCleaner( listName ),
       listNotes: stringCleaner( listNotes, false, !containsHTML( listNotes ) ),
       locked: +locked,
@@ -326,7 +475,7 @@ router.post( "/new", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -451,7 +600,7 @@ router.post( "/update", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
