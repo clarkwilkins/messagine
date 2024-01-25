@@ -9,6 +9,37 @@ const {
   SENDGRID_OFF
 } = process.env;
 
+// deactive all currently disqualified campaigns
+
+exports.checkCampaigns = async ( errorNumber, userId ) => {
+
+  const db = require( './db' );
+  const now = moment().format( 'X' );
+  const nowRunning = 'functions.js:checkCampaigns';
+  const queryText = " UPDATE campaigns SET active = false WHERE ( list_id NOT IN ( SELECT list_id FROM lists WHERE active = true ) OR ends < " + now + " ) RETURNING campaign_id; ";
+  const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId );
+
+  if ( !results.rows ) {
+    
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    } );
+    return { failure: 'campaign testing failed due to a database error', success: false };
+
+  }
+
+  const closedCampaigns = [];
+
+  Object.values( results.rows ).map( row => { closedCampaigns.push( row.campaign_id ) });
+
+  return { closedCampaigns, success: true }
+
+}
+
 exports.containsHTML = string => { // c/o ChatGPT 3.5
 
   const htmlRegex = /<[^>]+>/g;

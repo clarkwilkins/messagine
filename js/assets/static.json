@@ -1,0 +1,40 @@
+{
+  "intervals": [
+    "not set",
+    "weekdays",
+    "daily",
+    "weekly",
+    "bi-weekly",
+    "monthly",
+    "first day of each month",
+    "first weekday of each month",
+    "quarterly",
+    "first day of each quarter",
+    "first weekday of each quarter",
+    "biannually",
+    "first day of each biannual",
+    "first weekday of each biannual",
+    "yearly",
+    "first day of each year",
+    "first weekday of each year"
+  ],
+  "intervalsSelector": [
+    { "label": "not set", "value" : 0 },
+    { "label": "weekdays", "value" : 1 },
+    { "label": "daily", "value" : 2 },
+    { "label": "weekly", "value" : 3 },
+    { "label": "bi-weekly", "value" : 4 },
+    { "label": "monthly", "value" : 5 },
+    { "label": "first day of each month", "value" : 6 },
+    { "label": "first weekday of each month", "value" : 7 },
+    { "label": "quarterly", "value" : 8 },
+    { "label": "first day of each quarter", "value" : 9 },
+    { "label": "first weekday of each quarter", "value" : 10 },
+    { "label": "biannually", "value" : 11 },
+    { "label": "first day of each biannual", "value" : 12 },
+    { "label": "first weekday of each biannual", "value" : 13 },
+    { "label": "yearly", "value" : 14 },
+    { "label": "first day of each year", "value" : 15 },
+    { "label": "first weekday of each year", "value" : 16 }
+  ]
+}

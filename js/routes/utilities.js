@@ -32,7 +32,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
     const schema = Joi.object( { 
       active: Joi.boolean(),
       masterKey: Joi.any(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -74,7 +74,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -121,7 +121,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: API_ACCESS_TOKEN
+      userId
     } );
     const newException = nowRunning + ': failed with an exception: ' + e.message;
     console.log ( e );
@@ -146,7 +146,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
       notes: Joi.string().optional().allow( '', null ),
       masterKey: Joi.any(),
       tagText: Joi.string().required().min( 3 ).max( 30 ),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -186,7 +186,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -202,7 +202,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: API_ACCESS_TOKEN
+      userId
     } );
     const newException = nowRunning + ': failed with an exception: ' + e.message;
     console.log ( e );
@@ -226,7 +226,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
       apiTesting: Joi.boolean(),
       masterKey: Joi.any(),
       tagId: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -265,7 +265,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -281,7 +281,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: API_ACCESS_TOKEN
+      userId
     } );
     const newException = nowRunning + ': failed with an exception: ' + e.message;
     console.log ( e );
@@ -308,7 +308,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
       masterKey: Joi.any(),
       tagId: Joi.string().required().uuid(),
       tagText: Joi.string().required().min( 3 ).max( 30 ),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
@@ -352,7 +352,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -368,7 +368,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: API_ACCESS_TOKEN
+      userId
     } );
     const newException = nowRunning + ': failed with an exception: ' + e.message;
     console.log ( e );

@@ -44,7 +44,7 @@ router.post( "/all", async ( req, res ) => {
     const schema = Joi.object( {
       active: Joi.boolean(),
       masterKey: Joi.any(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -88,7 +88,7 @@ router.post( "/all", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -164,7 +164,7 @@ router.post( "/load", async ( req, res ) => {
     const schema = Joi.object( {
       masterKey: Joi.any(),
       thisUser: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid().uuid()
+      userId: Joi.string().required().uuid()
     } );
 
     const errorMessage = validateSchema( nowRunning, recordError, req, schema );
@@ -204,7 +204,7 @@ router.post( "/load", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -450,7 +450,7 @@ router.post( "/new", async ( req, res ) => {
         .min(8)
         .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
         .message('Password must contain at least 1 uppercase character, 1 lowercase character, and 1 number'),
-      userId: Joi.string().required().uuid().uuid(),
+      userId: Joi.string().required().uuid(),
       userName: Joi.string().required()
     } );
 
@@ -504,7 +504,7 @@ router.post( "/new", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -571,7 +571,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
   
@@ -791,7 +791,7 @@ router.post( "/update", async ( req, res ) => {
           'string.pattern.base': 'Password must contain at least 1 upper-case character, 1 lower-case character, and 1 number.',
         }),
       thisUser: Joi.string().required().uuid(),
-      userId: Joi.string().required().uuid().uuid(),
+      userId: Joi.string().required().uuid(),
       userName: Joi.string().required()
     } );
     
@@ -848,7 +848,7 @@ router.post( "/update", async ( req, res ) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       } );
       return res.status( 200 ).send( { failure, success } );
       
@@ -867,7 +867,7 @@ router.post( "/update", async ( req, res ) => {
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: API_ACCESS_TOKEN
+      userId
     } );
     const newException = nowRunning + ': failed with an exception: ' + e.message;
     console.log ( e );
