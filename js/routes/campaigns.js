@@ -427,6 +427,269 @@ router.post( "/load", async ( req, res ) => {
 
 } );
 
+router.post( "/messages/add", async ( req, res ) => { 
+
+  const nowRunning = "/campaigns/messages/add";
+  console.log( nowRunning + ": running" );
+
+  const errorNumber = 39;
+  const success = false;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      apiTesting: Joi.boolean().optional(),
+      campaignId: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      messageId: Joi.string().required().uuid(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    let { 
+      apiTesting,
+      campaignId,
+      messageId,
+      userId 
+    } = req.body;
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    // doing some cleanup before we connect the message
+
+    const { success: campaignsChecked } = await checkCampaigns( errorNumber, nowRunning, userId );
+
+    if ( !campaignsChecked ) {
+
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+
+    }
+
+    // check for the next position
+
+    let queryText = " SELECT max( position ) FROM campaign_messages WHERE campaign_id = '" + campaignId + "'; ";
+    let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+    if ( !results.rows ) {
+
+      const failure = 'database error when checking current message position';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    let nextPosition = +results.rows[0]?.max + 1 || 1;
+
+    queryText = " INSERT INTO campaign_messages( campaign_id, message_id, position ) VALUES ( '" + campaignId + "', '" + messageId + "', " + nextPosition + " ) RETURNING position; ";
+    results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if ( !results.rows || results.rowCount != 1 ) {
+
+      const failure = 'database error when adding a message to the campaign';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { nextPosition, success: true } );
+
+  } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+ }
+
+} );
+
+router.post( "/messages/remove", async ( req, res ) => { 
+
+  const nowRunning = "/campaigns/messages/remove";
+  console.log( nowRunning + ": running" );
+
+  const errorNumber = 40;
+  const success = false;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      apiTesting: Joi.boolean().optional(),
+      campaignId: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      messageId: Joi.string().required().uuid(),
+      position: Joi.number().optional().integer().positive(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    let { 
+      apiTesting,
+      campaignId,
+      messageId,
+      position,
+      userId 
+    } = req.body;
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    let queryText = " DELETE FROM campaign_messages WHERE campaign_id = '" + campaignId + "' AND message_id = '" + messageId + "' ";
+
+    // this is just in case we have N > 1 of the same message for some reason and want to remove a specific instance
+
+    if ( +position ) queryText += " AND position = " + position; 
+
+    // the second part will get what's left so we can do repositioning
+
+    queryText += "; SELECT * FROM campaign_messages WHERE campaign_id = '" + campaignId + "' ORDER BY position; ";
+    results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if ( !results[0].rows ) {
+
+      const failure = 'database error when removing a message from the campaign';
+      console.log( nowRunning + ": " + failure + "\n" );
+      recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    // if there are any remaining messages, they are now renumbered
+
+    if ( results[1].rowCount > 0 ) {
+
+      queryText = " DELETE FROM campaign_messages WHERE campaign_id = '" + campaignId + "'; ";
+
+      Object.values( results[1].rows ).map( ( row, key ) => {
+
+        const {
+          campaign_id: campaignId,
+          message_id: messageId,
+          last_sent: lastSent
+        } = row;
+        const position = +key + 1;
+        queryText += " INSERT INTO campaign_messages( campaign_id, message_id, last_sent, position ) VALUES( '" + campaignId + "', '" + messageId + "', " + +lastSent + ", " + position + " ); "
+
+      });
+
+      results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+      if ( !results ) {
+
+        const failure = 'database error when repositiong remaining messages in the campaign';
+        console.log( nowRunning + ": " + failure + "\n" );
+        recordError ( {
+          context: 'api: ' + nowRunning,
+          details: queryText,
+          errorMessage: failure,
+          errorNumber,
+          userId
+        } );
+        return res.status( 200 ).send( { failure, success } );
+        
+      }
+
+    }
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } );
+
+  } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+ }
+
+} );
+
 router.post( "/new", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/new";
