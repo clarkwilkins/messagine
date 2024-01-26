@@ -353,7 +353,7 @@ router.post( "/load", async ( req, res ) => {
 
     if ( !results.rows ) {
 
-      const failure = 'database error when getting all campaigns';
+      const failure = 'database error when getting the campaign';
       console.log( nowRunning + ": " + failure + "\n" );
       recordError ( {
         context: 'api: ' + nowRunning,
@@ -364,7 +364,7 @@ router.post( "/load", async ( req, res ) => {
       } );
       return res.status( 200 ).send( { failure, success } );
       
-    } else if ( !results.rows[0].campaign_id ) {
+    } else if ( !results.rows[0]?.campaign_id ) {
 
       const failure = 'campaignId ' + campaignId + ' was not found';
       return res.status( 200 ).send( { failure, success } );
