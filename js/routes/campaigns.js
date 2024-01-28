@@ -12,6 +12,7 @@ const {
   checkCampaigns,
   containsHTML,
   getUserLevel,
+  processCampaigns,
   recordError,
   stringCleaner,
   validateSchema
@@ -812,6 +813,159 @@ router.post( "/new", async ( req, res ) => {
     
     console.log( nowRunning + ": finished\n" );
     return res.status( 200 ).send( { campaignId, closedCampaigns, success: true } );
+
+  } catch ( e ) {
+
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+ }
+
+} );
+
+router.post( "/run", async ( req, res ) => { 
+
+  const nowRunning = "/campaigns/run";
+  console.log( nowRunning + ": running" );
+
+  const errorNumber = 41;
+  const success = false;
+
+  try {
+
+    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+
+      console.log( nowRunning + ": bad token\n" );
+      return res.status( 403 ).send( 'unauthorized' );
+
+    }
+
+    const schema = Joi.object( {
+      masterKey: Joi.any()
+    } );
+
+    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+  
+    if ( errorMessage ) {
+
+      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
+      return res.status( 422 ).send( { failure: errorMessage, success } );
+
+    }
+
+    const userId = API_ACCESS_TOKEN; // we need a user ID but this runs as a crontab job
+
+    // get all campaigns that have a message that is eligible to run now
+
+    const queryText = " SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, m.content, m.message_id, m.message_name, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= " + moment().format( 'X' ) + " OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position; ";
+    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+    if ( !results.rows ) {
+
+      const failure = 'database error when getting all campaigns';
+      console.log( nowRunning + ": " + failure + "\n" );
+      await recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status( 200 ).send( { failure, success } );
+      
+    }
+
+    const eligibleCampaigns = results.rows;
+    const campaignLimiter = [];
+
+    const processCampaignsPromises = eligibleCampaigns.map(async (row) => {
+      
+      try {
+
+        // get the campaign parameters and the next message in line to send
+
+        const {
+          campaign_id: campaignId,
+          content: messageContent,
+          list_id: listId,
+          message_id: messageId,
+          message_name: messageName,
+          subject: messageSubject
+        } = row;
+
+        // sometimes there will be N > 1 messages waiting to run on a campaign cycle, but we need to not send more than one per interval
+
+        if ( campaignLimiter.includes( campaignId ) ) {
+
+          console.log(`campaign ${campaignId} was limited to sending just one message per cycle` );
+          return { campaignsProcessedSuccess: true }; // note that allCampaignsProcessedResults will only have this single value when the limiter is invoked.
+
+        }
+
+        campaignLimiter.push( campaignId ); // prevents the campaign from sending any more emails on this run
+
+        // the campaign message will be sent to the mailing list after additional processing, see processCampaigns
+    
+        const {
+          campaignsProcessedFailure,
+          campaignsProcessedSuccess
+        } = await processCampaigns({
+          campaignId,
+          errorNumber,
+          listId,
+          messageContent: stringCleaner(messageContent),
+          messageId,
+          messageName: stringCleaner(messageName),
+          messageSubject: stringCleaner(messageSubject),
+          userId
+        });
+    
+        // log or handle the successful campaign processing (to be replaced with history)
+
+        console.log(`campaign ${campaignId} processed successfully`);
+    
+        return {
+          campaignId,
+          messageId: row.message_id,
+          campaignsProcessedFailure,
+          campaignsProcessedSuccess
+        };
+
+      } catch (error) {
+
+        // log or handle the failed campaign processing (to be replaced with history)
+
+        console.error(`Campaign ${row.campaign_id} processing failed:`, error);
+
+        return {
+          campaignId: row.campaign_id,
+          messageId: row.message_id,
+          campaignsProcessedFailure: error.message,
+          campaignsProcessedSuccess: null
+        };
+
+      }
+
+    });
+    
+    // creates an array of the results of processing each eligible campaign
+
+    const allCampaignsProcessedResults = await Promise.all(processCampaignsPromises);
+
+    // this returns true only if every campaign processed with no error
+  
+    const allCampaignsProcessed = allCampaignsProcessedResults.every( (result) => !result.campaignsProcessedFailure );
+  
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ success: true, allCampaignsProcessed, allCampaignsProcessedResults });
 
   } catch ( e ) {
 

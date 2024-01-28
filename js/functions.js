@@ -2,11 +2,11 @@ const _ = require( 'lodash' );
 const fs = require ( 'fs' );
 const moment = require( 'moment-timezone' );
 const request = require( 'request' );
-const sgMail = require( '@sendgrid/mail' );
 const {
   API_ACCESS_TOKEN,
   SENDGRID_API_KEY,
-  SENDGRID_OFF
+  SENDGRID_OFF,
+  SENDGRID_SENDER
 } = process.env;
 
 // deactive all currently disqualified campaigns
@@ -54,6 +54,55 @@ exports.dateToTimestamp = date => {
   date = +moment( date, 'DDD MMM YYYY HH:mm:ss Z' ).format( 'X' );
   return date;
   
+}
+
+exports.getDynamicMessageReplacements = async ( { errorNumber, messageId, userId } ) => {
+
+  const db = require( './db' );
+  const nowRunning = 'functions.js:getDynamicMessageReplacements';
+  const success = false;
+  const { 
+    containsHTML,
+    recordError,
+    stringCleaner
+  } = require ( './functions' );
+
+  const queryText = " SELECT DISTINCT ON ( target_name ) * FROM dynamic_values WHERE message_id = '" + messageId + "' ORDER BY target_name, last_used ";
+  const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+  if ( !results?.rows ) {
+
+    const failure = 'database error when getting dynamic values records';
+    console.log( nowRunning + ": " + failure + "\n" );
+    recordError ( {
+      context: 'api: ' + nowRunning,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    } );
+    return ( { failure, success } );
+    
+  }
+
+  const dynamicValues = {};
+
+  Object.values( results.rows ).map( row => {
+
+    const {
+      dynamic_id: dynamicId,
+      new_value: newValue,
+      target_name: targetName
+    } = row;
+    dynamicValues[dynamicId] = { 
+      newValue: stringCleaner( newValue, false, !containsHTML( newValue ) ),
+      targetName: stringCleaner( targetName )
+    }
+
+  })
+
+  return ( { dynamicValues, success: true } );
+
 }
 
 // getUserLevel was rewritten by ChatGPT 3.5 to throttle it and add better error handling.
@@ -132,6 +181,95 @@ exports.getUsers = async () => {
 
 }
 
+exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageContent, messageId, messageName, messageSubject, userId }) => {
+
+  const db = require( './db' );
+  const now = moment().format( 'X' );
+  const nowRunning = 'functions.js:processCampaigns';
+  const success = false;
+  const { 
+    getDynamicMessageReplacements,
+    recordError,
+    sendMail,
+    stringCleaner
+  } = require ( './functions' );
+
+  // get dynamic replacements (to be applied to messageContent)
+
+  const {
+    dynamicValues,
+    failure: getDynamicValuesFailure,
+    success: getDynamicValuesSuccess
+  } = await getDynamicMessageReplacements( { errorNumber, messageId, userId } );
+
+  if ( !getDynamicValuesSuccess ) {
+
+    console.log( nowRunning + ": exited due to error on function getDynamicMessageReplacements\n" );
+    return res.status( 200 ).send( { failure: getDynamicValuesFailure, success } );
+
+  }
+
+  console.log( 'dynamicValues', dynamicValues)
+
+  // dynamic values are inserted into the message.
+
+  Object.values( dynamicValues ).map( row => { 
+    
+     const newValue = stringCleaner( row.newValue );
+     const targetName = stringCleaner( row.targetName );
+
+     // the target string is programmatic c/o ChatGPT 3.5
+
+     const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g'); // 
+     messageContent = _.replace(messageContent, placeholderRegex, newValue);
+
+  });
+
+  // get the email recipients
+
+  let queryText = " SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE lc.list_id = '" + listId + "' AND lc.contact_id = c.contact_id AND c.active = true AND c.block_all = false AND c.contact_id NOT IN ( SELECT contact_id FROM unsubs WHERE list_id = '" + listId + "' ); ";
+  let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+  if ( !results.rows ) { 
+
+    const failure = 'database error when getting eligible recipients fot the campaign email';
+    console.log( nowRunning + ": " + failure + "\n" );
+    await recordError ( {
+      context: 'api: ' + nowRunning,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    } );
+
+    return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false });
+
+  }
+
+  Object.values( results.rows ).map( async row => {
+
+    let {
+      company_name: companyName,
+      contact_id: contactId,
+      contact_name: contactName,
+      email
+    } = row;
+
+    if ( companyName ) contactName += ", " + companyName;
+
+    contactName = stringCleaner( contactName );
+    messageContent = _.replace(messageContent, /\[CONTACT_NAME\]/g, contactName);
+
+    const result = await sendMail ( email, messageContent, messageSubject );
+    console.log( 'email result', result )
+
+    
+  });
+
+  return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true });
+
+}
+
 exports.randomString = () => { // c/o ChatGPT3.5
 
   const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -205,6 +343,8 @@ exports.recordError = async data => { // data should be { context, details, erro
 
 exports.sendMail = async ( addressee, html, subject, testMode ) => { 
 
+  const sgMail = require( '@sendgrid/mail' );
+  sgMail.setApiKey(  SENDGRID_API_KEY );
   let emailResults = null;
 
   try {
@@ -219,13 +359,13 @@ exports.sendMail = async ( addressee, html, subject, testMode ) => {
     testMode ? addressee = 'simplexable@gmail.com' : null;
 
     const text = 'Please read this email in a HTML-capable browser.';
-    const sender = 'noreply@healthica.com';
+    const sender = SENDGRID_SENDER;
 
     emailResults = await sgMail.send( { to: addressee, html, from: sender, subject, text } );
 
  } catch( e ) {
 
-    console.log( e );
+    console.log( 'e', e.response.body );
     emailResults = [ { statusCode: 200, status: 'Sendmail threw a local exception' } ];
 
  }
