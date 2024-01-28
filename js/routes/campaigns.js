@@ -72,7 +72,7 @@ router.post( "/all", async ( req, res ) => {
 
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -94,7 +94,7 @@ router.post( "/all", async ( req, res ) => {
       const failure = 'database error when getting all campaigns';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -160,7 +160,7 @@ router.post( "/all", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -232,7 +232,7 @@ router.post( "/delete", async ( req, res ) => {
       const failure = 'database error when deleting the campaign record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -255,7 +255,7 @@ router.post( "/delete", async ( req, res ) => {
 
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -271,7 +271,7 @@ router.post( "/delete", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -339,7 +339,7 @@ router.post( "/load", async ( req, res ) => {
 
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -357,7 +357,7 @@ router.post( "/load", async ( req, res ) => {
       const failure = 'database error when getting the campaign';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -414,7 +414,7 @@ router.post( "/load", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -486,7 +486,7 @@ router.post( "/messages/add", async ( req, res ) => {
 
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -506,7 +506,7 @@ router.post( "/messages/add", async ( req, res ) => {
       const failure = 'database error when checking current message position';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -526,7 +526,7 @@ router.post( "/messages/add", async ( req, res ) => {
       const failure = 'database error when adding a message to the campaign';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -542,7 +542,7 @@ router.post( "/messages/add", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -624,7 +624,7 @@ router.post( "/messages/remove", async ( req, res ) => {
       const failure = 'database error when removing a message from the campaign';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -659,7 +659,7 @@ router.post( "/messages/remove", async ( req, res ) => {
         const failure = 'database error when repositiong remaining messages in the campaign';
         console.log( `${nowRunning}: ${failure}\n` )
         recordError ( {
-          context: 'api: ' + nowRunning,
+          context: `api: ${nowRunning}`,
           details: queryText,
           errorMessage: failure,
           errorNumber,
@@ -677,7 +677,7 @@ router.post( "/messages/remove", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -781,7 +781,7 @@ router.post( "/new", async ( req, res ) => {
       const failure = 'database error when creating a new campaign record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -801,7 +801,7 @@ router.post( "/new", async ( req, res ) => {
 
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -817,7 +817,7 @@ router.post( "/new", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -866,15 +866,15 @@ router.post( "/run", async ( req, res ) => {
 
     // get all campaigns that have a message that is eligible to run now
 
-    const queryText = " SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, m.content, m.message_id, m.message_name, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= " + moment().format( 'X' ) + " OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position; ";
-    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    let queryText = " SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, m.content, m.message_id, m.message_name, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= " + moment().format( 'X' ) + " OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position; ";
+    let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
     if ( !results.rows ) {
 
       const failure = 'database error when getting all campaigns';
       console.log( `${nowRunning}: ${failure}\n` )
       await recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -896,9 +896,12 @@ router.post( "/run", async ( req, res ) => {
         const {
           campaign_id: campaignId,
           content: messageContent,
+          ends,
+          interval,
           list_id: listId,
           message_id: messageId,
           message_name: messageName,
+          repeats,
           subject: messageSubject
         } = row;
 
@@ -928,6 +931,33 @@ router.post( "/run", async ( req, res ) => {
           messageSubject: stringCleaner(messageSubject),
           userId
         });
+
+        // determine and set the next run of this campaign
+
+        let updateStartTime = false;
+
+        if ( !repeats ) { // check if any linked messages have not been sent yet
+
+          queryText = `SELECT count( message_id ) FROM campaign_messages WHERE campaign_id = '${campaignId}' AND ( last_sent < 1 OR last_sent IS NULL );`
+          results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+          if ( !results?.rows[0].count ) {
+
+            const failure = `database error when getting unsent messages count for campaign ${campaignId}`;
+            console.log( `${nowRunning}: ${failure}\n` )
+            await recordError ( {
+              context: `api: ${nowRunning}`,
+              details: queryText,
+              errorMessage: failure,
+              errorNumber,
+              userId
+            } );
+            return res.status( 200 ).send( { failure, success } );
+            
+          }
+
+
+        }
     
         // log or handle the successful campaign processing (to be replaced with history)
 
@@ -971,7 +1001,7 @@ router.post( "/run", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -1078,7 +1108,7 @@ router.post( "/update", async ( req, res ) => {
       const failure = 'database error when updating a  campaign record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -1096,7 +1126,7 @@ router.post( "/update", async ( req, res ) => {
 
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -1112,7 +1142,7 @@ router.post( "/update", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,

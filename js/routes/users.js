@@ -84,7 +84,7 @@ router.post( "/all", async ( req, res ) => {
       const failure = 'database error when getting users';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -130,7 +130,7 @@ router.post( "/all", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -200,7 +200,7 @@ router.post( "/load", async ( req, res ) => {
       const failure = 'database error when getting the user record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -233,7 +233,7 @@ router.post( "/load", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -281,7 +281,7 @@ router.post( "/login-key", async ( req, res ) => {
       const failure = 'database error when checking for an active user with this login key';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -311,7 +311,7 @@ router.post( "/login-key", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -376,7 +376,7 @@ router.post( "/login-standard", async ( req, res ) => {
       const failure = 'database error when checking for an active user with this email address';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -409,7 +409,7 @@ router.post( "/login-standard", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -500,7 +500,7 @@ router.post( "/new", async ( req, res ) => {
       const failure = 'database error when creating a new user record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -516,7 +516,7 @@ router.post( "/new", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -567,7 +567,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
       const failure = 'database error when checking if the email address belongs to an active user';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -593,7 +593,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
       const failure = 'database error when setting up a new reset record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -617,7 +617,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -670,7 +670,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
       const failure = 'database error when checking if the email address belongs to an active user';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -696,7 +696,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
       const failure = 'database error when getting the user\'s email address';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -713,7 +713,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
       const failure = 'the email address was not properly retrieved';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -734,7 +734,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
       const failure = 'database error when resetting the user\'s passphrase';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -753,7 +753,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -844,7 +844,7 @@ router.post( "/update", async ( req, res ) => {
       const failure = 'database error when updating the user record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -863,7 +863,7 @@ router.post( "/update", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,

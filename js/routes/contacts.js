@@ -82,7 +82,7 @@ router.post( "/all", async ( req, res ) => {
       const failure = 'database error when getting contact records';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -146,7 +146,7 @@ router.post( "/all", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -214,7 +214,7 @@ router.post( "/load", async ( req, res ) => {
       const failure = 'database error when getting contact records';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -271,7 +271,7 @@ router.post( "/load", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -363,7 +363,7 @@ router.post( "/new", async ( req, res ) => {
       const failure = 'database error when creating a new contact record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -385,7 +385,7 @@ router.post( "/new", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -487,7 +487,7 @@ router.post( "/search", async ( req, res ) => {
       const failure = 'database error when searching contact records';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -551,7 +551,7 @@ router.post( "/search", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -641,7 +641,7 @@ router.post( "/update", async ( req, res ) => {
       const failure = 'database error when checking the contact ID';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -699,7 +699,7 @@ router.post( "/update", async ( req, res ) => {
       const failure = 'database error when updating contact record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -720,7 +720,7 @@ router.post( "/update", async ( req, res ) => {
   } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,

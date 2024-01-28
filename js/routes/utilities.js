@@ -70,7 +70,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
       const failure = 'database error when getting tags';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -117,7 +117,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -182,7 +182,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
       const failure = 'database error when creating a new tag record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -198,7 +198,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -261,7 +261,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
       const failure = 'database error when creating a new tag record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -277,7 +277,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -348,7 +348,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
       const failure = 'database error when updating the tag record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -364,7 +364,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
   } catch (e) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner(  e.message ),
       errorMessage: 'exception thrown',
       errorNumber,

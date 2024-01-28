@@ -73,9 +73,9 @@ async function noTransaction( query, errorNumber, nowRunning, userId ) {
 
     console.log( 'database error: ' + e.message )
     recordError( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: query,
-      errorMessage: 'error: ' + e.message,
+      errorMessage: `error: ${e.message}`,      
       errorNumber,
       userId
     } );
@@ -104,9 +104,9 @@ async function transactionRequired( query, errorNumber, nowRunning, userId, apiT
 
     await client.query( "ROLLBACK " ); // rollback before throwing exception
     recordError( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: query,
-      errorMessage: 'error: ' + e.message,
+      errorMessage: `error: ${e.message}`,      
       errorNumber,
       userId
    } );

@@ -83,7 +83,7 @@ router.post( "/signatures/all", async ( req, res ) => {
       const failure = 'database error when removing a signature record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -131,7 +131,7 @@ router.post( "/signatures/all", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -201,7 +201,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
       const failure = 'database error when removing a signature record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -223,7 +223,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -291,7 +291,7 @@ router.post( "/signatures/load", async ( req, res ) => {
       const failure = 'database error when getting a signature record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -330,7 +330,7 @@ router.post( "/signatures/load", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -407,7 +407,7 @@ router.post( "/signatures/new", async ( req, res ) => {
       const failure = 'database error when creating a new signature record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -423,7 +423,7 @@ router.post( "/signatures/new", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
@@ -508,7 +508,7 @@ router.post( "/signatures/update", async ( req, res ) => {
       const failure = 'database error when creating a new signature record';
       console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
-        context: 'api: ' + nowRunning,
+        context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -530,7 +530,7 @@ router.post( "/signatures/update", async ( req, res ) => {
  } catch ( e ) {
 
     recordError ( {
-      context: 'api: ' + nowRunning,
+      context: `api: ${nowRunning}`,
       details: stringCleaner( JSON.stringify( e.message ), true ),
       errorMessage: 'exception thrown',
       errorNumber,
