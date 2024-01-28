@@ -73,7 +73,7 @@ exports.getDynamicMessageReplacements = async ( { errorNumber, messageId, userId
   if ( !results?.rows ) {
 
     const failure = 'database error when getting dynamic values records';
-    console.log( nowRunning + ": " + failure + "\n" );
+    console.log( `${nowRunning}: ${failure}\n` )
     recordError ( {
       context: 'api: ' + nowRunning,
       details: queryText,
@@ -190,6 +190,7 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
   const { 
     getDynamicMessageReplacements,
     recordError,
+    recordEvent,
     sendMail,
     stringCleaner
   } = require ( './functions' );
@@ -205,11 +206,9 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
   if ( !getDynamicValuesSuccess ) {
 
     console.log( nowRunning + ": exited due to error on function getDynamicMessageReplacements\n" );
-    return res.status( 200 ).send( { failure: getDynamicValuesFailure, success } );
+    return ( { failure: getDynamicValuesFailure, success } );
 
   }
-
-  console.log( 'dynamicValues', dynamicValues)
 
   // dynamic values are inserted into the message.
 
@@ -233,7 +232,7 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
   if ( !results.rows ) { 
 
     const failure = 'database error when getting eligible recipients fot the campaign email';
-    console.log( nowRunning + ": " + failure + "\n" );
+    console.log( `${nowRunning}: ${failure}\n` )
     await recordError ( {
       context: 'api: ' + nowRunning,
       details: queryText,
@@ -260,9 +259,9 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
     contactName = stringCleaner( contactName );
     messageContent = _.replace(messageContent, /\[CONTACT_NAME\]/g, contactName);
 
-    const result = await sendMail ( email, messageContent, messageSubject );
-    console.log( 'email result', result )
-
+    // const result = await sendMail ( email, messageContent, messageSubject );
+    const eventDetails = `email sent from campaign ${campaignId}, message: ${messageName}`
+    recordEvent ( { apiTesting: false, event: 1, eventDetails, eventTarget: contactId, userId } )
     
   });
 
@@ -295,6 +294,51 @@ exports.randomString = () => { // c/o ChatGPT3.5
   randomString = randomString.split('').sort( () => Math.random() - 0.5 ).join( '' );
 
   return randomString;
+
+}
+
+exports.recordEvent = async( { apiTesting, event, eventDetails, eventTarget, userId } ) => {
+
+  const db = require( './db' );
+  const errorNumber = 44;
+  const now = moment().format( 'X' );
+  const nowRunning = 'functions.js:recordEvent';
+  const { 
+    recordError,
+    stringCleaner
+  } = require ( './functions' );
+  try { // console.log(`Campaign ${campaignId} processed successfully`);
+
+    const queryText = " INSERT INTO events( event_details, event_target, event_time, event_type, user_id ) VALUES( '" + stringCleaner( eventDetails, true ) + "', '" + eventTarget + "', " + now + ", " + event + ", '" + userId + "' ); ";
+    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if ( !results ) {
+
+      const failure = 'database error when trying to record an event';
+      console.log( `${nowRunning}: ${failure}\n` )
+      await recordError ( {
+        context: 'api: ' + nowRunning,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+
+    }
+
+
+  } catch (e) {
+
+    await recordError ( {
+      context: 'api: ' + nowRunning,
+      details: 'exception thrown',
+      errorMessage: e.message,
+      errorNumber,
+      userId
+    } );
+    console.log( `${nowRunning}: ${e.message}\n` )
+
+  }
 
 }
 
