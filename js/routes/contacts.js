@@ -80,7 +80,7 @@ router.post( "/all", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting contact records';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -212,7 +212,7 @@ router.post( "/load", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting contact records';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -361,7 +361,7 @@ router.post( "/new", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new contact record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -374,7 +374,7 @@ router.post( "/new", async ( req, res ) => {
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
 
     }
@@ -485,7 +485,7 @@ router.post( "/search", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when searching contact records';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -639,7 +639,7 @@ router.post( "/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when checking the contact ID';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -652,13 +652,13 @@ router.post( "/update", async ( req, res ) => {
     } else if ( results.rowCount !== 1 ) { // invalid contact ID
 
       const failure = 'the contact ID is not valid';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
       
     } else if ( +results.rows[0].locked > userLevel ) { // the record is locked
 
       const failure = 'the contact record is locked to ' + level + '+';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
 
     }
@@ -697,7 +697,7 @@ router.post( "/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when updating contact record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -710,7 +710,7 @@ router.post( "/update", async ( req, res ) => {
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
     }
     

@@ -81,7 +81,7 @@ router.post( "/signatures/all", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when removing a signature record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -199,7 +199,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when removing a signature record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -212,7 +212,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
     } else if ( !results.rowCount ) { // this is not a messagine error
 
       const failure = 'update denied due to bad signature ID or ownership level conflict';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
 
     }
@@ -289,7 +289,7 @@ router.post( "/signatures/load", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting a signature record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -302,7 +302,7 @@ router.post( "/signatures/load", async ( req, res ) => {
     } else if ( !results.rowCount ) { // this is not an API failure
 
       const failure = 'signature record not found';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
 
     }
@@ -405,7 +405,7 @@ router.post( "/signatures/new", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new signature record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -506,7 +506,7 @@ router.post( "/signatures/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new signature record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -519,7 +519,7 @@ router.post( "/signatures/update", async ( req, res ) => {
     } else if ( !results.rowCount ) { // this is not a messagine error
 
       const failure = 'update denied due to bad signature ID or ownership level conflict';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
 
     }

@@ -80,7 +80,7 @@ router.post( "/all", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting list records';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -218,7 +218,7 @@ router.post( "/contact-linking", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting list records';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -302,7 +302,7 @@ router.post( "/load", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting the list metadata';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -341,7 +341,7 @@ router.post( "/load", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting the linked contacts';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -469,7 +469,7 @@ router.post( "/new", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new list record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -482,7 +482,7 @@ router.post( "/new", async ( req, res ) => {
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate list was blocked';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
 
     }
@@ -594,7 +594,7 @@ router.post( "/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when updating contact record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -607,7 +607,7 @@ router.post( "/update", async ( req, res ) => {
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success } );
     }
     

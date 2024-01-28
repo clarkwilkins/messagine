@@ -70,7 +70,7 @@ router.post( "/all", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -92,7 +92,7 @@ router.post( "/all", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting all campaigns';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -230,7 +230,7 @@ router.post( "/delete", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when deleting the campaign record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -253,7 +253,7 @@ router.post( "/delete", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -337,7 +337,7 @@ router.post( "/load", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -355,7 +355,7 @@ router.post( "/load", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting the campaign';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -484,7 +484,7 @@ router.post( "/messages/add", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -504,7 +504,7 @@ router.post( "/messages/add", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when checking current message position';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -524,7 +524,7 @@ router.post( "/messages/add", async ( req, res ) => {
     if ( !results.rows || results.rowCount != 1 ) {
 
       const failure = 'database error when adding a message to the campaign';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -622,7 +622,7 @@ router.post( "/messages/remove", async ( req, res ) => {
     if ( !results[0].rows ) {
 
       const failure = 'database error when removing a message from the campaign';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -657,7 +657,7 @@ router.post( "/messages/remove", async ( req, res ) => {
       if ( !results ) {
 
         const failure = 'database error when repositiong remaining messages in the campaign';
-        console.log( nowRunning + ": " + failure + "\n" );
+        console.log( `${nowRunning}: ${failure}\n` )
         recordError ( {
           context: 'api: ' + nowRunning,
           details: queryText,
@@ -779,7 +779,7 @@ router.post( "/new", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new campaign record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -799,7 +799,7 @@ router.post( "/new", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -838,6 +838,7 @@ router.post( "/run", async ( req, res ) => {
 
   const errorNumber = 41;
   const success = false;
+  console.log( req.body )
 
   try {
 
@@ -871,7 +872,7 @@ router.post( "/run", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting all campaigns';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       await recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -1075,7 +1076,7 @@ router.post( "/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when updating a  campaign record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -1093,7 +1094,7 @@ router.post( "/update", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,

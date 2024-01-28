@@ -1,4 +1,8 @@
 {
+  "events": [
+    "not set",
+    "campaign email sent to a contact"
+  ],
   "intervals": [
     "not set",
     "weekdays",

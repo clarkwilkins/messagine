@@ -68,7 +68,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting tags';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -180,7 +180,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new tag record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -259,7 +259,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new tag record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -346,7 +346,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when updating the tag record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,

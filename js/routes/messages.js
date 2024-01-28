@@ -73,7 +73,7 @@ router.post( "/all", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting all messages';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -203,7 +203,7 @@ router.post( "/delete", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when deleting the message record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -216,7 +216,7 @@ router.post( "/delete", async ( req, res ) => {
     } else if ( results.rowCount < 1 ) {
 
       const failure = 'the message record was not deleted due to a bad ID or because it\'s linked to a running campaign';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success: false } );
 
     }
@@ -229,7 +229,7 @@ router.post( "/delete", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when deleting the message from all linked campaigns';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -408,7 +408,7 @@ router.post( "/dynamic/new", async ( req, res ) => {
     if ( !results?.rowCount ) {
 
       const failure = 'database error when creating the dynamic values record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -500,7 +500,7 @@ router.post( "/duplicate", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new message record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -534,7 +534,7 @@ router.post( "/duplicate", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when duplicating the message record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -547,7 +547,7 @@ router.post( "/duplicate", async ( req, res ) => {
     } else if ( results.rowCount < 1 ) {
 
       const failure = 'the duplicate was not created, please make sure you are not trying to use the same message name';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       return res.status( 200 ).send( { failure, success: false } );
 
     }
@@ -625,7 +625,7 @@ router.post( "/load", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when getting the message';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -762,7 +762,7 @@ router.post( "/new", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when creating a new message record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
@@ -873,7 +873,7 @@ router.post( "/update", async ( req, res ) => {
     if ( !results.rows ) {
 
       const failure = 'database error when updating the message record';
-      console.log( nowRunning + ": " + failure + "\n" );
+      console.log( `${nowRunning}: ${failure}\n` )
       recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,
