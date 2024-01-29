@@ -20,17 +20,17 @@ const {
 router.post( "/all", async ( req, res ) => { 
 
   const nowRunning = "/messages/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 37;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -40,12 +40,12 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -70,7 +70,7 @@ router.post( "/all", async ( req, res ) => {
     queryText += " ORDER BY active DESC, message_name"
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting all messages';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -81,7 +81,7 @@ router.post( "/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } 
 
@@ -150,17 +150,17 @@ router.post( "/all", async ( req, res ) => {
 router.post( "/delete", async ( req, res ) => { 
 
   const nowRunning = "/messages/delete";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 36;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -171,12 +171,12 @@ router.post( "/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -200,7 +200,7 @@ router.post( "/delete", async ( req, res ) => {
     let queryText = " DELETE FROM messages WHERE message_id = '" + messageId + "' AND locked <= " + userLevel + " AND message_id NOT IN ( SELECT cm.message_id FROM campaigns c, campaign_messages cm WHERE c.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = '" + messageId + "' ); ";
     let results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when deleting the message record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -211,7 +211,7 @@ router.post( "/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount < 1 ) {
 
@@ -226,7 +226,7 @@ router.post( "/delete", async ( req, res ) => {
     queryText = " DELETE FROM campaign_messages WHERE message_id = '" + messageId + "'; ";
     results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when deleting the message from all linked campaigns';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -237,7 +237,7 @@ router.post( "/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -264,17 +264,17 @@ router.post( "/delete", async ( req, res ) => {
 router.post( "/dynamic/all", async ( req, res ) => { 
 
   const nowRunning = "/messages/dynamic/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 43;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -284,12 +284,12 @@ router.post( "/dynamic/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -343,17 +343,17 @@ router.post( "/dynamic/all", async ( req, res ) => {
 router.post( "/dynamic/new", async ( req, res ) => { 
 
   const nowRunning = "/messages/dynamic/new";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 42;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -370,12 +370,12 @@ router.post( "/dynamic/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -416,7 +416,7 @@ router.post( "/dynamic/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -443,17 +443,17 @@ router.post( "/dynamic/new", async ( req, res ) => {
 router.post( "/duplicate", async ( req, res ) => { 
 
   const nowRunning = "/messages/duplicate";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 35;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -466,12 +466,12 @@ router.post( "/duplicate", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -497,7 +497,7 @@ router.post( "/duplicate", async ( req, res ) => {
     let queryText = " SELECT * FROM messages WHERE message_id = '" + sourceId + "'; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new message record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -508,12 +508,12 @@ router.post( "/duplicate", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount < 1 ) {
 
       const failure = 'source message not found';
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
 
     }
 
@@ -531,7 +531,7 @@ router.post( "/duplicate", async ( req, res ) => {
     queryText = " INSERT INTO messages ( content, created, locked, message_id, message_name, notes, owner, repeatable, subject, updated, updated_by ) VALUES( '" + content + "', " + now + ", " + locked + ", '" + uuidv4() + "', '" + messageName + "', '" + notes + "', '" + userId + "', " + repeatable + ", '" + subject + "', " + now + ", '" + userId + "' ) ON CONFLICT DO NOTHING RETURNING message_id; ";
     results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when duplicating the message record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -542,7 +542,7 @@ router.post( "/duplicate", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount < 1 ) {
 
@@ -576,17 +576,17 @@ router.post( "/duplicate", async ( req, res ) => {
 router.post( "/load", async ( req, res ) => { 
 
   const nowRunning = "/messages/load";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 38;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -596,12 +596,12 @@ router.post( "/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -622,7 +622,7 @@ router.post( "/load", async ( req, res ) => {
     const queryText = " SELECT m.*, u.user_name  FROM messages m, users u WHERE m.updated_by = u.user_id AND m.message_id = '" + messageId + "'; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting the message';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -633,12 +633,12 @@ router.post( "/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( !results.rows[0]?.message_id ) {
 
       const failure = 'messageId ' + messageId + ' was not found';
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
       
@@ -693,17 +693,17 @@ router.post( "/load", async ( req, res ) => {
 router.post( "/new", async ( req, res ) => { 
 
   const nowRunning = "/messages/new";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 33;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -720,12 +720,12 @@ router.post( "/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -759,7 +759,7 @@ router.post( "/new", async ( req, res ) => {
     const queryText = " INSERT INTO messages( active, created, content, locked, message_id, message_name, notes, owner, repeatable, subject, updated, updated_by ) VALUES ( " + active + ", " + now + ", '" + stringCleaner( messageContent, true ) + "', " + locked + ", '" + uuidv4() + "', '" + stringCleaner( messageName, true ) + "', '" + messageNotes + "', '" + userId + "', " + repeatable + ", '" + stringCleaner( messageSubject, true ) + "', " + now + ", '" + userId + "' ) RETURNING message_id; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new message record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -770,7 +770,7 @@ router.post( "/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -799,17 +799,17 @@ router.post( "/new", async ( req, res ) => {
 router.post( "/update", async ( req, res ) => { 
 
   const nowRunning = "/messages/update";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 34;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -827,12 +827,12 @@ router.post( "/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -870,7 +870,7 @@ router.post( "/update", async ( req, res ) => {
     queryText += "', repeatable = " + repeatable + ", subject = '" + stringCleaner( messageSubject, true ) + "', updated = " + moment().format( 'X' ) + ", updated_by = '" + userId + "' WHERE message_id = '" + messageId + "' AND locked <= " + userLevel + "; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when updating the message record';
       console.log( nowRunning + ": " + failure + "\n" );
@@ -881,7 +881,7 @@ router.post( "/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
     

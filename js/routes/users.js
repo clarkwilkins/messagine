@@ -27,17 +27,17 @@ const {
 router.post( "/all", async ( req, res ) => { 
 
   const nowRunning = "/users/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 1;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -47,12 +47,12 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -79,10 +79,10 @@ router.post( "/all", async ( req, res ) => {
     queryText += " ORDER BY active DESC, user_name; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting users';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -90,7 +90,7 @@ router.post( "/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -147,17 +147,17 @@ router.post( "/all", async ( req, res ) => {
 router.post( "/load", async ( req, res ) => { 
 
   const nowRunning = "/users/load";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 12;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -167,12 +167,12 @@ router.post( "/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -195,10 +195,10 @@ router.post( "/load", async ( req, res ) => {
     const queryText = " SELECT * FROM users WHERE user_id = '" + thisUser + "' AND level <= " + userLevel + "; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting the user record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -206,7 +206,7 @@ router.post( "/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount !== 1 ) {
 
@@ -250,7 +250,7 @@ router.post( "/load", async ( req, res ) => {
 router.post( "/login-key", async ( req, res ) => {
 
   const nowRunning = "users/login-key";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 3;
   const success = false;
@@ -265,10 +265,10 @@ router.post( "/login-key", async ( req, res ) => {
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -276,10 +276,10 @@ router.post( "/login-key", async ( req, res ) => {
     const queryText = " SELECT * FROM users WHERE active = true AND token = '" + key + "'; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when checking for an active user with this login key';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -287,7 +287,7 @@ router.post( "/login-key", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     }
 
@@ -328,17 +328,17 @@ router.post( "/login-key", async ( req, res ) => {
 router.post( "/login-standard", async ( req, res ) => { 
 
   const nowRunning = "/users/login-standard";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 2;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -353,12 +353,12 @@ router.post( "/login-standard", async ( req, res ) => {
       userId: Joi.any() // ignored
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -371,10 +371,10 @@ router.post( "/login-standard", async ( req, res ) => {
     const queryText = " SELECT * FROM users WHERE active = true AND email ILIKE '" + email + "' ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, masterKey );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when checking for an active user with this email address';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -382,7 +382,7 @@ router.post( "/login-standard", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     } else if ( results.rowCount < 1 ) {
 
@@ -426,17 +426,17 @@ router.post( "/login-standard", async ( req, res ) => {
 router.post( "/new", async ( req, res ) => { 
 
   const nowRunning = "/users/new";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 1;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -454,12 +454,12 @@ router.post( "/new", async ( req, res ) => {
       userName: Joi.string().required()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -495,10 +495,10 @@ router.post( "/new", async ( req, res ) => {
     const queryText = " INSERT INTO users ( active, email, level, login_hash, token, user_id, user_name ) VALUES ( true, '" + email + "', " + level + ", '" + loginHash + "', '" + newId + "', '" + token + "', '" + stringCleaner( userName, true ) + "' ) RETURNING *; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new user record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -506,7 +506,7 @@ router.post( "/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
     
@@ -533,7 +533,7 @@ router.post( "/new", async ( req, res ) => {
 router.post( "/reset-password/part-1", async ( req, res ) => {
 
   const nowRunning = "/users/reset-password/part-1";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 4;
   const success = false;
@@ -547,10 +547,10 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
     
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -562,10 +562,10 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
     let queryText = " SELECT user_id FROM users WHERE active = true AND email ILIKE '" + email + "'; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -573,7 +573,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     } else if ( results.rowCount < 1 ) {
 
@@ -591,7 +591,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
     if ( !results || !results[1].rowCount) {
 
       const failure = 'database error when setting up a new reset record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -599,7 +599,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     }
     
@@ -634,7 +634,7 @@ router.post( "/reset-password/part-1", async ( req, res ) => {
 router.post( "/reset-password/part-2", async ( req, res ) => {
 
   const nowRunning = "/users/reset-password/part-2";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 5;
   const success = false;
@@ -648,10 +648,10 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -665,10 +665,10 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     let queryText = " SELECT * FROM resets WHERE code = '" + resetCode + "' AND expires >= " + moment().format( 'X' ) + "; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
     
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -676,7 +676,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     } else if ( results.rowCount < 1 ) {
 
@@ -691,10 +691,10 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     queryText = " SELECT email FROM users WHERE user_id = '" + userId + "'; ";
     results = await db.noTransaction( queryText, errorNumber, nowRunning, API_ACCESS_TOKEN );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting the user\'s email address';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -702,7 +702,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     }
     
@@ -711,7 +711,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     if ( !email ) {
 
       const failure = 'the email address was not properly retrieved';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -719,7 +719,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     }
 
@@ -732,7 +732,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
     if ( !results || results[0].rowCount != 1 ) {
 
       const failure = 'database error when resetting the user\'s passphrase';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -740,7 +740,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
   
     }
 
@@ -770,7 +770,7 @@ router.post( "/reset-password/part-2", async ( req, res ) => {
 router.post( "/update", async ( req, res ) => {
 
   const nowRunning = "/users/update";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 6;
   const success = false;
@@ -797,10 +797,10 @@ router.post( "/update", async ( req, res ) => {
     
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -839,10 +839,10 @@ router.post( "/update", async ( req, res ) => {
     queryText += "user_name = '" + stringCleaner( userName, true ) + "' WHERE user_id = '" + thisUser + "' RETURNING *; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when updating the user record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -850,7 +850,7 @@ router.post( "/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 

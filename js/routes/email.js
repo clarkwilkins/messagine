@@ -27,17 +27,17 @@ const {
 router.post( "/signatures/all", async ( req, res ) => { 
 
   const nowRunning = "/email/signatures/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 16;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -47,12 +47,12 @@ router.post( "/signatures/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -78,10 +78,10 @@ router.post( "/signatures/all", async ( req, res ) => {
 
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when removing a signature record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -89,7 +89,7 @@ router.post( "/signatures/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
     
@@ -148,17 +148,17 @@ router.post( "/signatures/all", async ( req, res ) => {
 router.post( "/signatures/delete", async ( req, res ) => { 
 
   const nowRunning = "/email/signatures/delete";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 14;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -169,12 +169,12 @@ router.post( "/signatures/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -196,10 +196,10 @@ router.post( "/signatures/delete", async ( req, res ) => {
     const queryText = " DELETE FROM email_signatures WHERE signature_id = '" + signatureId + "' AND ( owner = '" + userId + "' OR owner IN ( SELECT user_id FROM users WHERE active = false OR level < " + userLevel + " ) ) RETURNING *; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when removing a signature record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -207,13 +207,13 @@ router.post( "/signatures/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( !results.rowCount ) { // this is not a messagine error
 
       const failure = 'update denied due to bad signature ID or ownership level conflict';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
 
     }
     
@@ -240,17 +240,17 @@ router.post( "/signatures/delete", async ( req, res ) => {
 router.post( "/signatures/load", async ( req, res ) => { 
 
   const nowRunning = "/email/signatures/load";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 17;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -260,12 +260,12 @@ router.post( "/signatures/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -286,10 +286,10 @@ router.post( "/signatures/load", async ( req, res ) => {
     const queryText = " SELECT e.*, u.user_name FROM email_signatures e, users u WHERE e.signature_id = '" + signatureId + "' AND e.owner = u.user_id; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting a signature record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -297,13 +297,13 @@ router.post( "/signatures/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( !results.rowCount ) { // this is not an API failure
 
       const failure = 'signature record not found';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
 
     }
     
@@ -347,17 +347,17 @@ router.post( "/signatures/load", async ( req, res ) => {
 router.post( "/signatures/new", async ( req, res ) => { 
 
   const nowRunning = "/email/signatures/new";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 13;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -370,12 +370,12 @@ router.post( "/signatures/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -402,10 +402,10 @@ router.post( "/signatures/new", async ( req, res ) => {
     const queryText = " INSERT INTO email_signatures( owner, private, signature_id, signature_name, signature_text ) VALUES( '" + userId + "', " + private + ", '" + signatureId + "', '" + stringCleaner( signatureName, true ) + "', '" + stringCleaner( signatureText, true ) + "' ); ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new signature record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -413,7 +413,7 @@ router.post( "/signatures/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
     
@@ -440,17 +440,17 @@ router.post( "/signatures/new", async ( req, res ) => {
 router.post( "/signatures/update", async ( req, res ) => { 
 
   const nowRunning = "/email/signatures/update";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 15;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -464,12 +464,12 @@ router.post( "/signatures/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
 
@@ -503,10 +503,10 @@ router.post( "/signatures/update", async ( req, res ) => {
 
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new signature record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -514,13 +514,13 @@ router.post( "/signatures/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( !results.rowCount ) { // this is not a messagine error
 
       const failure = 'update denied due to bad signature ID or ownership level conflict';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
 
     }
     

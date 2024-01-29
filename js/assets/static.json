@@ -1,7 +1,10 @@
 {
   "events": [
     "not set",
-    "campaign email sent to a contact"
+    "campaign email sent to a contact",
+    "campaign was updated",
+    "campaign ran successfully",
+    "Sendgrid error reported"
   ],
   "intervals": [
     "not set",
@@ -34,9 +37,9 @@
     { "label": "quarterly", "value" : 8 },
     { "label": "first day of each quarter", "value" : 9 },
     { "label": "first weekday of each quarter", "value" : 10 },
-    { "label": "biannually", "value" : 11 },
-    { "label": "first day of each biannual", "value" : 12 },
-    { "label": "first weekday of each biannual", "value" : 13 },
+    { "label": "semiannually", "value" : 11 },
+    { "label": "first day of each semiannual", "value" : 12 },
+    { "label": "first weekday of each semiannual", "value" : 13 },
     { "label": "yearly", "value" : 14 },
     { "label": "first day of each year", "value" : 15 },
     { "label": "first weekday of each year", "value" : 16 }

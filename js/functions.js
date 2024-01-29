@@ -19,7 +19,7 @@ exports.checkCampaigns = async ( errorNumber, userId ) => {
   const queryText = " UPDATE campaigns SET active = false WHERE ( list_id NOT IN ( SELECT list_id FROM lists WHERE active = true ) OR ends < " + now + " ) RETURNING campaign_id; ";
   const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId );
 
-  if ( !results.rows ) {
+  if (!results.rows) {
     
     recordError ( {
       context: 'api: ' + nowRunning,
@@ -73,7 +73,7 @@ exports.getDynamicMessageReplacements = async ( { errorNumber, messageId, userId
   if ( !results?.rows ) {
 
     const failure = 'database error when getting dynamic values records';
-    console.log( `${nowRunning}: ${failure}\n` )
+    console.log(`${nowRunning}: ${failure}\n`)
     recordError ( {
       context: 'api: ' + nowRunning,
       details: queryText,
@@ -229,10 +229,10 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
   let queryText = " SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE lc.list_id = '" + listId + "' AND lc.contact_id = c.contact_id AND c.active = true AND c.block_all = false AND c.contact_id NOT IN ( SELECT contact_id FROM unsubs WHERE list_id = '" + listId + "' ); ";
   let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-  if ( !results.rows ) { 
+  if (!results.rows) { 
 
     const failure = 'database error when getting eligible recipients fot the campaign email';
-    console.log( `${nowRunning}: ${failure}\n` )
+    console.log(`${nowRunning}: ${failure}\n`)
     await recordError ( {
       context: 'api: ' + nowRunning,
       details: queryText,
@@ -259,9 +259,33 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
     contactName = stringCleaner( contactName );
     messageContent = _.replace(messageContent, /\[CONTACT_NAME\]/g, contactName);
 
-    // const result = await sendMail ( email, messageContent, messageSubject );
-    const eventDetails = `email sent from campaign ${campaignId}, message: ${messageName}`
-    recordEvent ( { apiTesting: false, event: 1, eventDetails, eventTarget: contactId, userId } )
+    const {
+      body,
+      statusCode
+    } = await sendMail (email, messageContent, messageSubject);
+
+    let eventDetails;
+
+    if ( statusCode == 200 || statusCode == 202 ) { // record successful send in events
+
+      eventDetails = `email sent from campaign ${campaignId}, message: ${messageName}`
+      recordEvent ({ apiTesting: false, event: 1, eventDetails, eventTarget: contactId, userId })
+    
+    } else {
+
+      // start with the basics of what's running right now
+
+      eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`;
+
+      // append all error messages to the details
+
+      body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+
+      // record the errors on this send to the event log (not the errors API)
+
+      recordEvent ({ apiTesting: false, event: 4, eventDetails, eventTarget: campaignId, userId })
+
+    }
     
   });
 
@@ -315,7 +339,7 @@ exports.recordEvent = async( { apiTesting, event, eventDetails, eventTarget, use
     if ( !results ) {
 
       const failure = 'database error when trying to record an event';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       await recordError ( {
         context: 'api: ' + nowRunning,
         details: queryText,

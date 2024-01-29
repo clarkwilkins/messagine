@@ -19,17 +19,17 @@ const {
 router.post( "/all", async ( req, res ) => { 
 
   const nowRunning = "/contacts/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 20;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -40,12 +40,12 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -77,10 +77,10 @@ router.post( "/all", async ( req, res ) => {
     queryText += " ORDER BY block_all, active DESC, contact_name; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting contact records';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -88,7 +88,7 @@ router.post( "/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -163,17 +163,17 @@ router.post( "/all", async ( req, res ) => {
 router.post( "/load", async ( req, res ) => { 
 
   const nowRunning = "/contacts/load";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 21;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -183,12 +183,12 @@ router.post( "/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -209,10 +209,10 @@ router.post( "/load", async ( req, res ) => {
     const queryText = " SELECT c.*, u.user_name FROM contacts c, users u WHERE c.contact_id = '" + contactId + "' AND c.updated_by = u.user_id; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting contact records';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -220,12 +220,12 @@ router.post( "/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( !results.rowCount ) {
 
       const failure = 'contact ID was not found';
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
 
     }
 
@@ -288,17 +288,17 @@ router.post( "/load", async ( req, res ) => {
 router.post( "/new", async ( req, res ) => { 
 
   const nowRunning = "/contacts/new";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 18;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -315,12 +315,12 @@ router.post( "/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -358,10 +358,10 @@ router.post( "/new", async ( req, res ) => {
     const queryText = " INSERT INTO contacts( company_name, contact_id, contact_name, contact_notes, created, email, locked, sms, updated, updated_by ) VALUES( '" + companyName + "', '" + contactId + "', '" + contactName + "', '" + contactNotes + "', " + now + ", '" + email + "', " + locked + ", '" + sms + "', " + now + ", '" + userId + "' ) ON CONFLICT DO NOTHING RETURNING contact_id; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new contact record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -369,13 +369,13 @@ router.post( "/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
 
     }
     
@@ -402,17 +402,17 @@ router.post( "/new", async ( req, res ) => {
 router.post( "/search", async ( req, res ) => { 
 
   const nowRunning = "/contacts/search";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 22;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -429,12 +429,12 @@ router.post( "/search", async ( req, res ) => {
     } )
     .or( 'active', 'blockAll', 'companyName', 'contactName', 'contactNotes', 'sms', 'url');
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -482,10 +482,10 @@ router.post( "/search", async ( req, res ) => {
 
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when searching contact records';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -493,7 +493,7 @@ router.post( "/search", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -568,17 +568,17 @@ router.post( "/search", async ( req, res ) => {
 router.post( "/update", async ( req, res ) => { 
 
   const nowRunning = "/contacts/update";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 19;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -598,12 +598,12 @@ router.post( "/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -636,10 +636,10 @@ router.post( "/update", async ( req, res ) => {
     let queryText = " SELECT locked FROM contacts WHERE contact_id = '" + contactId + "'; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when checking the contact ID';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -647,19 +647,19 @@ router.post( "/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount !== 1 ) { // invalid contact ID
 
       const failure = 'the contact ID is not valid';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
       
     } else if ( +results.rows[0].locked > userLevel ) { // the record is locked
 
       const failure = 'the contact record is locked to ' + level + '+';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
 
     }
 
@@ -694,10 +694,10 @@ router.post( "/update", async ( req, res ) => {
     queryText += " WHERE contact_id = '" + contactId + "' AND locked <= " + userLevel + " RETURNING contact_id; ";
     results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when updating contact record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -705,13 +705,13 @@ router.post( "/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log( `${nowRunning}: ${failure}\n` )
-      return res.status( 200 ).send( { failure, success } );
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
     }
     
     console.log( nowRunning + ": finished\n" );

@@ -14,6 +14,7 @@ const {
   getUserLevel,
   processCampaigns,
   recordError,
+  recordEvent,
   stringCleaner,
   validateSchema
 } = require( '../functions.js' );
@@ -21,17 +22,17 @@ const {
 router.post( "/all", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 31;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -39,14 +40,14 @@ router.post( "/all", async ( req, res ) => {
       active: Joi.boolean().optional().allow( '', null ),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -60,7 +61,7 @@ router.post( "/all", async ( req, res ) => {
     if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -70,15 +71,15 @@ router.post( "/all", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
 
     }
 
@@ -89,18 +90,18 @@ router.post( "/all", async ( req, res ) => {
     queryText += " ORDER BY active DESC, campaign_name"
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting all campaigns';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     } 
 
@@ -150,12 +151,12 @@ router.post( "/all", async ( req, res ) => {
 
       if ( active !== true ) label += '*';
 
-      campaignsSelector.push( { label, value: campaignId } );
+      campaignsSelector.push( { label, value: campaignId })
 
     })
     
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { campaigns, campaignsSelector, success: true } );
+    return res.status( 200 ).send( { campaigns, campaignsSelector, success: true })
 
   } catch ( e ) {
 
@@ -165,29 +166,29 @@ router.post( "/all", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/delete", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/delete";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 30;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -196,14 +197,14 @@ router.post( "/delete", async ( req, res ) => {
       campaignId: Joi.string().optional().uuid(),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -218,7 +219,7 @@ router.post( "/delete", async ( req, res ) => {
     if ( userLevel < 5 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -227,23 +228,23 @@ router.post( "/delete", async ( req, res ) => {
     const queryText = " DELETE FROM campaigns WHERE campaign_id = '" + campaignId + "' AND locked <= '" + userLevel + "' RETURNING campaign_id; ";    
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when deleting the campaign record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     } else if ( results.rowCount < 1 ) { // bad ID or the record is locked
 
       const failure = 'the campaign record was not deleted';
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
 
     }
 
@@ -253,20 +254,20 @@ router.post( "/delete", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
 
     }
     
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { campaignId, closedCampaigns, success: true } );
+    return res.status( 200 ).send( { campaignId, closedCampaigns, success: true })
 
   } catch ( e ) {
 
@@ -276,29 +277,29 @@ router.post( "/delete", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/load", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/load";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 32;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -306,14 +307,14 @@ router.post( "/load", async ( req, res ) => {
       campaignId: Joi.string().required().uuid(),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -327,7 +328,7 @@ router.post( "/load", async ( req, res ) => {
     if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -337,38 +338,38 @@ router.post( "/load", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
 
     }
 
     const queryText = " SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id AND c.campaign_id = '" + campaignId + "'; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting the campaign';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     } else if ( !results.rows[0]?.campaign_id ) {
 
       const failure = 'campaignId ' + campaignId + ' was not found';
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
       
@@ -409,7 +410,7 @@ router.post( "/load", async ( req, res ) => {
       updated: +updated,
       updatedBy,
       updatedBy2: stringCleaner( updatedBy2 )
-    } );
+    })
 
   } catch ( e ) {
 
@@ -419,29 +420,29 @@ router.post( "/load", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/messages/add", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/messages/add";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 39;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -451,14 +452,14 @@ router.post( "/messages/add", async ( req, res ) => {
       masterKey: Joi.any(),
       messageId: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -474,7 +475,7 @@ router.post( "/messages/add", async ( req, res ) => {
     if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -484,15 +485,15 @@ router.post( "/messages/add", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
 
     }
 
@@ -501,18 +502,18 @@ router.post( "/messages/add", async ( req, res ) => {
     let queryText = " SELECT max( position ) FROM campaign_messages WHERE campaign_id = '" + campaignId + "'; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when checking current message position';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -524,20 +525,20 @@ router.post( "/messages/add", async ( req, res ) => {
     if ( !results.rows || results.rowCount != 1 ) {
 
       const failure = 'database error when adding a message to the campaign';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     }
 
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { nextPosition, success: true } );
+    return res.status( 200 ).send( { nextPosition, success: true })
 
   } catch ( e ) {
 
@@ -547,29 +548,29 @@ router.post( "/messages/add", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/messages/remove", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/messages/remove";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 40;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -580,14 +581,14 @@ router.post( "/messages/remove", async ( req, res ) => {
       messageId: Joi.string().required().uuid(),
       position: Joi.number().optional().integer().positive(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -604,7 +605,7 @@ router.post( "/messages/remove", async ( req, res ) => {
     if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -622,15 +623,15 @@ router.post( "/messages/remove", async ( req, res ) => {
     if ( !results[0].rows ) {
 
       const failure = 'database error when removing a message from the campaign';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -657,22 +658,22 @@ router.post( "/messages/remove", async ( req, res ) => {
       if ( !results ) {
 
         const failure = 'database error when repositiong remaining messages in the campaign';
-        console.log( `${nowRunning}: ${failure}\n` )
+        console.log(`${nowRunning}: ${failure}\n`)
         recordError ( {
           context: `api: ${nowRunning}`,
           details: queryText,
           errorMessage: failure,
           errorNumber,
           userId
-        } );
-        return res.status( 200 ).send( { failure, success } );
+        })
+        return res.status(200).send({ failure, success })
         
       }
 
     }
 
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { success: true } );
+    return res.status( 200 ).send( { success: true })
 
   } catch ( e ) {
 
@@ -682,29 +683,29 @@ router.post( "/messages/remove", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/new", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/new";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 28;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -726,14 +727,14 @@ router.post( "/new", async ( req, res ) => {
       masterKey: Joi.any(),
       messageSeries: Joi.boolean().optional(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -757,7 +758,7 @@ router.post( "/new", async ( req, res ) => {
     if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -776,18 +777,18 @@ router.post( "/new", async ( req, res ) => {
     const queryText = " INSERT INTO campaigns( active, campaign_id, campaign_name, campaign_notes, campaign_repeats, created, ends, list_id, interval, locked, message_series, starts, updated, updated_by ) VALUES ( " + active + ", '" + uuidv4() + "', '" + stringCleaner( campaignName, true )  + "', '" + stringCleaner( campaignNotes, true ) + "', " + campaignRepeats + ", " + now + ", " + campaignEnds + ", '" + listId + "', " + campaignInterval + ", " + locked + ", " + messageSeries + ", " + campaignStarts + ", " + now + ", '" + userId + "' ) RETURNING campaign_id; ";    
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new campaign record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -799,20 +800,20 @@ router.post( "/new", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
 
     }
     
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { campaignId, closedCampaigns, success: true } );
+    return res.status( 200 ).send( { campaignId, closedCampaigns, success: true })
 
   } catch ( e ) {
 
@@ -822,70 +823,189 @@ router.post( "/new", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/run", async ( req, res ) => { 
 
-  const nowRunning = "/campaigns/run";
-  console.log( nowRunning + ": running" );
+  const nowRunning = "/campaigns/run"
+  console.log(`${nowRunning}: running`)
 
-  const errorNumber = 41;
-  const success = false;
-  console.log( req.body )
+  const errorNumber = 41
+  const success = false
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
+      apiTesting: Joi.boolean(),
       masterKey: Joi.any()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
+    const { apiTesting } = req.body;
     const userId = API_ACCESS_TOKEN; // we need a user ID but this runs as a crontab job
 
     // get all campaigns that have a message that is eligible to run now
 
-    let queryText = " SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, m.content, m.message_id, m.message_name, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= " + moment().format( 'X' ) + " OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position; ";
+    let queryText = " SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, c.starts, m.content, m.message_id, m.message_name, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= " + moment().format( 'X' ) + " OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position; ";
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting all campaigns';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       await recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     }
 
     const eligibleCampaigns = results.rows;
     const campaignLimiter = [];
+
+    const setNextRun = async({ apiTesting, campaignId, ends, interval, starts }) => {
+
+      let nextRunTime
+
+      // convert starts to a Moment object and extract hour and minute
+    
+      const startsMoment = moment.unix(starts)
+      const dayOfWeek = startsMoment.day()
+      const hour = startsMoment.hour()
+      const minute = startsMoment.minute()
+      const nowMoment = moment()
+
+      if (interval == 1) { // set nextRunTime to the next weekday after now
+        
+        nextRunTime = nowMoment.clone().add(1, 'days').hour(hour).minute(minute);
+
+        while (nextRunTime.isoWeekday() >= 6) { nextRunTime.add(1, 'days'); }
+   
+      } else if (interval === 2) { // set nextRunTime for the next day
+
+        nextRunTime = nowMoment.clone().add(1, 'days').hour(hour).minute(minute)
+
+      } else if ( interval == 3 ) { // set nextRunTime to one week
+
+        nextRunTime = nowMoment.clone().add(1, 'weeks').day(dayOfWeek).hour(hour).minute(minute);
+
+      } else if ( interval == 4 ) { // set nextRunTime to two weeks
+
+        nextRunTime = nowMoment.clone().add(1, 'weeks').day(dayOfWeek).hour(hour).minute(minute)
+
+      } else if ( interval == 5 ) { // set nextRunTime to one month
+
+        nextRunTime = nowMoment.clone().add(1, 'months').day(dayOfWeek).hour(hour).minute(minute)
+
+      } else if ( interval == 6 ) { // set nextRunTime to the first day of the next month
+      
+        nextRunTime = nowMoment.clone().add(1, 'months').startOf('month').hour(hour).minute(minute)
+
+      } else if ( interval == 7 ) { // set nextRunTime to the first weekday of the next month
+      
+        nextRunTime = nowMoment.clone().add(1, 'months').startOf('month').isoWeekday(1).hour(hour).minute(minute)
+    
+      } else if ( interval == 8 ) { // set nextRunTime to three months from now (quarterly)
+
+        nextRunTime = nowMoment.clone().add(3, 'years').hour(hour).minute(minute)
+
+      } else if ( interval == 9 ) { // set nextRunTime to the first day of the next quarter
+      
+        nextRunTime = nowMoment.clone().add(1, 'quarters').startOf('quarter').hour(hour).minute(minute)
+
+      } else if ( interval == 10 ) { // set nextRunTime to the first weekday of the next quarter
+      
+        nextRunTime = nowMoment.clone().add(1, 'quarters').startOf('quarter').isoWeekday(1).hour(hour).minute(minute)
+    
+      } else if ( interval == 11 ) { // set nextRunTime to six months from now (semiannual)
+
+        nextRunTime = nowMoment.clone().add(6, 'months').hour(hour).minute(minute)
+    
+      } else if ( interval == 12 ) { // set nextRunTime to the first day of the next semiannual
+
+        nextRunTime = nowMoment.clone().add(6, 'months').startOf('month').hour(hour).minute(minute)
+    
+      } else if ( interval == 13 ) { // set nextRunTime to the first weekday of the next semiannual
+
+        nextRunTime = nowMoment.clone().add(6, 'months').startOf('month').isoWeekday(1).hour(hour).minute(minute)
+
+      } else if ( interval == 14 ) { // set nextRunTime to one year from now
+
+        nextRunTime = nowMoment.clone().add(1, 'years').hour(hour).minute(minute)
+    
+      } else if ( interval == 15 ) { // set nextRunTime to the first day of the next year
+
+        nextRunTime = nowMoment.clone().add(1, 'years').startOf('month').hour(hour).minute(minute)
+    
+      } else if ( interval == 16 ) { // set nextRunTime to the first weekday of the next year
+
+        nextRunTime = nowMoment.clone().add(1, 'years').startOf('month').isoWeekday(1).hour(hour).minute(minute)
+
+      }
+
+      nextRunTime = +moment(nextRunTime).format('X')
+
+      if ( nextRunTime > ends ) {
+
+        const eventDetails = 'The next run time for this campaign exceeded the campaign end time, so it was not renewed.'
+        recordEvent ({ apiTesting: false, event: 2, eventDetails, eventTarget: campaignId, userId })
+        return { setNextRunFailure: failure, setNextRunSuccess: true }
+
+      }
+
+
+
+      console.log( `${nowRunning}: setting nextRunTime to ${moment.unix(nextRunTime).format('YYYY.MM.DD HH.mm')}`)
+
+      const queryText = `UPDATE campaigns SET next_run = ${nextRunTime} WHERE campaign_id = '${campaignId}';`
+      const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting )
+
+      if (!results.rows) {
+
+        const failure = `database error when updating the next run time for campaign ${campaignId}`
+        console.log(`${nowRunning}: ${failure}\n`)
+        await recordError ( {
+          context: `api: ${nowRunning}`,
+          details: queryText,
+          errorMessage: failure,
+          errorNumber,
+          userId
+        })
+        return { setNextRunFailure: failure, setNextRunSuccess: false }
+        
+      }
+
+      const eventDetails = `The next run time for this campaign was set to ${moment.unix(nextRunTime).format('YYYY.MM.DD HH.mm')}`
+      recordEvent ({ apiTesting: false, event: 2, eventDetails, eventTarget: campaignId, userId })
+      return { setNextRunSuccess: true }
+
+    }
 
     const processCampaignsPromises = eligibleCampaigns.map(async (row) => {
       
@@ -902,14 +1022,55 @@ router.post( "/run", async ( req, res ) => {
           message_id: messageId,
           message_name: messageName,
           repeats,
+          starts,
           subject: messageSubject
         } = row;
 
+        // if the campaign is non-repeating, check if there are any unsent messages
+
+        if (!repeats) { // check if any linked messages have not been sent yet
+
+          queryText = `SELECT count( message_id ) FROM campaign_messages WHERE campaign_id = '${campaignId}' AND ( last_sent < 1 OR last_sent IS NULL );`
+          results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+
+          if (!results.rows) {
+
+            const failure = `database error when getting unsent messages count for campaign ${campaignId}`;
+            console.log(`${nowRunning}: ${failure}\n`)
+            await recordError ( {
+              context: `api: ${nowRunning}`,
+              details: queryText,
+              errorMessage: failure,
+              errorNumber,
+              userId
+            })
+            return res.status( 200 ).send( { campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+            
+          }
+
+          // if there are no unsent messages on a non-repeating email, we need to set the next run time and then exit
+
+          if ( +results.rows[0].count < 1 ) {
+            
+            console.log(`campaign ${campaignId} is non-repeating and has no unsent messages` );
+            const {
+              setNextRunFailure,
+              setNextRunSuccess
+            } = await setNextRun({ apiTesting, campaignId, ends, interval, starts })
+
+            if ( !setNextRunSuccess) return { campaignsProcessedFailure: setNextRunFailure, campaignsProcessedSuccess: false };
+
+            return { noUnsentMessages: true, campaignsProcessedSuccess: true };
+
+          }
+
+        }
+
         // sometimes there will be N > 1 messages waiting to run on a campaign cycle, but we need to not send more than one per interval
 
-        if ( campaignLimiter.includes( campaignId ) ) {
+        if (campaignLimiter.includes( campaignId) ) {
 
-          console.log(`campaign ${campaignId} was limited to sending just one message per cycle` );
+          console.log(`${nowRunning}: campaign ${campaignId} was limited to sending just one message per cycle` );
           return { campaignsProcessedSuccess: true }; // note that allCampaignsProcessedResults will only have this single value when the limiter is invoked.
 
         }
@@ -932,36 +1093,19 @@ router.post( "/run", async ( req, res ) => {
           userId
         });
 
-        // determine and set the next run of this campaign
+        // set the next run time for this campaign
 
-        let updateStartTime = false;
+        const {
+          setNextRunFailure,
+          setNextRunSuccess
+        } = await setNextRun({ apiTesting, campaignId, ends, interval, starts });
 
-        if ( !repeats ) { // check if any linked messages have not been sent yet
-
-          queryText = `SELECT count( message_id ) FROM campaign_messages WHERE campaign_id = '${campaignId}' AND ( last_sent < 1 OR last_sent IS NULL );`
-          results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
-
-          if ( !results?.rows[0].count ) {
-
-            const failure = `database error when getting unsent messages count for campaign ${campaignId}`;
-            console.log( `${nowRunning}: ${failure}\n` )
-            await recordError ( {
-              context: `api: ${nowRunning}`,
-              details: queryText,
-              errorMessage: failure,
-              errorNumber,
-              userId
-            } );
-            return res.status( 200 ).send( { failure, success } );
-            
-          }
-
-
-        }
+        if (!setNextRunSuccess) return { campaignsProcessedFailure: setNextRunFailure, campaignsProcessedSuccess: false };
     
         // log or handle the successful campaign processing (to be replaced with history)
 
-        console.log(`campaign ${campaignId} processed successfully`);
+        const eventDetails = `${nowRunning}: campaign ${campaignId} processed successfully`;
+        recordEvent ({ apiTesting: false, event: 3, eventDetails, eventTarget: campaignId, userId })
     
         return {
           campaignId,
@@ -972,31 +1116,29 @@ router.post( "/run", async ( req, res ) => {
 
       } catch (error) {
 
-        // log or handle the failed campaign processing (to be replaced with history)
-
-        console.error(`Campaign ${row.campaign_id} processing failed:`, error);
+        console.error(`${nowRunning}: campaign ${row.campaign_id} processing failed:`, error)
 
         return {
           campaignId: row.campaign_id,
           messageId: row.message_id,
           campaignsProcessedFailure: error.message,
           campaignsProcessedSuccess: null
-        };
+        }
 
       }
 
-    });
+    })
     
     // creates an array of the results of processing each eligible campaign
 
-    const allCampaignsProcessedResults = await Promise.all(processCampaignsPromises);
+    const allCampaignsProcessedResults = await Promise.all(processCampaignsPromises)
 
     // this returns true only if every campaign processed with no error
   
-    const allCampaignsProcessed = allCampaignsProcessedResults.every( (result) => !result.campaignsProcessedFailure );
+    const allCampaignsProcessed = allCampaignsProcessedResults.every((result) => !result.campaignsProcessedFailure)
   
     console.log(nowRunning + ": finished\n");
-    return res.status(200).send({ success: true, allCampaignsProcessed, allCampaignsProcessedResults });
+    return res.status(200).send({ success: true, allCampaignsProcessed, allCampaignsProcessedResults })
 
   } catch ( e ) {
 
@@ -1006,29 +1148,29 @@ router.post( "/run", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 router.post( "/update", async ( req, res ) => { 
 
   const nowRunning = "/campaigns/update";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 29;
   const success = false;
 
   try {
 
-    if ( req.body.masterKey != API_ACCESS_TOKEN ) {
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log( nowRunning + ": bad token\n" );
-      return res.status( 403 ).send( 'unauthorized' );
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -1051,14 +1193,14 @@ router.post( "/update", async ( req, res ) => {
       masterKey: Joi.any(),
       messageSeries: Joi.boolean().optional(),
       userId: Joi.string().required().uuid()
-    } );
+    })
 
-    const errorMessage = validateSchema( nowRunning, recordError, req, schema );
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -1083,7 +1225,7 @@ router.post( "/update", async ( req, res ) => {
     if ( userLevel < 1 ) {
 
       console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success })
 
     } 
 
@@ -1103,18 +1245,18 @@ router.post( "/update", async ( req, res ) => {
     const queryText = " UPDATE campaigns SET active = " + active + ", campaign_name = '" + stringCleaner( campaignName, true ) + "', campaign_notes = '" + stringCleaner( campaignNotes, true ) + "', campaign_repeats = " + campaignRepeats + ", ends = " + campaignEnds + ", interval = " + campaignInterval + ", list_id = '" + listId + "', locked = " + locked + ", message_series = " + messageSeries + ", starts = " + campaignStarts + ", updated = " + now + ", updated_by = '" + userId + "' WHERE campaign_id = '" + campaignId + "' AND locked <= " + userLevel + " RETURNING campaign_id; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when updating a  campaign record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -1124,20 +1266,20 @@ router.post( "/update", async ( req, res ) => {
 
     if ( !campaignsChecked ) {
 
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
         userId
-      } );
-      return res.status( 200 ).send( { failure, success } );
+      })
+      return res.status(200).send({ failure, success })
 
     }
     
     console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { closedCampaigns, success: true } );
+    return res.status( 200 ).send( { closedCampaigns, success: true })
 
   } catch ( e ) {
 
@@ -1147,14 +1289,14 @@ router.post( "/update", async ( req, res ) => {
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    } );
+    })
     const newException = nowRunning + ': failed with an exception: ' + e;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
  }
 
-} );
+})
 
 module.exports = router;
 console.log( 'campaign services loaded successfully!' );

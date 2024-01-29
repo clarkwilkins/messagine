@@ -22,7 +22,7 @@ const {
 router.post( "/hashtags/all", async ( req, res ) => {
 
   const nowRunning = "utilities/hashtags/all";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   let success = false;
   const errorNumber = 9;
@@ -37,10 +37,10 @@ router.post( "/hashtags/all", async ( req, res ) => {
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -65,10 +65,10 @@ router.post( "/hashtags/all", async ( req, res ) => {
     queryText += " ORDER BY active DESC, tag_text; ";
     const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when getting tags';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -76,7 +76,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -134,7 +134,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
 router.post( "/hashtags/create", async ( req, res ) => {
 
   const nowRunning = "utilities/hashtags/create";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   let success = false;
   const errorNumber = 7;
@@ -151,10 +151,10 @@ router.post( "/hashtags/create", async ( req, res ) => {
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -177,10 +177,10 @@ router.post( "/hashtags/create", async ( req, res ) => {
     const queryText = " INSERT INTO tags ( notes, tag_id, tag_text ) VALUES( '" + stringCleaner( notes, true ) + "', '" + uuidv4() + "', '" + stringCleaner( tagText, true ) + "' ); ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new tag record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -188,7 +188,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -215,7 +215,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
 router.post( "/hashtags/delete", async ( req, res ) => {
 
   const nowRunning = "utilities/hashtags/delete";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   let success = false;
   const errorNumber = 8;
@@ -231,10 +231,10 @@ router.post( "/hashtags/delete", async ( req, res ) => {
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -256,10 +256,10 @@ router.post( "/hashtags/delete", async ( req, res ) => {
     const queryText = " DELETE FROM tags WHERE tag_id = '" + tagId + "'; DELETE FROM tag_connects WHERE tag_id = '" + tagId + "'; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when creating a new tag record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -267,7 +267,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
@@ -294,7 +294,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
 router.post( "/hashtags/update", async ( req, res ) => {
 
   const nowRunning = "utilities/hashtags/update";
-  console.log( nowRunning + ": running" );
+  console.log(`${nowRunning}: running`);
 
   let success = false;
   const errorNumber = 10;
@@ -313,10 +313,10 @@ router.post( "/hashtags/update", async ( req, res ) => {
 
     const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
   
-    if ( errorMessage ) {
+    if (errorMessage) {
 
-      console.log( nowRunning + ' exited due to a validation error: ' + errorMessage );
-      return res.status( 422 ).send( { failure: errorMessage, success } );
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
 
@@ -343,10 +343,10 @@ router.post( "/hashtags/update", async ( req, res ) => {
     const queryText = " UPDATE tags SET active = " + active + ", notes = '" + stringCleaner( notes, true ) + "', tag_text = '" + stringCleaner( tagText, true ) + "' WHERE tag_id = '" + tagId + "'; ";
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
-    if ( !results.rows ) {
+    if (!results.rows) {
 
       const failure = 'database error when updating the tag record';
-      console.log( `${nowRunning}: ${failure}\n` )
+      console.log(`${nowRunning}: ${failure}\n`)
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -354,7 +354,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status( 200 ).send( { failure, success } );
+      return res.status(200).send({ failure, success })
       
     }
 
