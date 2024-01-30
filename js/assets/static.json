@@ -1,10 +1,12 @@
 {
   "events": [
     "not set",
-    "campaign email sent to a contact",
-    "campaign was updated",
-    "campaign ran successfully",
-    "Sendgrid error reported"
+    "a campaign email was sent to this contact",
+    "the campaign was updated",
+    "the campaign ran successfully",
+    "Sendgrid error reported",
+    "the message was updated",
+    "a message was removed from this campaign"
   ],
   "intervals": [
     "not set",
