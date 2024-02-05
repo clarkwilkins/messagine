@@ -278,7 +278,7 @@ exports.getUsers = async () => {
 
 }
 
-exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageContent, messageId, messageName, messageSubject, userId }) => {
+exports.processCampaigns = async ({ apiTesting, campaignId, errorNumber, listId, messageContent, messageId, messageName, messageSubject, userId }) => {
 
   const db = require('./db')
   const now = moment().format('X')
@@ -376,7 +376,11 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
 
       // append all error messages to the details
 
-      body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+      try {
+        
+        body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+
+      } catch(e) {} // no errors to append
 
       // record the errors on this send to the event log (not the errors API)
 
@@ -386,7 +390,35 @@ exports.processCampaigns = async ({ campaignId, errorNumber, listId, messageCont
     
   })
 
-  return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true })
+  // before exiting, update the dynamic values just used, so they flow to the end of the rotation
+
+  queryText = '';
+
+  Object.keys( dynamicValues ).map( value => {
+
+    queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}'; `
+
+  })
+
+  results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
+
+  if (!results) { 
+
+    const failure = 'database error when updating the last_run parameter on dynamic values used on this campaign run'
+    console.log(`${nowRunning}: ${failure}\n`)
+    await recordError ({
+      context: 'api: ' + nowRunning,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    })
+
+    return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+
+  }
+
+  return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true, })
 
 }
 

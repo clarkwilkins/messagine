@@ -402,7 +402,7 @@ router.post("/dynamic/new", async (req, res) => {
     // create the dynamic values record
 
     const now = moment().format('X')
-    const queryText = " INSERT INTO dynamic_values(created, created_by, dynamic_id, locked, message_id, new_value, target_name, updated, updated_by) VALUES(" + now + ", '" + userId + "', '" + uuidv4() + "', " + locked + ", '" + messageId + "', '" + stringCleaner(newValue, true) + "', '" + stringCleaner(target, true) + "', " + now + ", '" + userId + "') RETURNING created; "
+    const queryText = " INSERT INTO dynamic_values(created, created_by, dynamic_id, last_used, locked, message_id, new_value, target_name, updated, updated_by) VALUES(" + now + ", '" + userId + "', '" + uuidv4() + "', 0, " + locked + ", '" + messageId + "', '" + stringCleaner(newValue, true) + "', '" + stringCleaner(target, true) + "', " + now + ", '" + userId + "') RETURNING created; "
     const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
     if (!results?.rowCount) {
