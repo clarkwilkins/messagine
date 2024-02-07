@@ -1,3 +1,8 @@
+# local client assets
+
+assets/files/
+assets/html/
+
 # Logs
 logs
 *.log
