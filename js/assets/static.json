@@ -6,7 +6,9 @@
     "the campaign ran successfully",
     "Sendgrid error reported",
     "the message was updated",
-    "a message was removed from this campaign"
+    "a message was removed from this campaign",
+    "a contact unsubscribed from this campaign",
+    "a contact set a total block on their record"
   ],
   "intervals": [
     "not set",

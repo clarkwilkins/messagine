@@ -323,7 +323,7 @@ exports.processCampaigns = async ({ apiTesting, campaignId, errorNumber, listId,
 
   // get the email recipients
 
-  let queryText = " SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE lc.list_id = '" + listId + "' AND lc.contact_id = c.contact_id AND c.active = true AND c.block_all = false AND c.contact_id NOT IN (SELECT contact_id FROM unsubs WHERE list_id = '" + listId + "'); "
+  let queryText = `SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE lc.list_id = '${listId}' AND lc.contact_id = c.contact_id AND c.active = true AND c.block_all = false AND c.contact_id NOT IN (SELECT contact_id FROM unsubs WHERE list_id = '${listId}')`;
   let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
   if (!results.rows) { 
@@ -394,11 +394,7 @@ exports.processCampaigns = async ({ apiTesting, campaignId, errorNumber, listId,
 
   queryText = '';
 
-  Object.keys( dynamicValues ).map( value => {
-
-    queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}'; `
-
-  })
+  Object.keys( dynamicValues ).map( value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
 
   results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
 

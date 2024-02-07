@@ -343,13 +343,8 @@ router.post( "/run", async ( req, res ) => {
           starts,
           subject: messageSubject
         } = row
-        console.log(messageContent.startsWith('template:'))
+
         if (messageContent.startsWith('template:')) messageContent = fs.readFileSync( `./html/${messageContent.substring(9)}.html`, 'utf-8' )
-        console.log(`messageContent: ${messageContent}`)
-        // return null;
-
-
-        // if the message is not repeatable, we immediate 
 
         // if the campaign is non-repeating, check if there are any unsent messages
 
