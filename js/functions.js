@@ -278,6 +278,13 @@ exports.getUsers = async () => {
 
 }
 
+exports.isUrl = string => {
+
+  var urlRegex = /^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]+\.?)+(\/[^\s]*)?$/i;
+  return urlRegex.test(string);
+
+}
+
 exports.processCampaigns = async ({ apiTesting, campaignId, errorNumber, listId, messageContent, messageId, messageName, messageSubject, userId }) => {
 
   const db = require('./db')

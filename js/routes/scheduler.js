@@ -1,4 +1,5 @@
 console.log( "loading scheduler services now..." )
+const _ = require('lodash');
 const db = require( '../db' )
 const express = require( 'express' )
 const Joi = require( 'joi' )
@@ -10,6 +11,7 @@ router.use( express.json() )
 const { API_ACCESS_TOKEN } = process.env
 const { 
   getUserLevel,
+  isUrl,
   recordError,
   recordEvent,
   stringCleaner,
@@ -186,7 +188,7 @@ router.post( "/run", async ( req, res ) => {
 
     // get all campaigns that have a message that is eligible to run now
 
-    let queryText = " SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, c.starts, cm.position, m.content, m.message_id, m.message_name, m.repeatable, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= " + moment().format( 'X' ) + " OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position "
+    let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, c.starts, c.unsub_url, cm.position, m.content, m.message_id, m.message_name, m.repeatable, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND ( c.next_run <= ${moment().format( 'X' )} OR c.next_run IS NULL ) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position`
     let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId )
 
     if (!results.rows) {
@@ -331,6 +333,7 @@ router.post( "/run", async ( req, res ) => {
 
         let {
           campaign_id: campaignId,
+          campaign_name: campaignName,
           campaign_repeats: campaignRepeats,
           content: messageContent,
           ends,
@@ -341,10 +344,48 @@ router.post( "/run", async ( req, res ) => {
           position,
           repeatable,
           starts,
-          subject: messageSubject
+          subject: messageSubject,
+          unsub_url: unsubUrl
         } = row
 
+        // check for a valid unsubscribe URL
+
+        if (!isUrl(unsubUrl)) {
+
+          const eventDetails = `campaign: <b>${campaignName}</b>, id: <b>${campaignId}</b>, unsub link: <b>${unsubUrl}</b>`
+          recordEvent ({ apiTesting, event: 9, eventDetails, eventTarget: campaignId, userId })
+          return {
+            campaignId,
+            messageId: row.message_id,
+            campaignsProcessedFailure: 'the campaign does not have a valid unsubscribe link',
+            campaignsProcessedSuccess: false
+          }
+
+        }
+
+        // use a template where specified by messageContent
+
         if (messageContent.startsWith('template:')) messageContent = fs.readFileSync( `./html/${messageContent.substring(9)}.html`, 'utf-8' )
+
+        // check for a placeholder to insert the unsub link
+
+        if (!messageContent.includes('[UNSUB_MESSAGE]')) {
+
+          const eventDetails = `campaign: <b>${campaignName}</b>, id: <b>${campaignId}</b>, message ID: <b>${messageId}</b>`
+          recordEvent ({ apiTesting, event: 10, eventDetails, eventTarget: campaignId, userId })
+          return {
+            campaignId,
+            messageId: row.message_id,
+            campaignsProcessedFailure: 'the message content does not contain the [UNSUB_MESSAGE] placeholder',
+            campaignsProcessedSuccess: false
+          }
+
+        }
+
+        // insert the unsubscribe message
+
+        const placeholderRegex = new RegExp(`\\[UNSUB_MESSAGE\\]`, 'g'); // 
+        messageContent = _.replace(messageContent, placeholderRegex, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`)
 
         // if the campaign is non-repeating, check if there are any unsent messages
 
