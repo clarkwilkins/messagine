@@ -18,14 +18,13 @@ function LoginWithKey() {
   changeTitle ('messagine: key-based login')
 
   const defaultError = "The login tool isn't working right now"
-  const [error, setError] = useState()
   const [errorAlreadyReported, setErrorAlreadyReported] = useState(false)
   const [errorContext, setErrorContext] = useState(nowRunning + '.e')
   const [errorContextReported, setErrorContextReported] = useState()
   const [errorDetails, setErrorDetails] = useState('general exception thrown')
   const [errorDisplayed, setErrorDisplayed] = useState() // latch the error unless it changes
   const [errorMessage, setErrorMessage] = useState(defaultError)
-  const [errorNumber, setErrorNumber] = useState(49)
+  const errorNumber = 49
   const [errorOccurred, setErrorOccurred] = useState(false)
   let { key } = useParams()
 
@@ -53,7 +52,6 @@ function LoginWithKey() {
           setErrorContext(context)
           setErrorDetails(`failure: ${failure}`)
           setErrorMessage(defaultError)
-          setErrorNumber(errorNumber)
           setErrorOccurred(true)
           return null
 
@@ -93,7 +91,6 @@ function LoginWithKey() {
         setErrorContext(context + ': exception thrown')
         setErrorDetails(e.message)
         setErrorMessage(defaultError)
-        setErrorNumber(errorNumber); 
         setErrorOccurred(true)
       
       }
@@ -125,7 +122,6 @@ function LoginWithKey() {
           errorDisplay({
             context: errorContext,
             details: errorDetails,
-            error,
             errorMessage,
             errorNumber,
             nowRunning,
@@ -142,17 +138,11 @@ function LoginWithKey() {
 
   } catch(e) {
   
-    setError(e)
-    setErrorDisplayed(errorNumber)
-    return errorDisplay({
-      context: nowRunning, // context is logged as the area that failed
-      details: e.message,
-      error: e,
-      errorMessage: defaultError,
-      errorNumber, // also the default
-      nowRunning,
-      reportError
-    })
+    setErrorAlreadyReported( false );
+    setErrorContext( nowRunning + '.e' );
+    setErrorDetails( 'general exception thrown' );
+    setErrorMessage( e.message );
+    setErrorOccurred( true );
 
   }
 

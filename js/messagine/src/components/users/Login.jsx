@@ -71,7 +71,7 @@ function Login() {
 
         localStorage.removeItem('messagine.token')
         setErrorAlreadyReported(true)
-        setErrorContext(nowRunning + '.onSubmit.(getting user record)')
+        setErrorContext(`${nowRunning}.onSubmit.(getting user record)`)
         setErrorMessage(defaultError)
         setErrorOccurred(true)
         return null
@@ -82,7 +82,7 @@ function Login() {
 
         localStorage.removeItem('messagine.token')
         setErrorAlreadyReported(true)
-        setErrorContext(nowRunning + '.onSubmit.(bad login credentials)')
+        setErrorContext(`${nowRunning}.onSubmit.(bad login credentials)`)
         setErrorMessage('The email and/or password is not correct. Remember passwords are case-sensitive')
         setErrorOccurred(true)
         return null
@@ -98,7 +98,7 @@ function Login() {
   
       setError(e)
       setErrorAlreadyReported(false)
-      setErrorContext(nowRunning + '.onSubmit.(general exception)')
+      setErrorContext(`${nowRunning}.onSubmit.(general exception)`)
       setErrorDetails('exception thrown')
       setErrorMessage(defaultError)
       setErrorOccurred(true)
@@ -213,20 +213,12 @@ function Login() {
    )
 
   } catch(e) {
-
-    if (+level === 9) console.log(nowRunning + '.exception: ' + e.message)
   
-    setErrorDisplayed(errorNumber)
-    return errorDisplay({
-      context: nowRunning, // context is logged as the area that failed
-      details: e.message,
-      error: e,
-      errorMessage: defaultError,
-      errorNumber, // also the default
-      level,
-      nowRunning,
-      reportError
-    })
+    setErrorAlreadyReported(false);
+    setErrorContext(`${nowRunning}.e`);
+    setErrorDetails('general exception thrown');
+    setErrorMessage(e.message);
+    setErrorOccurred(true);
 
   }
 
