@@ -49,5 +49,5 @@ const httpsServer = https.createServer(
   app
 );
 httpsServer.listen( port, () => {
-  console.log( 'Messageine 3.x server running SSL on port ' + port );
+  console.log( 'Messagine 3.x server running SSL on port ' + port );
 });
