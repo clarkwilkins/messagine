@@ -47,7 +47,7 @@ function LoginWithKey() {
 
         if (!success) {
 
-          const context = nowRunning + '.useEffect'
+          const context = `${nowRunning}.useEffect`
           setErrorAlreadyReported(true)
           setErrorContext(context)
           setErrorDetails(`failure: ${failure}`)
@@ -86,7 +86,7 @@ function LoginWithKey() {
 
       } catch (e) {
       
-        const context = nowRunning + '.useEffect';      
+        const context = `${nowRunning}.useEffect`;      
         setErrorAlreadyReported(false)
         setErrorContext(context + ': exception thrown')
         setErrorDetails(e.message)

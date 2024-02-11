@@ -2,7 +2,10 @@ import {
   useRef,
   useState 
 } from 'react';
-import { Outlet } from 'react-router-dom';
+import { 
+  Link,
+  Outlet 
+} from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { jwtDecode } from "jwt-decode";
 import moment from 'moment';
@@ -79,7 +82,17 @@ function App() {
 
           <Nav className="flex-column">
 
-            <Nav.Item className="size-80"><b>contacts + lists</b></Nav.Item>
+            <Nav.Item className="size-80"><b>mailing lists</b></Nav.Item>
+
+              <Nav.Item>
+                <Nav.Link
+                  as={Link} 
+                  onClick={handleClose}
+                  to="/lists/manage"
+                >
+                  manage lists
+                </Nav.Link>
+              </Nav.Item>
 
             <Nav.Item className="size-80"><b>other</b></Nav.Item>
 

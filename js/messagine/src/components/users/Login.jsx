@@ -25,7 +25,6 @@ function Login() {
   changeTitle('messagine:login')
   
   const defaultError = "The login tool isn't working right now"
-  const [error, setError] = useState()
   const [errorAlreadyReported, setErrorAlreadyReported] = useState(false)
   const [errorContext, setErrorContext] = useState(nowRunning + '.e')
   const [errorContextReported, setErrorContextReported] = useState()
@@ -96,7 +95,6 @@ function Login() {
 
     } catch (e) {
   
-      setError(e)
       setErrorAlreadyReported(false)
       setErrorContext(`${nowRunning}.onSubmit.(general exception)`)
       setErrorDetails('exception thrown')
@@ -135,7 +133,6 @@ function Login() {
           errorDisplay({
             context: errorContext,
             details: errorDetails,
-            error,
             errorMessage,
             errorNumber,
             level,

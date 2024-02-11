@@ -386,6 +386,7 @@ router.post( "/load", async ( req, res ) => {
       listName: stringCleaner( listName ),
       listNotes: stringCleaner( listNotes, false, !containsHTML( listNotes ) ),
       locked: +locked,
+      success: true,
       updated: +updated,
       updatedBy,
       updatedBy2: stringCleaner( updatedBy2 )

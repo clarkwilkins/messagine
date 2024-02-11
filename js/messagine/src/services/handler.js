@@ -15,7 +15,7 @@ const masterKey = process.env.REACT_APP_API_KEY;
 
 let userId;
 
-const jwt = localStorage.getItem( "docr.token" );
+const jwt = localStorage.getItem( "messagine.token" );
 
 if ( jwt ) {
   
@@ -23,7 +23,7 @@ if ( jwt ) {
   userId = userRecord.user_id;
 }
 
-if ( !userId ) localStorage.removeItem( "docr.token" ); // remove the session record so we can force the user to log in again
+if ( !userId ) localStorage.removeItem( "messagine.token" ); // remove the session record so we can force the user to log in again
 
 export async function apiLoader({ api, payload}) {
   
