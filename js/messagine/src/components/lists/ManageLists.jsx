@@ -23,8 +23,12 @@ import {
   PlusSquare,
   UserGear
 } from '@phosphor-icons/react'
+import CheckBoxInput from '../common/CheckBoxInput'
+import DeleteConfirmationModal from '../common/DeleteConfirmationModal'
+import FormButtons from '../common/FormButtons'
 import Loading from '../common/Loading'
 import Selector from '../common/Selector'
+import TextArea from '../common/TextArea'
 import TextInput from '../common/TextInput'
 import { 
   apiLoader, 
@@ -72,7 +76,8 @@ function ManageLists() {
   } )
   const [showContacts, setShowContacts] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
+  const [showModal, setDisplayConfirmationModal] = useState(false)
+  const [showSettings, setShowSettings] = useState(true)
 
   const { 
     formState: { errors },
@@ -222,6 +227,7 @@ function ManageLists() {
       }
 
       setLists(listsSelector)
+      setShowSettings(false)
 
     } catch(e) {
 
@@ -252,7 +258,14 @@ function ManageLists() {
 
       const { listId } = getValues()
 
-      if (!listId ) return
+      if (!listId) {
+        
+        setLinkedContacts({})
+        setLinkedContactsCount(0)
+        setListData({})
+        return 
+
+      }
 
       const api = 'lists/load'
       const payload = { listId }
@@ -286,13 +299,15 @@ function ManageLists() {
 
       }
 
-      console.log(availableContacts)
-
       setLinkedContacts(linkedContacts) // contacts on this list
       setLinkedContactsCount(Object.keys(linkedContacts).length)
       setListData(data)
       setShowContacts(true)
-      setValue( 'listName', listName)
+      setValue('acceptsContacts', acceptsContacts)
+      setValue('active', active)
+      setValue('listName', listName)
+      setValue('listNotes', listNotes)
+      setValue('locked', locked >= level)
 
     } catch(e) {
 
@@ -306,6 +321,20 @@ function ManageLists() {
       }))
 
     }
+
+  }
+
+  const hideConfirmationModal = () => { setDisplayConfirmationModal( false ); }
+
+  const onDelete = async () => {
+
+    console.log('delete...')
+
+  }
+
+  const onReset = () => {
+
+    console.log('reset...')
 
   }
 
@@ -336,6 +365,8 @@ function ManageLists() {
     }
 
   }
+
+  const showConfirmationModal = () => { setDisplayConfirmationModal( true ); }
 
   function showRows() { // c/o ChatGPT4 with very light editing
 
@@ -370,7 +401,10 @@ function ManageLists() {
   
       rows.push(
 
-        <Row className="alternate-1 p-2">
+        <Row 
+          className="alternate-1 p-2"
+          key={i}
+        >
 
           <Col 
             xs={6} className="hover" 
@@ -623,13 +657,85 @@ function ManageLists() {
 
                   </Col>
 
+                  <Col xs={12} sm={6}>
+
+                    <Form.Label className="mb-3 size-65 text-muted">list options</Form.Label>
+
+                    <div className="floats">
+
+                      <div className="float-left mr-05">
+
+                        <CheckBoxInput
+                          disabled={ locked > level }
+                          inputName="acceptsContacts"
+                          label="allow new contacts"
+                          register={register}
+                        />
+
+                      </div>
+
+                      <div className="float-left mr-05">
+
+                        <CheckBoxInput
+                          disabled={ locked > level }
+                          inputName="active"
+                          label="active"
+                          register={register}
+                        />
+
+                      </div>
+
+                      <div className="float-left mr-05">
+
+                        <CheckBoxInput
+                          disabled={ locked > level }
+                          inputName="locked"
+                          label="locked"
+                          register={register}
+                        />
+
+                      </div>
+                    
+                    </div>
+
+                  </Col>
+
                 </Row>
+
+                <TextArea
+                  disabled={ locked > level }
+                  inputName="listNotes"
+                  label="notes"
+                  placeholder="use this to add notes about the list..."
+                  register={register}
+                />
+
+                {level >= locked && (
+
+                  <FormButtons
+                    deleteMessage="Are you sure you want to delete this list?"
+                    deletePrompt="delete list"
+                    errors={errors}
+                    onReset={onReset}
+                    showConfirmationModal={showConfirmationModal}
+                    showDelete={true}
+                    submitText="update the expense"
+                  />
+
+                )}
+
+                <DeleteConfirmationModal 
+                  confirmModal={onDelete}
+                  hideModal={hideConfirmationModal}
+                  message="Are you sure you want to remove this mailing list?"
+                  showModal={showModal} 
+                />
 
               </Form>
 
             )}
 
-            {showContacts && (
+            {showContacts && listData?.listName && (
 
               <>
 
