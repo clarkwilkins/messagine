@@ -40,14 +40,15 @@ function ManageLists() {
   const [allContacts, setAllContacts] = useState({})
   const [availableContacts, setAvailableContacts] = useState({})
   const defaultError = "The lists management tool isn't working right now"
-  const [errorAlreadyReported, setErrorAlreadyReported] = useState(false)
-  const [errorContext, setErrorContext] = useState(nowRunning + '.e')
-  const [errorContextReported, setErrorContextReported] = useState()
-  const [errorDetails, setErrorDetails] = useState('general exception thrown')
-  const [errorDisplayed, setErrorDisplayed] = useState() // latch the error unless it changes
-  const [errorMessage, setErrorMessage] = useState(defaultError)
-  const [errorNumber, setErrorNumber] = useState(50)
-  const [errorOccurred, setErrorOccurred] = useState(false)
+  const [errorState, setErrorState] = useState({
+    alreadyReported: false,
+    context: '',
+    details: 'general exception thrown',
+    displayed: 50, // this is only useful when there are child components
+    message: defaultError,
+    number: 50,
+    occurred: false,
+  });
   const {
     level,
     toggleDimmer
@@ -71,7 +72,7 @@ function ManageLists() {
   } )
   const [showContacts, setShowContacts] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
-  const [showSettings, setShowSettings] = useState(true)
+  const [showSettings, setShowSettings] = useState(false)
 
   const { 
     formState: { errors },
@@ -83,6 +84,8 @@ function ManageLists() {
   } = useForm({ resolver: joiResolver( schema )} )
 
   const manageLink = async (contactId, link) => {
+
+    const context = `${nowRunning}.manageLink`
 
     try {
 
@@ -100,24 +103,31 @@ function ManageLists() {
 
       if (!success) {
 
+        if (level === 9) console.log(`failure: ${failure}`)
+
         toggleDimmer(false)
-        const context = nowRunning + '.manageLink'
-        setErrorAlreadyReported(true)
-        setErrorContext(context)
-        setErrorDetails(`failure: ${failure}`)
-        setErrorMessage(defaultError)
-        setErrorOccurred(true)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          occurred: true
+        }))
         return null
 
       }
 
     } catch(e) {
 
-      setErrorAlreadyReported(false)
-      setErrorContext(`${nowRunning}.manageLink.(general exception)`)
-      setErrorDetails('exception thrown')
-      setErrorMessage(defaultError)
-      setErrorOccurred(true)
+      if (level === 9) console.log(`exception: ${e.message}`)
+
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
 
     }
 
@@ -130,6 +140,8 @@ function ManageLists() {
   const onChange = () => { trigger() } // validate the update form
 
   const getAllContacts = useCallback( async () => { // get all active contacts
+
+    const context = `${nowRunning}.getAllContacts`
 
     try {
 
@@ -144,17 +156,16 @@ function ManageLists() {
 
       if (!success) {
 
+        if (level === 9) console.log(`failure: ${failure}`)
+
         toggleDimmer(false)
-        const context = `${nowRunning}.getAllContacts`
-
-        if ( +level === 9 ) console.log(`${context}.failure: ${failure}`);
-
-        setErrorAlreadyReported(true)
-        setErrorContext(context)
-        setErrorDetails(`failure: ${failure}`)
-        setErrorMessage(defaultError)
-        setErrorNumber(errorNumber)
-        setErrorOccurred(true)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          occurred: true
+        }))
         return null
 
       }
@@ -164,18 +175,24 @@ function ManageLists() {
 
     } catch(e) {
 
+      if (level === 9) console.log(`exception: ${e.message}`)
+
       toggleDimmer(false)
-      setErrorAlreadyReported(false)
-      setErrorContext(`${nowRunning}.getAllContacts.(general exception)`)
-      setErrorDetails('exception thrown')
-      setErrorMessage(defaultError)
-      setErrorOccurred(true)
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
 
     }
 
-  }, [errorNumber, level, toggleDimmer])
+  }, [level, toggleDimmer])
 
   const getAllLists = useCallback( async () => { // get all active lists
+
+    const context = `${nowRunning}.getAllLists`
 
     try {
 
@@ -190,17 +207,16 @@ function ManageLists() {
 
       if (!success) {
 
+        if (level === 9) console.log(`failure: ${failure}`)
+
         toggleDimmer(false)
-        const context = `${nowRunning}.getAllLists(getting all active mailing lists)`
-
-        if ( +level === 9 ) console.log(`${context}.failure: ${failure}`);
-
-        setErrorAlreadyReported(true)
-        setErrorContext(context)
-        setErrorDetails(`failure: ${failure}`)
-        setErrorMessage(defaultError)
-        setErrorNumber(errorNumber)
-        setErrorOccurred(true)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          occurred: true
+        }))
         return null
 
       }
@@ -209,18 +225,24 @@ function ManageLists() {
 
     } catch(e) {
 
+      if (level === 9) console.log(`exception: ${e.message}`)
+
       toggleDimmer(false)
-      setErrorAlreadyReported(false)
-      setErrorContext(`${nowRunning}.getAllContacts.(general exception)`)
-      setErrorDetails('exception thrown')
-      setErrorMessage(defaultError)
-      setErrorOccurred(true)
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
 
     }
 
-  }, [errorNumber, level, toggleDimmer])
+  }, [level, toggleDimmer])
 
   const getListData = async () => {
+
+    const context = `${nowRunning}.getListData`
 
     try {
 
@@ -250,13 +272,16 @@ function ManageLists() {
       
       if (!success) {
 
+        if (level === 9) console.log(`failure: ${failure}`)
+
         toggleDimmer(false)
-        const context = nowRunning + '.getListData'
-        setErrorAlreadyReported(true)
-        setErrorContext(context)
-        setErrorDetails(`failure: ${failure}`)
-        setErrorMessage(defaultError)
-        setErrorOccurred(true)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          occurred: true
+        }))
         return null
 
       }
@@ -266,22 +291,27 @@ function ManageLists() {
       setLinkedContacts(linkedContacts) // contacts on this list
       setLinkedContactsCount(Object.keys(linkedContacts).length)
       setListData(data)
-      setShowEditor(true)
+      setShowContacts(true)
       setValue( 'listName', listName)
 
     } catch(e) {
 
-      setErrorAlreadyReported(false)
-      setErrorContext(`${nowRunning}.getListData.(general exception)`)
-      setErrorDetails('exception thrown')
-      setErrorMessage(defaultError)
-      setErrorOccurred(true)
+      toggleDimmer(false)
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
 
     }
 
   }
 
   const onSubmit = async () => {
+
+    const context = `${nowRunning}.onSubmit`
 
     try {
 
@@ -292,82 +322,20 @@ function ManageLists() {
 
     } catch(e) {
 
-      setErrorAlreadyReported(false)
-      setErrorContext(`${nowRunning}.onSubmit.(general exception)`)
-      setErrorDetails('exception thrown')
-      setErrorMessage(defaultError)
-      setErrorOccurred(true)
+      if (level === 9) console.log(`exception: ${e.message}`)
+
+      toggleDimmer(false)
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
 
     }
 
   }
-
-  // const showRows = () => {
-
-  //   const contactsWhichAreNotSelected = availableContacts; // so we don't directly mutate state
-  //   const inUse = [];
-  //   Object.entries(linkedContacts).map(row => {
-  //     inUse.push({
-  //       contactId: row[0],
-  //       ...row[1]
-  //     })
-  //     delete availableContacts[row[0]] // it's already in use
-  //     return null    
-  //   })
-
-  //   const rows = Object.entries(contactsWhichAreNotSelected).map( (row, key) => {
-
-  //     const contactId = row[0]
-  //     const {
-  //       blockAll,
-  //       contactNotes,
-  //       email,
-  //       fullName
-  //     } = row[1]
-
-  //     if ( blockAll === true ) return null
-
-  //     if (!inUse[key]) inUse[key] = {}      
-
-  //     return(
-
-  //       <Row className="alternate-1 p-2">
-
-  //         <Col 
-  //           xs={6} 
-  //           className="hover"
-  //           onClick={ () => manageLink(contactId, true) } 
-  //         >
-  //           <div>{fullName}</div>
-  //           <div className="size-80">{email}</div>
-  //           <div className="size-80">{contactNotes}</div>
-  //         </Col>
-  //         <Col 
-  //           xs={6} 
-  //           className="hover"
-  //         >
-
-  //           {inUse[key] && (
-
-  //             <div onClick={ () => manageLink(inUse[key].contactId, false) }>
-  //               <div>{inUse[key].fullName}</div>
-  //               <div className="size-80">{inUse[key].email}</div>
-  //               <div className="size-80">{inUse[key].contactNotes}</div>
-  //             </div>
-
-  //           )}
-
-  //         </Col>
-
-  //       </Row>
-
-  //     )
-      
-  //   })
-
-  //   return rows
-
-  // }
 
   function showRows() { // c/o ChatGPT4 with very light editing
 
@@ -436,8 +404,7 @@ function ManageLists() {
     }
   
     return rows;
-  }
-  
+  }  
 
   const toggleContacts = () => setShowContacts( !showContacts );
 
@@ -446,6 +413,8 @@ function ManageLists() {
   const toggleSettings = () => setShowSettings( !showSettings );
 
   useEffect(() => {
+
+    const context = `${nowRunning}.useEffect`
 
     const runThis = async () => {
 
@@ -463,18 +432,18 @@ function ManageLists() {
         }
 
       } catch (e) {
-      
+
+        if (level === 9) console.log(`exception: ${e.message}`)
+  
         toggleDimmer(false)
-        const context = `${nowRunning}.useEffect`
-
-        if ( +level === 9 ) console.log(e);
-
-        setErrorAlreadyReported(false)
-        setErrorContext(`${context}: exception thrown`)
-        setErrorDetails(e.message)
-        setErrorMessage(defaultError)
-        setErrorNumber(errorNumber); 
-        setErrorOccurred(true)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: e.message,
+          errorAlreadyReported: false,
+          occurred: true
+        }))
+        setLoaded(true)
       
       }
 
@@ -482,24 +451,29 @@ function ManageLists() {
 
     runThis()
 
-  }, [errorNumber, getAllContacts, level, toggleDimmer])
+  }, [getAllContacts, getAllLists, level, loading, toggleDimmer])
 
   try {
     
+    // setup for error display and (possible) reporting
+
     let reportError = false; // default condition is there is no error
+    const {
+      alreadyReported,
+      context: errorContext,
+      details: errorDetails,
+      message: errorMessage,
+      errorNumber,
+      occurred: errorOccurred
+    } = errorState;
 
-    if (errorOccurred && errorNumber !== errorDisplayed && errorContext !== errorContextReported && !errorAlreadyReported) { 
-                
-      reportError = true; 
-      setErrorContextReported(errorContext)
-      setErrorDisplayed(errorNumber); 
+    if (errorOccurred && !alreadyReported) reportError = true; // persist this error to the Simplexable API
 
-    }
+    // final setup before rendering
 
     if ( level === 9 && Object.keys( errors ).length > 0 ) console.log( 'validation errors: ', errors );
 
-    const locked = listData?.locked
-    console.log()
+    const locked = listData?.locked // is the form data locked?
 
     return (
     
@@ -662,7 +636,7 @@ function ManageLists() {
 
                 <div className="bg-light p-3 mb-3">
 
-                  <div className="mb-3 size-80"><b>contacts ({linkedContactsCount})</b></div>
+                  <div className="mb-3 size-80"><b>{listData.listName} contacts ({linkedContactsCount})</b></div>
                     
                   <Container className="border-gray-1 size-80">
 
@@ -693,16 +667,17 @@ function ManageLists() {
    )
 
   } catch(e) {
-  
-    if (+level === 9) console.log(`{$nowRunning}.exception: ${e.message}`)
+
+    if (level === 9) console.log(`exception: ${e.message}`)
 
     toggleDimmer(false)
-    setErrorAlreadyReported(false);
-    setErrorContext(`${nowRunning}.e`);
-    setErrorDetails('general exception thrown');
-    setErrorMessage(e.message);
-    setErrorNumber(errorNumber);
-    setErrorOccurred(true);
+    setErrorState(prevState => ({
+      ...prevState,
+      context: nowRunning,
+      details: e.message,
+      errorAlreadyReported: false,
+      occurred: true
+    }))
 
   }
 
