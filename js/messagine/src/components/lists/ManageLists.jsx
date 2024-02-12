@@ -263,6 +263,7 @@ function ManageLists() {
         setLinkedContacts({})
         setLinkedContactsCount(0)
         setListData({})
+        setShowEditor(false)
         return 
 
       }
@@ -384,9 +385,11 @@ function ManageLists() {
 
   }
 
-  const onReset = () => {
-
-    console.log('reset...')
+  const onReset = async () => {
+    
+    console.log('reset?')
+    await getListData()
+    setShowEditor(true)
 
   }
 
