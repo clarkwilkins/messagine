@@ -518,7 +518,7 @@ router.post("/messages/add", async (req, res) => {
 
     let nextPosition = +results.rows[0]?.max + 1 || 1
 
-    queryText = `INSERT INTO campaign_messages(campaign_id, message_id, position) VALUES ('${campaignId}', '${messageId}', ${nextPosition}) RETURNING position;`
+    queryText = `INSERT INTO campaign_messages(campaign_id, last_sent, message_id, position) VALUES ('${campaignId}', 0, '${messageId}', ${nextPosition}) RETURNING position;`
     results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
     if (!results.rows || results.rowCount != 1) {
