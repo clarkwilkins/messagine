@@ -10,7 +10,6 @@ import { joiResolver } from '@hookform/resolvers/joi'
 import { toast } from 'react-toastify'
 import { 
   Breadcrumb,
-  Button,
   Col,
   Container,
   Form,
@@ -34,7 +33,8 @@ import TextInput from '../common/TextInput'
 import { 
   apiLoader, 
   changeTitle,
-  errorDisplay
+  errorDisplay,
+  validateUUID
 } from '../../services/handler'
 
 function ManageLists() {
@@ -43,7 +43,6 @@ function ManageLists() {
   changeTitle ('messagine: lists management')
 
   const [allContacts, setAllContacts] = useState({})
-  const [availableContacts, setAvailableContacts] = useState({})
   const defaultError = "The lists management tool isn't working right now"
   const [errorState, setErrorState] = useState({
     alreadyReported: false,
@@ -88,62 +87,6 @@ function ManageLists() {
     trigger
   } = useForm({ resolver: joiResolver( schema )} )
 
-  const manageLink = async (contactId, link) => {
-
-    const context = `${nowRunning}.manageLink`
-
-    try {
-
-      const api = 'lists/contact-linking'
-      const payload = {
-        contactId,
-        link,
-        listId: getValues().listId
-      }
-      const { data }= await apiLoader({ api, payload })
-      const {
-        failure,
-        success
-      } = data;
-
-      if (!success) {
-
-        if (level === 9) console.log(`failure: ${failure}`)
-
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-          ...prevState,
-          context,
-          details: `failure: ${failure}`,
-          errorAlreadyReported: true,
-          occurred: true
-        }))
-        return null
-
-      }
-
-    } catch(e) {
-
-      if (level === 9) console.log(`exception: ${e.message}`)
-
-      setErrorState(prevState => ({
-        ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
-
-    }
-
-    await getListData()
-
-    if (!link) await getAllContacts()
-
-  }
-
-  const onChange = () => { trigger() } // validate the update form
-
   const getAllContacts = useCallback( async () => { // get all active contacts
 
     const context = `${nowRunning}.getAllContacts`
@@ -167,8 +110,8 @@ function ManageLists() {
         setErrorState(prevState => ({
           ...prevState,
           context,
-          details: `failure: ${failure}`,
           errorAlreadyReported: true,
+          message: `failure: ${failure}`,
           occurred: true
         }))
         return null
@@ -176,7 +119,6 @@ function ManageLists() {
       }
 
       setAllContacts(contacts)
-      setAvailableContacts(contacts)
 
     } catch(e) {
 
@@ -218,8 +160,8 @@ function ManageLists() {
         setErrorState(prevState => ({
           ...prevState,
           context,
-          details: `failure: ${failure}`,
           errorAlreadyReported: true,
+          message: `failure: ${failure}`,
           occurred: true
         }))
         return null
@@ -227,7 +169,6 @@ function ManageLists() {
       }
 
       setLists(listsSelector)
-      setShowSettings(false)
 
     } catch(e) {
 
@@ -279,9 +220,7 @@ function ManageLists() {
         listName,
         listNotes,
         locked,
-        success,
-        updated,
-        updatedBy2
+        success
       } = data
       
       if (!success) {
@@ -292,8 +231,8 @@ function ManageLists() {
         setErrorState(prevState => ({
           ...prevState,
           context,
-          details: `failure: ${failure}`,
           errorAlreadyReported: true,
+          message: `failure: ${failure}`,
           occurred: true
         }))
         return null
@@ -327,6 +266,62 @@ function ManageLists() {
 
   const hideConfirmationModal = () => { setDisplayConfirmationModal( false ); }
 
+  const manageLink = async (contactId, link) => {
+
+    const context = `${nowRunning}.manageLink`
+
+    try {
+
+      const api = 'lists/contact-linking'
+      const payload = {
+        contactId,
+        link,
+        listId: getValues().listId
+      }
+      const { data }= await apiLoader({ api, payload })
+      const {
+        failure,
+        success
+      } = data;
+
+      if (!success) {
+
+        if (level === 9) console.log(`failure: ${failure}`)
+
+        toggleDimmer(false)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          errorAlreadyReported: true,
+          message: `failure: ${failure}`,
+          occurred: true
+        }))
+        return null
+
+      }
+
+    } catch(e) {
+
+      if (level === 9) console.log(`exception: ${e.message}`)
+
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
+
+    }
+
+    await getListData()
+
+    if (!link) await getAllContacts()
+
+  }
+
+  const onChange = () => { trigger() } // validate the update form
+
   const onDelete = async () => {
 
     const context = `${nowRunning}.onDelete`
@@ -351,8 +346,8 @@ function ManageLists() {
         setErrorState(prevState => ({
           ...prevState,
           context,
-          details: `failure: ${failure}`,
           errorAlreadyReported: true,
+          message: `failure: ${failure}`,
           occurred: true
         }))
         return null
@@ -363,7 +358,8 @@ function ManageLists() {
       setLinkedContactsCount(0)
       setListData({})
       setShowEditor(false)
-      await getAllLists()
+      setValue('listId', null)
+      await updateList()
       reset()
       toast.success('The mailing list was deleted.')
       toggleDimmer(false)
@@ -415,8 +411,8 @@ function ManageLists() {
         setErrorState(prevState => ({
           ...prevState,
           context,
-          details: `failure: ${failure}`,
           errorAlreadyReported: true,
+          message: `failure: ${failure}`,
           occurred: true
         }))
         return null
@@ -524,6 +520,19 @@ function ManageLists() {
 
   const toggleSettings = () => setShowSettings( !showSettings );
 
+  const updateList = async () => {
+
+    toggleDimmer(true)
+    const listIdPresent = validateUUID(getValues('listId'))
+    await getAllLists()
+    setShowSettings(!validateUUID(listIdPresent)) 
+    
+    if ( listIdPresent === true ) { await getListData() } else { setShowContacts(false) }
+
+    toggleDimmer(false)
+
+  }
+
   useEffect(() => {
 
     const context = `${nowRunning}.useEffect`
@@ -538,6 +547,9 @@ function ManageLists() {
           toggleDimmer(true)
           await getAllContacts()
           await getAllLists()
+
+          if ( lists.length > 0 ) setShowSettings(true)
+
           setLoaded(true)
           toggleDimmer(false)
 
@@ -563,7 +575,7 @@ function ManageLists() {
 
     runThis()
 
-  }, [getAllContacts, getAllLists, level, loading, toggleDimmer])
+  }, [getAllContacts, getAllLists, level, lists.length, loading, toggleDimmer])
 
   try {
     
@@ -572,8 +584,8 @@ function ManageLists() {
     let reportError = false; // default condition is there is no error
     const {
       alreadyReported,
-      context: errorContext,
-      details: errorDetails,
+      context,
+      details,
       message: errorMessage,
       errorNumber,
       occurred: errorOccurred
@@ -583,7 +595,7 @@ function ManageLists() {
 
     // final setup before rendering
 
-    if ( level === 9 && Object.keys( errors ).length > 0 ) console.log( 'validation errors: ', errors );
+    if ( +level === 9 && Object.keys( errors ).length > 0 ) console.log( 'validation errors: ', errors );
 
     const locked = listData?.locked // is the form data locked?
 
@@ -594,8 +606,8 @@ function ManageLists() {
         {errorOccurred && (
 
           errorDisplay({
-            context: errorContext,
-            details: errorDetails,
+            context,
+            details,
             errorMessage,
             errorNumber,
             nowRunning,
@@ -618,6 +630,24 @@ function ManageLists() {
             </Breadcrumb>
 
             <h5 className="floats">
+
+              <div className="float-right ml-05">
+
+                <OverlayTrigger
+                  delay={ {  hide: 100, show: 200 } }
+                  overlay={ ( props ) => ( 
+                    <Tooltip { ...props }>
+                      create new lists
+                    </Tooltip>
+                  )}
+                  placement="bottom"
+                >
+
+                  <a href="./new"><PlusSquare /></a>
+                  
+                </OverlayTrigger>
+
+              </div>
 
               <div className="float-right ml-05">
 
@@ -698,7 +728,7 @@ function ManageLists() {
                     complex={true}
                     inputName="listId"
                     label="mailing list"
-                    onChange={ () => getListData() }
+                    onChange={ () => { updateList() } }
                     placeholder="please select a list to continue..."
                     register={register}
                     values={lists}

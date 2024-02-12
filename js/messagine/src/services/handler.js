@@ -88,7 +88,7 @@ export function errorDisplay ( props ) {
 
     if ( error?.message ) details = error.message;  // this is only going to be present on exceptions thrown
 
-    errorHandler({ context, details, errorMessage: error, errorNumber });
+    errorHandler({ context, details, errorMessage, errorNumber });
 
   }
 
@@ -110,13 +110,15 @@ export function errorDisplay ( props ) {
 export async function errorHandler( errorPayload ) {
 
   try {
+
+    console.log(errorPayload)
     
-    const api = 'utilities/log-error';
+    // const api = 'utilities/log-error';
     const payload = { ...errorPayload };
 
     if ( !payload.userId ) payload.userId = masterKey; // this should only happen in login situations
 
-    await apiLoader( api, payload );
+    // await apiLoader({ api, payload });
 
     return true;
 

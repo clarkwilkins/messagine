@@ -582,7 +582,7 @@ router.post( "/new", async ( req, res ) => {
     listNotes ? listNotes = stringCleaner( listNotes, true ) : listNotes = '';
     const now = moment().format( 'X' );
 
-    const queryText = " INSERT INTO lists( created, list_id, list_name, list_notes, locked, updated, updated_by ) VALUES( " + now + ", '" + listId + "', '" + listName + "', '" + listNotes + "', 0, " + now + ", '" + userId + "' ) ON CONFLICT DO NOTHING RETURNING list_id; ";
+    const queryText = `INSERT INTO lists( created, list_id, list_name, list_notes, locked, updated, updated_by ) VALUES( ${now}, '${listId}', '${listName}', '${listNotes}', 0, ${now}, '${userId}' ) ON CONFLICT DO NOTHING RETURNING list_id;`;
     const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
 
     if (!results.rows) {
