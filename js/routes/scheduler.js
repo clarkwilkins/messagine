@@ -104,7 +104,7 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
   const getUnsubsSuccess = false
   const unsubs = {}
 
-  let queryText = "SELECT contact_id FROM contacts WHERE block_all = true SELECT contact_id, list_id FROM unsubs"
+  let queryText = "SELECT contact_id FROM contacts WHERE block_all = true; SELECT contact_id, campaign_id FROM unsubs"
   let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
   if (!results) {
@@ -127,23 +127,160 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
 
     const {
       contact_id: contactId,
-      list_id: listId
+      campaign_id: campaignId
     } = row
 
-    if (!unsubs[listId]) {
+    if (!unsubs[campaignId]) {
 
-      unsubs[listId] = [contactId]
-      blockAll.map( contactId => unsubs[listId].push(contactId) )
+      unsubs[campaignId] = [contactId]
+      blockAll.map( contactId => unsubs[campaignId].push(contactId) )
 
     } else {
 
-      unsubs[listId].push(contactId)
+      unsubs[campaignId].push(contactId)
 
     }
 
   })
 
   return ({ getUnsubsSuccess: true, unsubs }) 
+
+}
+
+const processCampaigns = async ({ apiTesting, campaignId, errorNumber, listId, messageContent, messageId, messageName, messageSubject, userId }) => {
+
+  const now = moment().format('X')
+  const nowRunning = 'scheduler.js:processCampaigns'
+  const success = false
+  const { 
+    getDynamicMessageReplacements,
+    sendMail
+  } = require ('../functions')
+
+  // get dynamic replacements (to be applied to messageContent)
+
+  const {
+    dynamicValues,
+    failure: getDynamicValuesFailure,
+    success: getDynamicValuesSuccess
+  } = await getDynamicMessageReplacements({ errorNumber, messageId, userId })
+
+  if (!getDynamicValuesSuccess) {
+
+    console.log(nowRunning + ": exited due to error on function getDynamicMessageReplacements\n")
+    return ({ failure: getDynamicValuesFailure, success })
+
+  }
+
+  // dynamic values are inserted into the message.
+
+  Object.values(dynamicValues).map(row => { 
+    
+     const newValue = stringCleaner(row.newValue)
+     const targetName = stringCleaner(row.targetName)
+
+     // the target string is programmatic c/o ChatGPT 3.5
+
+     const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g'); // 
+     messageContent = _.replace(messageContent, placeholderRegex, newValue)
+
+  })
+
+  // get the email recipients
+
+  let queryText = `SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE lc.list_id = '${listId}' AND lc.contact_id = c.contact_id AND c.active = true AND c.block_all = false AND c.contact_id NOT IN (SELECT contact_id FROM unsubs WHERE list_id = '${listId}')`;
+  let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+
+  if (!results.rows) { 
+
+    const failure = 'database error when getting eligible recipients fot the campaign email'
+    console.log(`${nowRunning}: ${failure}\n`)
+    await recordError ({
+      context: 'api: ' + nowRunning,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    })
+
+    return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+
+  }
+
+  Object.values(results.rows).map(async row => {
+
+    let {
+      company_name: companyName,
+      contact_id: contactId,
+      contact_name: contactName,
+      email
+    } = row
+
+    if (companyName) contactName += ", " + companyName
+
+    contactName = stringCleaner(contactName)
+    messageContent = _.replace(messageContent, /\[CONTACT_NAME\]/g, contactName)
+
+    const response = await sendMail (email, messageContent, messageSubject)
+    const {
+      body,
+      statusCode
+    } = response[0]
+
+    let eventDetails
+
+    if (statusCode == 200 || statusCode == 202) { // record successful send in events
+
+      eventDetails = `email sent from campaign ${campaignId}, message: ${messageName}`
+      recordEvent ({ apiTesting, event: 1, eventDetails, eventTarget: contactId, userId })
+    
+    } else {
+
+      // start with the basics of what's running right now
+
+      eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body?.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`
+
+      // append all error messages to the details
+
+      try {
+        
+        response.body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+
+      } catch(e) {} // no errors to append
+
+      // record the errors on this send to the event log (not the errors API)
+
+      recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
+
+    }
+    
+  })
+
+  // before exiting, update the dynamic values just used, so they flow to the end of the rotation
+
+  queryText = '';
+
+  Object.keys( dynamicValues ).map( value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
+
+  results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
+
+  if (!results) { 
+
+    const failure = 'database error when updating the last_run parameter on dynamic values used on this campaign run'
+    console.log(`${nowRunning}: ${failure}\n`)
+    await recordError ({
+      context: 'api: ' + nowRunning,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    })
+
+    return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+
+  }
+
+  return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true, })
 
 }
 
@@ -156,7 +293,6 @@ router.post( "/run", async ( req, res ) => {
   const success = false
   const {
     deleteCampaignMessage,
-    processCampaigns
   } = require('../functions.js')
   const fs = require('fs')
 
@@ -365,7 +501,7 @@ router.post( "/run", async ( req, res ) => {
 
         // use a template where specified by messageContent
 
-        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync( `./html/${messageContent.substring(9)}.html`, 'utf-8' )
+        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync( `../assets/files/html/${messageContent.substring(9)}.html`, 'utf-8' )
 
         // check for a placeholder to insert the unsub link
 
@@ -458,6 +594,7 @@ router.post( "/run", async ( req, res ) => {
         // position is used if the message appears more than once in the list, so only the current message is removed
 
         if (!repeatable){ 
+
           const {
             deleteCampaignMessageFailure,
             deleteCampaignMessageSuccess
@@ -465,7 +602,27 @@ router.post( "/run", async ( req, res ) => {
       
           if (!deleteCampaignMessageSuccess) return res.status(200).send({ failure: deleteCampaignMessageFailure, success })
 
-        } 
+        } else { // otherwise set last_sent to move this campaign message to the end of the list.
+
+          queryText = `UPDATE campaign_messages SET last_sent = ${+moment().format('X')} WHERE message_id = '${messageId}' AND campaign_id = '${campaignId}';`
+          results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+
+          if (!results) {
+
+            const failure = `database error when moving the just sent message to the end of the list for this campaign`
+            console.log(`${nowRunning}: ${failure}\n`)
+            await recordError ( {
+              context: `api: ${nowRunning}`,
+              details: queryText,
+              errorMessage: failure,
+              errorNumber,
+              userId
+            })
+            return res.status( 200 ).send( { campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+            
+          }
+
+        }
 
         // set the next run time for this campaign
 
