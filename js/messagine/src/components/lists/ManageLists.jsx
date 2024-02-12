@@ -387,7 +387,6 @@ function ManageLists() {
 
   const onReset = async () => {
     
-    console.log('reset?')
     await getListData()
     setShowEditor(true)
 
