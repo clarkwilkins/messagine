@@ -7,6 +7,7 @@ import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import Joi from 'joi'
 import { joiResolver } from '@hookform/resolvers/joi'
+import { toast } from 'react-toastify'
 import { 
   Breadcrumb,
   Button,
@@ -70,9 +71,7 @@ function ManageLists() {
     listId: Joi.string().required().uuid(),
     listName: Joi.string().required(),
     listNotes: Joi.string().optional().allow( '', null ),
-    locked: Joi.boolean().optional().allow( '', null ),
-    masterKey: Joi.any(),
-    userId: Joi.string().required().uuid()
+    locked: Joi.boolean().optional().allow( '', null )
   } )
   const [showContacts, setShowContacts] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
@@ -84,6 +83,7 @@ function ManageLists() {
     getValues,
     handleSubmit,
     register,
+    reset,
     setValue,
     trigger
   } = useForm({ resolver: joiResolver( schema )} )
@@ -271,7 +271,7 @@ function ManageLists() {
       const payload = { listId }
       const { data } = await apiLoader({ api, payload })
       const {
-        acceptsContacts,
+        acceptContacts,
         active,
         failure,
         linkedContacts,
@@ -303,7 +303,7 @@ function ManageLists() {
       setLinkedContactsCount(Object.keys(linkedContacts).length)
       setListData(data)
       setShowContacts(true)
-      setValue('acceptsContacts', acceptsContacts)
+      setValue('acceptContacts', acceptContacts)
       setValue('active', active)
       setValue('listName', listName)
       setValue('listNotes', listNotes)
@@ -328,7 +328,59 @@ function ManageLists() {
 
   const onDelete = async () => {
 
-    console.log('delete...')
+    const context = `${nowRunning}.onDelete`
+
+    try {
+
+      toggleDimmer(true)
+      const { listId } = getValues();
+      const api = 'lists/delete'
+      const payload = { listId }
+      const { data } = await apiLoader({ api, payload })
+      const {
+        failure,
+        success
+      } = data;
+      
+      if (!success) {
+
+        if (level === 9) console.log(`failure: ${failure}`)
+    
+        toggleDimmer(false)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          occurred: true
+        }))
+        return null
+    
+      }
+
+      setLinkedContacts({})
+      setLinkedContactsCount(0)
+      setListData({})
+      setShowEditor(false)
+      await getAllLists()
+      reset()
+      toast.success('The mailing list was deleted.')
+      toggleDimmer(false)
+
+    } catch(e) {
+
+      if (level === 9) console.log(`exception: ${e.message}`)
+
+      toggleDimmer(false)
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
+
+    }
 
   }
 
@@ -344,10 +396,34 @@ function ManageLists() {
 
     try {
 
+      toggleDimmer(true)
       const api = 'lists/update'
       const payload = { ...getValues() }
       const { data } = await apiLoader({ api, payload })
-      console.log(data)
+      const {
+        failure,
+        success
+      } = data;
+      
+      if (!success) {
+
+        if (level === 9) console.log(`failure: ${failure}`)
+    
+        toggleDimmer(false)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          occurred: true
+        }))
+        return null
+    
+      }
+
+      await getListData() // refresh
+      toast.success('The list setup was updated.')
+      toggleDimmer(false)
 
     } catch(e) {
 
@@ -636,7 +712,7 @@ function ManageLists() {
 
               <Form 
                 className="bg-light p-3 mb-3"
-                onSubmit={handleSubmit( onSubmit )}    
+                onSubmit={handleSubmit(onSubmit)}
               >
 
                 <div className="size-80"><b>list setup</b></div>
@@ -667,7 +743,7 @@ function ManageLists() {
 
                         <CheckBoxInput
                           disabled={ locked > level }
-                          inputName="acceptsContacts"
+                          inputName="acceptContacts"
                           label="allow new contacts"
                           register={register}
                         />

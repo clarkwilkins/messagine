@@ -10,7 +10,8 @@
     "a contact unsubscribed from this campaign",
     "a contact set a total block on their record",
     "a campaign was not allowed to run because the unsubscribe URL was not found",
-    "a campaign message was blocked because the message or template does not contain an [UNSUB_MESSAGE] placeholder"
+    "a campaign message was blocked because the message or template does not contain an [UNSUB_MESSAGE] placeholder",
+    "a list was deleted"
   ],
   "intervals": [
     "not set",

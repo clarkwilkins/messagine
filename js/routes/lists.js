@@ -12,6 +12,7 @@ const {
   containsHTML,
   getUserLevel,
   recordError,
+  recordEvent,
   stringCleaner,
   validateSchema
 } = require( '../functions.js' );
@@ -230,6 +231,123 @@ router.post( "/contact-linking", async ( req, res ) => {
       
     }
     
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } );
+
+  } catch ( e ) {
+
+    recordError ( {
+      context: `api: ${nowRunning}`,
+      details: stringCleaner( JSON.stringify( e.message ), true ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e;
+    console.log ( e ); 
+    res.status( 500 ).send( newException );
+
+  }
+
+} );
+
+router.post( "/delete", async ( req, res ) => { 
+
+  const nowRunning = "/lists/delete";
+  console.log(`${nowRunning}: running`);
+
+  const errorNumber = 51;
+  const success = false;
+
+  try {
+
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
+
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
+
+    }
+
+    const schema = Joi.object( {
+      apiTesting: Joi.boolean().optional(),
+      listId: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
+
+    }
+
+    let { 
+      apiTesting,
+      listId,
+      userId 
+    } = req.body;
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    }
+
+    let queryText = `DELETE FROM lists WHERE list_id = '${listId}' AND locked <= ${userLevel} RETURNING *`
+    let results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if (!results) {
+
+      const failure = 'database error when deleting list record';
+      console.log(`${nowRunning}: ${failure}\n`)
+      recordError ( {
+        context: `api: ${nowRunning}`,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status(200).send({ failure, success })
+      
+    } else if ( results.rowCount === 0 ) {
+
+      const failure = 'attempt to delete a mailing list was blocked';
+      console.log(`${nowRunning}: ${failure}\n`)
+      return res.status(200).send({ failure, success })
+
+    }
+
+    const listName = stringCleaner(results.rows[0].list_name)
+
+    // cleanup
+
+    queryText = `DELETE FROM list_contacts WHERE list_id = '${listId}'; DELETE FROM events WHERE event_target = '${listId}'`
+    results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+
+    if (!results) {
+
+      const failure = 'database error when cleaning up after list deletion';
+      console.log(`${nowRunning}: ${failure}\n`)
+      recordError ( {
+        context: `api: ${nowRunning}`,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      } );
+      return res.status(200).send({ failure, success })
+      
+    }
+
+    const eventDetails = `Mailing list <b>${listName}</b> was deleted.`
+    await recordEvent ({ apiTesting, event: 11, eventDetails, eventTarget: userId, userId })
+
     console.log( nowRunning + ": finished\n" );
     return res.status( 200 ).send( { success: true } );
 
@@ -569,7 +687,7 @@ router.post( "/update", async ( req, res ) => {
     listName = stringCleaner( listName, true );
     listNotes ? listNotes = stringCleaner( listNotes, true ) : listNotes = '';
 
-    queryText = " UPDATE lists SET list_name = '" + listName + "', list_notes = '" + listNotes + "', updated = " + moment().format( 'X' ) + ", updated_by = '" + userId + "'";
+    const queryText = " UPDATE lists SET list_name = '" + listName + "', list_notes = '" + listNotes + "', updated = " + moment().format( 'X' ) + ", updated_by = '" + userId + "'";
     
     if ( acceptContacts && typeof acceptContacts === 'boolean' ) queryText += ", accept_contacts = " + acceptContacts ;
 
@@ -610,6 +728,7 @@ router.post( "/update", async ( req, res ) => {
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
       console.log(`${nowRunning}: ${failure}\n`)
       return res.status(200).send({ failure, success })
+
     }
     
     console.log( nowRunning + ": finished\n" );
