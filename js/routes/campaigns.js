@@ -82,9 +82,9 @@ router.post("/all", async (req, res) => {
 
     }
 
-    let queryText = " SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id";   
+    let queryText = "SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id";   
 
-    if (typeof active === 'boolean') queryText += " AND c.active = " + active
+    if (typeof active === 'boolean') queryText += ` AND c.active = ${active}`
 
     queryText += " ORDER BY active DESC, campaign_name"
     const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
@@ -224,7 +224,7 @@ router.post("/delete", async (req, res) => {
 
     // delete the campaign
 
-    const queryText = " DELETE FROM campaigns WHERE campaign_id = '" + campaignId + "' AND locked <= '" + userLevel + "' RETURNING campaign_id; ";    
+    const queryText = `DELETE FROM campaigns WHERE campaign_id = '${campaignId}' AND locked <= ${userLevel} RETURNING campaign_id;`;    
     const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
     if (!results.rows) {
@@ -349,7 +349,7 @@ router.post("/load", async (req, res) => {
 
     }
 
-    const queryText = " SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id AND c.campaign_id = '" + campaignId + "'; "
+    const queryText = `SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id AND c.campaign_id = '${campaignId}';`
     const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
     if (!results.rows) {
@@ -498,7 +498,7 @@ router.post("/messages/add", async (req, res) => {
 
     // check for the next position
 
-    let queryText = " SELECT max(position) FROM campaign_messages WHERE campaign_id = '" + campaignId + "'; "
+    let queryText = `SELECT max(position) FROM campaign_messages WHERE campaign_id = '${campaignId}';`
     let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
     if (!results.rows) {
@@ -518,7 +518,7 @@ router.post("/messages/add", async (req, res) => {
 
     let nextPosition = +results.rows[0]?.max + 1 || 1
 
-    queryText = " INSERT INTO campaign_messages(campaign_id, message_id, position) VALUES ('" + campaignId + "', '" + messageId + "', " + nextPosition + ") RETURNING position; "
+    queryText = `INSERT INTO campaign_messages(campaign_id, message_id, position) VALUES ('${campaignId}', '${messageId}', ${nextPosition}) RETURNING position;`
     results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
     if (!results.rows || results.rowCount != 1) {
@@ -670,6 +670,7 @@ router.post("/new", async (req, res) => {
       locked: Joi.boolean().optional(),
       masterKey: Joi.any(),
       messageSeries: Joi.boolean().optional(),
+      unsubUrl: Joi.string().required(),
       userId: Joi.string().required().uuid()
     })
 
@@ -694,6 +695,7 @@ router.post("/new", async (req, res) => {
       listId,
       locked,
       messageSeries,
+      unsubUrl,
       userId 
     } = req.body
 
@@ -718,7 +720,7 @@ router.post("/new", async (req, res) => {
 
     // create the campaign
 
-    const queryText = " INSERT INTO campaigns(active, campaign_id, campaign_name, campaign_notes, campaign_repeats, created, ends, list_id, interval, locked, message_series, starts, updated, updated_by) VALUES (" + active + ", '" + uuidv4() + "', '" + stringCleaner(campaignName, true)  + "', '" + stringCleaner(campaignNotes, true) + "', " + campaignRepeats + ", " + now + ", " + campaignEnds + ", '" + listId + "', " + campaignInterval + ", " + locked + ", " + messageSeries + ", " + campaignStarts + ", " + now + ", '" + userId + "') RETURNING campaign_id; ";    
+    const queryText = `INSERT INTO campaigns(active, campaign_id, campaign_name, campaign_notes, campaign_repeats, created, ends, list_id, interval, locked, message_series, starts, unsub_url, updated, updated_by) VALUES (${active}, '${uuidv4()}', '${stringCleaner(campaignName, true)}', '${stringCleaner(campaignNotes, true)}', ${campaignRepeats}, ${now}, ${campaignEnds}, '${listId}', ${campaignInterval}, ${locked}, ${messageSeries}, ${campaignStarts}, '${unsubUrl}', ${now}, '${userId}') RETURNING campaign_id;`;    
     const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
     if (!results.rows) {
@@ -927,6 +929,7 @@ router.post("/update", async (req, res) => {
       locked: Joi.boolean().optional(),
       masterKey: Joi.any(),
       messageSeries: Joi.boolean().optional(),
+      unsubUrl: Joi.string().required(),
       userId: Joi.string().required().uuid()
     })
 
@@ -952,6 +955,7 @@ router.post("/update", async (req, res) => {
       listId,
       locked,
       messageSeries,
+      unsubUrl,
       userId 
     } = req.body
 
@@ -977,10 +981,10 @@ router.post("/update", async (req, res) => {
 
     // update the campaign
 
-    const queryText = " UPDATE campaigns SET active = " + active + ", campaign_name = '" + stringCleaner(campaignName, true) + "', campaign_notes = '" + stringCleaner(campaignNotes, true) + "', campaign_repeats = " + campaignRepeats + ", ends = " + campaignEnds + ", interval = " + campaignInterval + ", list_id = '" + listId + "', locked = " + locked + ", message_series = " + messageSeries + ", starts = " + campaignStarts + ", updated = " + now + ", updated_by = '" + userId + "' WHERE campaign_id = '" + campaignId + "' AND locked <= " + userLevel + " RETURNING campaign_id; "
+    const queryText = `UPDATE campaigns SET active = ${active}, campaign_name = '${stringCleaner(campaignName, true)}', campaign_notes = '${stringCleaner(campaignNotes, true)}', campaign_repeats = ${campaignRepeats}, ends = ${campaignEnds}, interval = ${campaignInterval}, list_id = '${listId}', locked = ${locked}, message_series = ${messageSeries}, starts = ${campaignStarts}, updated = ${now}, updated_by = '${userId}' WHERE campaign_id = '${campaignId}' AND locked <= ${userLevel} RETURNING campaign_id;`
     const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when updating a  campaign record'
       console.log(`${nowRunning}: ${failure}\n`)
