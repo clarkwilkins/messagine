@@ -501,7 +501,7 @@ router.post( "/run", async ( req, res ) => {
 
         // use a template where specified by messageContent
 
-        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync( `../assets/files/html/${messageContent.substring(9)}.html`, 'utf-8' )
+        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync( `./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8' )
 
         // check for a placeholder to insert the unsub link
 
@@ -695,7 +695,7 @@ router.post( "/upcoming", async ( req, res ) => {
 
   const errorNumber = 45
   const success = false
-  const { intervals } = require('../assets/static.json')
+  const { intervals } = require('./assets/static.json')
 
   try {
 
