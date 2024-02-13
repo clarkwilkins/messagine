@@ -82,27 +82,39 @@ function App() {
 
           <Nav className="flex-column">
 
+            <Nav.Item className="size-80"><b>message scheduler</b></Nav.Item>
+
+            <Nav.Item>
+              <Nav.Link
+                as={Link} 
+                onClick={handleClose}
+                to="/scheduler/upcoming"
+              >
+                upcoming events
+              </Nav.Link>
+            </Nav.Item>
+
             <Nav.Item className="size-80"><b>mailing lists</b></Nav.Item>
 
-              <Nav.Item>
-                <Nav.Link
-                  as={Link} 
-                  onClick={handleClose}
-                  to="/lists/manage"
-                >
-                  manage lists
-                </Nav.Link>
-              </Nav.Item>
+            <Nav.Item>
+              <Nav.Link
+                as={Link} 
+                onClick={handleClose}
+                to="/lists/manage"
+              >
+                manage lists
+              </Nav.Link>
+            </Nav.Item>
 
-              <Nav.Item>
-                <Nav.Link
-                  as={Link} 
-                  onClick={handleClose}
-                  to="/lists/new"
-                >
-                  new list
-                </Nav.Link>
-              </Nav.Item>
+            <Nav.Item>
+              <Nav.Link
+                as={Link} 
+                onClick={handleClose}
+                to="/lists/new"
+              >
+                new list
+              </Nav.Link>
+            </Nav.Item>
 
             <Nav.Item className="size-80"><b>other</b></Nav.Item>
 

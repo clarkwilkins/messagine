@@ -746,7 +746,7 @@ router.post( "/upcoming", async ( req, res ) => {
     }    
     
     const upcoming = {}
-    let queryText = `SELECT c.campaign_id, c.campaign_name, c.ends, c.interval, c.next_run, c.starts, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
+    let queryText = `SELECT c.campaign_id, c.campaign_name, c.ends, c.interval, c.next_run, c.starts, m.message_id, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
     let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
     if (!results.rows) {
@@ -771,6 +771,7 @@ router.post( "/upcoming", async ( req, res ) => {
         campaign_name: campaignName,
         ends,
         interval,
+        message_id: messageId,
         message_name: messageName,
         next_run: nextRun,
         starts,
@@ -787,6 +788,7 @@ router.post( "/upcoming", async ( req, res ) => {
           ends2: moment.unix(ends).format('YYYY.MM.DD HH.mm'),
           interval: +interval,
           interval2: intervals[interval],
+          messageId,
           messageName: stringCleaner(messageName),
           nextRun: +nextRun,
           nextRun2: moment.unix(nextRun).format('YYYY.MM.DD HH.mm'),

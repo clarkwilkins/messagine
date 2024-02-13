@@ -5,6 +5,8 @@ import App from "./App";
 import LoginWithKey from "./components/users/LoginKey"
 import ManageLists from "./components/lists/ManageLists"
 import NewList from "./components/lists/NewList"
+import ScheduleEditor from "./components/scheduler/ScheduleEditor"
+import Upcoming from "./components/scheduler/Upcoming"
 
 const container = document.getElementById('root');
 const root = createRoot(container);
@@ -35,6 +37,16 @@ root.render(
           <Route 
             element={ <NewList /> }
             path="lists/new"
+          />
+
+          <Route 
+            element={ <ScheduleEditor /> }
+            path="scheduler/edit/:campaignId/:messageId"
+          />
+
+          <Route 
+            element={ <Upcoming /> }
+            path="scheduler/upcoming"
           />
 
         </Route>

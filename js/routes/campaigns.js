@@ -37,7 +37,7 @@ router.post("/all", async (req, res) => {
 
     const schema = Joi.object({
       active: Joi.boolean().optional().allow('', null),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
 
@@ -194,7 +194,7 @@ router.post("/delete", async (req, res) => {
     const schema = Joi.object({
       apiTesting: Joi.boolean().optional(),
       campaignId: Joi.string().optional().uuid(),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
 
@@ -304,7 +304,7 @@ router.post("/load", async (req, res) => {
 
     const schema = Joi.object({
       campaignId: Joi.string().required().uuid(),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
 
@@ -349,10 +349,10 @@ router.post("/load", async (req, res) => {
 
     }
 
-    const queryText = `SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id AND c.campaign_id = '${campaignId}';`
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    let queryText = `SELECT c.*, u.user_name  FROM campaigns c, users u WHERE c.updated_by = u.user_id AND c.campaign_id = '${campaignId}';`
+    let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting the campaign'
       console.log(`${nowRunning}: ${failure}\n`)
@@ -390,8 +390,66 @@ router.post("/load", async (req, res) => {
       updatedBy,
       user_name: updatedBy2
     } = results.rows[0]
-    
-    console.log(nowRunning + ": finished\n"); const a = results.rows
+
+    // now get linked messages including campaign specific settings
+
+    queryText = `SELECT cm.last_sent, cm.position, m.* FROM campaign_messages cm, messages m WHERE cm.campaign_id = '${campaignId}' AND cm.message_id = m.message_id ORDER BY last_sent`
+    results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+
+    if (!results) {
+
+      const failure = 'database error when getting the campaign message details'
+      console.log(`${nowRunning}: ${failure}\n`)
+      recordError ({
+        context: `api: ${nowRunning}`,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      })
+      return res.status(200).send({ failure, success })
+      
+    }
+
+    const messages = {}
+
+    Object.values(results.rows).map(row => {
+
+      const {
+        active,
+        created,
+        content,
+        last_sent: lastSent,
+        locked,
+        message_id: messageId,
+        message_name: messageName,
+        notes,
+        owner,
+        position,
+        repeatable,
+        subject,
+        updated,
+        updated_by: updatedBy
+      } = row
+      messages[messageId] = {
+        active,
+        created: +created,
+        content,
+        lastSent: +lastSent,
+        locked,
+        messageName: stringCleaner(messageName),
+        notes: stringCleaner(notes),
+        owner,
+        position,
+        repeatable,
+        subject: stringCleaner(subject),
+        updated,
+        updated_by: updatedBy
+      }
+
+    })
+
+    console.log(nowRunning + ": finished\n");
     return res.status(200).send({ 
       active,
       campaignName: stringCleaner(campaignName),
@@ -399,13 +457,16 @@ router.post("/load", async (req, res) => {
       campaignRepeats,
       created: +created,
       ends: +ends,
+      failure,
       interval: +interval,
       listId,
       locked: +locked,
+      messages,
       messageSeries,
       nextMessage,
       nextRun: +nextRun,
       starts: +starts,
+      success: true,
       updated: +updated,
       updatedBy,
       updatedBy2: stringCleaner(updatedBy2)
@@ -448,7 +509,7 @@ router.post("/messages/add", async (req, res) => {
     const schema = Joi.object({
       apiTesting: Joi.boolean().optional(),
       campaignId: Joi.string().required().uuid(),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       messageId: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
@@ -577,7 +638,7 @@ router.post("/messages/remove", async (req, res) => {
     const schema = Joi.object({
       apiTesting: Joi.boolean().optional(),
       campaignId: Joi.string().required().uuid(),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       messageId: Joi.string().required().uuid(),
       position: Joi.number().optional().integer().positive(),
       userId: Joi.string().required().uuid()
@@ -636,6 +697,122 @@ router.post("/messages/remove", async (req, res) => {
 
 })
 
+router.post("/messages/update", async (req, res) => { 
+
+  const nowRunning = "/campaigns/messages/update"
+  console.log(`${nowRunning}: running`)
+
+  const errorNumber = 55
+  const success = false
+
+  try {
+
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
+
+      console.log(`${nowRunning}: bad token\n`)
+      return res.status(403).send('unauthorized')
+
+    }
+
+    const schema = Joi.object({
+      active: Joi.boolean().required(),
+      apiTesting: Joi.boolean().optional(),
+      campaignId: Joi.string().required().uuid(),
+      content: Joi.string().required(),
+      front: Joi.boolean().required(),
+      locked: Joi.boolean().required(),
+      masterKey: Joi.string().required().uuid(),
+      messageId: Joi.string().required().uuid(),
+      messageName: Joi.string().required(),
+      notes: Joi.string().required().allow('', null),
+      repeatable: Joi.boolean().required(),
+      subject: Joi.string().required(),
+      userId: Joi.string().required().uuid()
+    })
+
+    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
+      return res.status(422).send({ failure: errorMessage, success })
+
+    }
+
+    let { 
+      active,
+      apiTesting,
+      campaignId,
+      content,
+      front,
+      locked,
+      messageName,
+      messageId,
+      notes,
+      repeatable,
+      subject,
+      userId 
+    } = req.body
+
+    const { level: userLevel } = await getUserLevel(userId)
+
+    if (userLevel < 1) {
+
+      console.log(nowRunning + ": aborted, invalid user ID\n")
+      return res.status(404).send({ failure: 'invalid user ID', success })
+
+    } 
+
+    const now = +moment().format('X')
+    locked ? locked = userLevel : locked = 1
+    let queryText = `UPDATE messages SET active = ${active}, content = '${stringCleaner(content, true)}', message_name='${stringCleaner(messageName), true}', notes = '${stringCleaner(notes, true)}', repeatable = ${repeatable}, subject = '${stringCleaner(subject, true)}', updated = ${now}, updated_by = '${userId}' WHERE message_id = '${messageId}';`
+    
+    // move the message to the front of the rotation?
+    
+    if (front) queryText += ` UPDATE campaign_messages SET last_sent = -1 WHERE campaign_id = '${campaignId}' AND message_id = '${messageId}';`
+
+    const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+
+    if (!results) {
+
+      const failure = 'database error when updating the campaign message'
+      console.log(`${nowRunning}: ${failure}\n`)
+      recordError ({
+        context: `api: ${nowRunning}`,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      })
+      return res.status(200).send({ failure, success })
+      
+    }
+
+    let eventDetails = 'The message was updated from the scheduler.'
+
+    if (front) eventDetails += ` It was moved to the front of the rotation on campaign ID <b>${campaignId}</b>.`
+
+    recordEvent ({ apiTesting, event: 12, eventDetails, eventTarget: messageId, userId })
+    console.log(nowRunning + ": finished\n")
+    return res.status(200).send({ success: true })
+
+  } catch (e) {
+
+    recordError ({
+      context: `api: ${nowRunning}`,
+      details: stringCleaner(JSON.stringify(e.message), true),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId: req.body.userId
+    })
+    const newException = nowRunning + ': failed with an exception: ' + e
+    console.log (e); 
+    res.status(500).send(newException)
+
+  }
+
+})
+
 router.post("/new", async (req, res) => { 
 
   const nowRunning = "/campaigns/new"
@@ -668,7 +845,7 @@ router.post("/new", async (req, res) => {
       }),
       listId: Joi.string().optional().uuid().allow('', null),
       locked: Joi.boolean().optional(),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       messageSeries: Joi.boolean().optional(),
       unsubUrl: Joi.string().required(),
       userId: Joi.string().required().uuid()
@@ -927,7 +1104,7 @@ router.post("/update", async (req, res) => {
       }),
       listId: Joi.string().optional().uuid().allow('', null),
       locked: Joi.boolean().optional(),
-      masterKey: Joi.any(),
+      masterKey: Joi.string().required().uuid(),
       messageSeries: Joi.boolean().optional(),
       unsubUrl: Joi.string().required(),
       userId: Joi.string().required().uuid()

@@ -52,26 +52,26 @@ function ManageLists() {
     message: defaultError,
     number: 50,
     occurred: false,
-  });
+  })
   const {
     level,
     toggleDimmer
-  } = useOutletContext();
+  } = useOutletContext()
   const [linkedContacts, setLinkedContacts] = useState()
   const [linkedContactsCount, setLinkedContactsCount] = useState(0)
   const [listData, setListData] = useState()
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const schema = Joi.object( {
+  const schema = Joi.object({
     acceptContacts: Joi.boolean().optional(),
     active: Joi.boolean().optional(),
     apiTesting: Joi.boolean().optional(),
     listId: Joi.string().required().uuid(),
     listName: Joi.string().required(),
-    listNotes: Joi.string().optional().allow( '', null ),
-    locked: Joi.boolean().optional().allow( '', null )
-  } )
+    listNotes: Joi.string().optional().allow('', null),
+    locked: Joi.boolean().optional().allow('', null)
+  })
   const [showContacts, setShowContacts] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
   const [showModal, setDisplayConfirmationModal] = useState(false)
@@ -85,9 +85,9 @@ function ManageLists() {
     reset,
     setValue,
     trigger
-  } = useForm({ resolver: joiResolver( schema )} )
+  } = useForm({ resolver: joiResolver(schema)})
 
-  const getAllContacts = useCallback( async () => { // get all active contacts
+  const getAllContacts = useCallback(async () => { // get all active contacts
 
     const context = `${nowRunning}.getAllContacts`
 
@@ -137,7 +137,7 @@ function ManageLists() {
 
   }, [level, toggleDimmer])
 
-  const getAllLists = useCallback( async () => { // get all active lists
+  const getAllLists = useCallback(async () => { // get all active lists
 
     const context = `${nowRunning}.getAllLists`
 
@@ -193,7 +193,7 @@ function ManageLists() {
 
     try {
 
-      setValue( 'listName', null )
+      setValue('listName', null)
       setShowEditor(false)
       setListData()
 
@@ -264,7 +264,7 @@ function ManageLists() {
 
   }
 
-  const hideConfirmationModal = () => { setDisplayConfirmationModal( false ); }
+  const hideConfirmationModal = () => { setDisplayConfirmationModal(false); }
 
   const manageLink = async (contactId, link) => {
 
@@ -282,7 +282,7 @@ function ManageLists() {
       const {
         failure,
         success
-      } = data;
+      } = data
 
       if (!success) {
 
@@ -329,14 +329,14 @@ function ManageLists() {
     try {
 
       toggleDimmer(true)
-      const { listId } = getValues();
+      const { listId } = getValues()
       const api = 'lists/delete'
       const payload = { listId }
       const { data } = await apiLoader({ api, payload })
       const {
         failure,
         success
-      } = data;
+      } = data
       
       if (!success) {
 
@@ -401,7 +401,7 @@ function ManageLists() {
       const {
         failure,
         success
-      } = data;
+      } = data
       
       if (!success) {
 
@@ -440,7 +440,7 @@ function ManageLists() {
 
   }
 
-  const showConfirmationModal = () => { setDisplayConfirmationModal( true ); }
+  const showConfirmationModal = () => { setDisplayConfirmationModal(true); }
 
   function showRows() { // c/o ChatGPT4 with very light editing
 
@@ -452,7 +452,7 @@ function ManageLists() {
       
       return acc
 
-    }, {});
+    }, {})
   
     // calculate the maximum length to ensure we iterate over both objects fully
 
@@ -460,7 +460,7 @@ function ManageLists() {
   
     // creating rows for display
 
-    const rows = [];
+    const rows = []
 
     for (let i = 0; i < maxLength; i++) {
 
@@ -490,7 +490,7 @@ function ManageLists() {
                 <div className="size-80">{filteredContact.email}</div>
                 <div className="size-80">{filteredContact.contactNotes}</div>
               </>
-            ) : <div>&nbsp;</div>}
+          ) : <div>&nbsp;</div>}
           </Col>
 
           <Col 
@@ -503,22 +503,22 @@ function ManageLists() {
                 <div className="size-80">{linkedContact.email}</div>
                 <div className="size-80">{linkedContact.contactNotes}</div>
               </>
-            ) : <div>&nbsp;</div>}
+          ) : <div>&nbsp;</div>}
           </Col>
 
         </Row>
 
-      );
+    )
     }
   
-    return rows;
+    return rows
   }  
 
-  const toggleContacts = () => setShowContacts( !showContacts );
+  const toggleContacts = () => setShowContacts(!showContacts)
 
-  const toggleEditor = () => setShowEditor( !showEditor );
+  const toggleEditor = () => setShowEditor(!showEditor)
 
-  const toggleSettings = () => setShowSettings( !showSettings );
+  const toggleSettings = () => setShowSettings(!showSettings)
 
   const updateList = async () => {
 
@@ -527,7 +527,7 @@ function ManageLists() {
     await getAllLists()
     setShowSettings(!validateUUID(listIdPresent)) 
     
-    if ( listIdPresent === true ) { await getListData() } else { setShowContacts(false) }
+    if (listIdPresent === true) { await getListData() } else { setShowContacts(false) }
 
     toggleDimmer(false)
 
@@ -541,14 +541,14 @@ function ManageLists() {
 
       try {
 
-        if ( !loading ) {
+        if (!loading) {
 
           setLoading(true) // only do this once!          
           toggleDimmer(true)
           await getAllContacts()
           await getAllLists()
 
-          if ( lists.length > 0 ) setShowSettings(true)
+          if (lists.length > 0) setShowSettings(true)
 
           setLoaded(true)
           toggleDimmer(false)
@@ -589,13 +589,13 @@ function ManageLists() {
       message: errorMessage,
       errorNumber,
       occurred: errorOccurred
-    } = errorState;
+    } = errorState
 
     if (errorOccurred && !alreadyReported) reportError = true; // persist this error to the Simplexable API
 
     // final setup before rendering
 
-    if ( +level === 9 && Object.keys( errors ).length > 0 ) console.log( 'validation errors: ', errors );
+    if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
 
     const locked = listData?.locked // is the form data locked?
 
@@ -614,7 +614,7 @@ function ManageLists() {
             reportError
           })
 
-        )}
+      )}
 
         {!loaded && (<Loading className="loading" message="loading the lists manager..." />)}
 
@@ -635,11 +635,11 @@ function ManageLists() {
 
                 <OverlayTrigger
                   delay={ {  hide: 100, show: 200 } }
-                  overlay={ ( props ) => ( 
+                  overlay={ (props) => (
                     <Tooltip { ...props }>
                       create new lists
                     </Tooltip>
-                  )}
+                )}
                   placement="bottom"
                 >
 
@@ -653,12 +653,12 @@ function ManageLists() {
 
                 <OverlayTrigger
                   delay={ {  hide: 100, show: 200 } }
-                  overlay={ ( props ) => ( 
+                  overlay={ (props) => (
                     <Tooltip { ...props }>
                       {showSettings && (<span>hide lists</span>)}
                       {!showSettings && (<span>show lists</span>)}
                     </Tooltip>
-                  )}
+                )}
                   placement="bottom"
                 >
 
@@ -676,12 +676,12 @@ function ManageLists() {
 
                     <OverlayTrigger
                       delay={ {  hide: 100, show: 200 } }
-                      overlay={ ( props ) => ( 
+                      overlay={ (props) => (
                         <Tooltip { ...props }>
                           {showEditor && (<span>hide editor</span>)}
                           {!showEditor && (<span>show editor</span>)}
                         </Tooltip>
-                      )}
+                    )}
                       placement="bottom"
                     >
 
@@ -695,12 +695,12 @@ function ManageLists() {
 
                     <OverlayTrigger
                       delay={ {  hide: 100, show: 200 } }
-                      overlay={ ( props ) => ( 
+                      overlay={ (props) => (
                         <Tooltip { ...props }>
                           {showContacts && (<span>hide contacts</span>)}
                           {!showContacts && (<span>show contacts</span>)}
                         </Tooltip>
-                      )}
+                    )}
                       placement="bottom"
                     >
 
@@ -712,7 +712,7 @@ function ManageLists() {
 
                 </>
 
-              )}
+            )}
 
               mailing lists
 
@@ -738,7 +738,7 @@ function ManageLists() {
 
               </>
 
-            )}
+          )}
 
             {showEditor && (
 
@@ -841,7 +841,7 @@ function ManageLists() {
 
               </Form>
 
-            )}
+          )}
 
             {showContacts && listData?.listName && (
 
@@ -870,15 +870,15 @@ function ManageLists() {
 
               </>
 
-            )}
+          )}
 
           </>
 
-        )}
+      )}
 
       </>
 
-   )
+  )
 
   } catch(e) {
 

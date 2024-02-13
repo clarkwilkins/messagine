@@ -1,7 +1,7 @@
 import { 
   useEffect,
   useState
-} from 'react';
+} from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import Joi from 'joi'
@@ -36,16 +36,16 @@ function NewList() {
     message: defaultError,
     number: 52,
     occurred: false,
-  });
+  })
   const {
     level,
     toggleDimmer
-  } = useOutletContext();
-  const schema = Joi.object( {
+  } = useOutletContext()
+  const schema = Joi.object({
     apiTesting: Joi.boolean().optional(),
     listName: Joi.string().required(),
-    listNotes: Joi.string().optional().allow( '', null )
-  } )
+    listNotes: Joi.string().optional().allow('', null)
+  })
 
   const { 
     formState: { errors },
@@ -53,7 +53,7 @@ function NewList() {
     register,
     reset,
     trigger
-  } = useForm({ resolver: joiResolver( schema )} )
+  } = useForm({ resolver: joiResolver(schema)})
 
   const onReset = () => {
     
@@ -75,7 +75,7 @@ function NewList() {
       const {
         failure,
         success
-      } = result;
+      } = result
       
       if (!success) {
 
@@ -120,7 +120,7 @@ function NewList() {
     
     // setup for error display and (possible) reporting
 
-    let reportError = false; // default condition is there is no error
+    let reportError = false // default condition is there is no error
     const {
       alreadyReported,
       context,
@@ -128,13 +128,13 @@ function NewList() {
       message: errorMessage,
       errorNumber,
       occurred: errorOccurred
-    } = errorState;
+    } = errorState
 
-    if (errorOccurred && !alreadyReported) reportError = true; // persist this error to the Simplexable API
+    if (errorOccurred && !alreadyReported) reportError = true // persist this error to the Simplexable API
 
     // final setup before rendering
 
-    if ( +level === 9 && Object.keys( errors ).length > 0 ) console.log( 'validation errors: ', errors );
+    if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
 
     return (
     
@@ -151,7 +151,7 @@ function NewList() {
             reportError
           })
 
-        )}
+      )}
           
         <>
 
@@ -168,11 +168,11 @@ function NewList() {
 
               <OverlayTrigger
                 delay={ {  hide: 100, show: 200 } }
-                overlay={ ( props ) => ( 
+                overlay={ (props) => (
                   <Tooltip { ...props }>
-                    showLists
+                    show lists
                   </Tooltip>
-                )}
+             )}
                 placement="bottom"
               >
 
@@ -219,7 +219,7 @@ function NewList() {
 
       </>
 
-   )
+)
 
   } catch(e) {
 
@@ -238,4 +238,4 @@ function NewList() {
 
 }
 
-export default NewList;
+export default NewList
