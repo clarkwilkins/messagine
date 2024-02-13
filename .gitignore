@@ -1,7 +1,6 @@
 # local client assets
 
-assets/files/
-assets/html/
+js/assets/files/
 
 # Logs
 logs
