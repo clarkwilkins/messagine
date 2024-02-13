@@ -425,7 +425,7 @@ function ScheduleEditor() {
                   placement="bottom"
                 >
 
-                  <a href="./upcoming"><List /></a>
+                  <a href="../../upcoming"><List /></a>
                   
                 </OverlayTrigger>
                 

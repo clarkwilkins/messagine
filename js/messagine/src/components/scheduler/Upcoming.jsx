@@ -309,7 +309,7 @@ function Upcoming() {
                   placement="bottom"
                 >
 
-                  <a href="./manage"><List /></a>
+                  <a href="./upcoming"><List /></a>
                   
                 </OverlayTrigger>
                 

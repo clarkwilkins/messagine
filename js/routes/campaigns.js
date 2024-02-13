@@ -765,7 +765,7 @@ router.post("/messages/update", async (req, res) => {
 
     const now = +moment().format('X')
     locked ? locked = userLevel : locked = 1
-    let queryText = `UPDATE messages SET active = ${active}, content = '${stringCleaner(content, true)}', message_name='${stringCleaner(messageName), true}', notes = '${stringCleaner(notes, true)}', repeatable = ${repeatable}, subject = '${stringCleaner(subject, true)}', updated = ${now}, updated_by = '${userId}' WHERE message_id = '${messageId}';`
+    let queryText = `UPDATE messages SET active = ${active}, content = '${stringCleaner(content, true)}', message_name='${stringCleaner(messageName, true)}', notes = '${stringCleaner(notes, true)}', repeatable = ${repeatable}, subject = '${stringCleaner(subject, true)}', updated = ${now}, updated_by = '${userId}' WHERE message_id = '${messageId}';`
     
     // move the message to the front of the rotation?
     
