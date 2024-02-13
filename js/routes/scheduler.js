@@ -695,7 +695,7 @@ router.post( "/upcoming", async ( req, res ) => {
 
   const errorNumber = 45
   const success = false
-  const { intervals } = require('./assets/static.json')
+  const { intervals } = require('../assets/static.json')
 
   try {
 
