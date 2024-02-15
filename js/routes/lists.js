@@ -687,7 +687,7 @@ router.post( "/update", async ( req, res ) => {
     listName = stringCleaner( listName, true );
     listNotes ? listNotes = stringCleaner( listNotes, true ) : listNotes = '';
 
-    const queryText = " UPDATE lists SET list_name = '" + listName + "', list_notes = '" + listNotes + "', updated = " + moment().format( 'X' ) + ", updated_by = '" + userId + "'";
+    let queryText = " UPDATE lists SET list_name = '" + listName + "', list_notes = '" + listNotes + "', updated = " + moment().format( 'X' ) + ", updated_by = '" + userId + "'";
     
     if ( acceptContacts && typeof acceptContacts === 'boolean' ) queryText += ", accept_contacts = " + acceptContacts ;
 
