@@ -518,6 +518,7 @@ router.post("/run", async (req, res) => {
           campaign_name: campaignName,
           campaign_repeats: campaignRepeats,
           content: messageContent,
+          ends,
           list_id: listId,
           message_id: messageId,
           repeatable,
@@ -939,8 +940,7 @@ router.post("/upcoming", async (req, res) => {
         message_id: messageId,
         message_name: messageName,
         next_run: nextRun,
-        starts,
-        
+        starts        
       } = row
 
       if (nextRun < 1) nextRun = calculateNextRun({ interval, starts })
