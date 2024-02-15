@@ -523,6 +523,7 @@ router.post("/run", async (req, res) => {
           list_id: listId,
           message_id: messageId,
           repeatable,
+          starts,
           subject: messageSubject,
           unsub_url: unsubUrl
         } = row
