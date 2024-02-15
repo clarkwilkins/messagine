@@ -422,13 +422,15 @@ exports.sendMail = async (addressee, html, subject, testMode) => {
     const sender = SENDGRID_SENDER
 
     emailResults = await sgMail.send({ to: addressee, html, from: sender, subject, text })
+    // console.log('sg: ', await sgMail.send({ to: addressee, html, from: sender, subject, text }))
 
- } catch(e) {
 
-    console.log('e', e.response.body)
-    emailResults = [ { statusCode: 200, status: 'Sendmail threw a local exception' } ]
+  } catch(e) {
 
- }
+    console.log('e', e)
+    emailResults = [ { statusCode: 200, status: 'Sendmail threw a local exception: ' + e.message } ]
+
+  }
 
   return emailResults
   

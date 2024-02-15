@@ -1,7 +1,7 @@
 {
   "events": [
     "not set",
-    "a campaign email was sent to this contact",
+    "the campaign was not processed because it's set to not repeat and all list members have already seen all active messages",
     "the campaign was updated",
     "the campaign ran successfully",
     "Sendgrid error reported",
