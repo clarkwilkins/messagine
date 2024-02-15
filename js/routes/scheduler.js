@@ -217,11 +217,6 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
 
       if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8')
 
-      // Insert the unsubscribe message.
-
-      const placeholderRegex = new RegExp(`\\[UNSUB_MESSAGE\\]`, 'g')
-      messageContent = replace(messageContent, placeholderRegex, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`)
-
       // Dynamic values are inserted into the **replacement** messsage.
 
       Object.values(dynamicValues).map(row => { 
@@ -238,10 +233,14 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
 
     }
 
-    // Perform all global replacements.
+    // Each message gets the individual contact name.
 
-    messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName)
+    messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName) 
 
+    // Add the unsubcribe URL.
+    
+    messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`) 
+    
     // Send the mail now.
 
     const response = await sendMail (email, messageContent, messageSubject)
@@ -534,9 +533,6 @@ router.post("/run", async (req, res) => {
           unsub_url: unsubUrl
         } = row
 
-        console.log('campaignLimiter', campaignLimiter)
-        console.log(`campaignId: ${campaignId}`)
-
         // Sometimes there will be N > 1 messages waiting to run on a campaign cycle, but we need to not send more than one per interval.
 
         if (campaignLimiter.includes(campaignId)) {
@@ -581,11 +577,6 @@ router.post("/run", async (req, res) => {
           }
 
         }
-
-        // Insert the unsubscribe message.
-
-        const placeholderRegex = new RegExp(`\\[UNSUB_MESSAGE\\]`, 'g')
-        messageContent = replace(messageContent, placeholderRegex, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`)
 
         // Filter the mailing list and make sure there is at least one valid recipient.
 
