@@ -519,6 +519,7 @@ router.post("/run", async (req, res) => {
           campaign_repeats: campaignRepeats,
           content: messageContent,
           ends,
+          interval,
           list_id: listId,
           message_id: messageId,
           repeatable,
