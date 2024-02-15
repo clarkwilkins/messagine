@@ -31,10 +31,10 @@ import {
   errorDisplay
 } from '../../services/handler'
 
-function ScheduleEditor() {
+function MessageEditor() {
 
-  const nowRunning = 'scheduler/ScheduleEditor.jsx'
-  changeTitle ( 'messagine: schedule editor')
+  const nowRunning = 'campaigns/MessageEditor.jsx'
+  changeTitle ( 'messagine: edit campaign message')
 
   const defaultError = "The schedule editor isn't working right now"
   const [errorState, setErrorState] = useState( {
@@ -225,7 +225,7 @@ function ScheduleEditor() {
     
       }
 
-      window.location = '../../upcoming' // exit on success, as this record no longer exists
+      window.location = '../../manage' // exit on success, as this record no longer exists
 
     } catch(e) { // reporting an exception within the function
 
@@ -406,8 +406,8 @@ function ScheduleEditor() {
 
             <Breadcrumb className="size-50 text-muted mb-3">
 
-              <Breadcrumb.Item>scheduler</Breadcrumb.Item>
-              <Breadcrumb.Item>edit campaign message</Breadcrumb.Item>
+              <Breadcrumb.Item>campaigns</Breadcrumb.Item>
+              <Breadcrumb.Item>edit message</Breadcrumb.Item>
 
             </Breadcrumb>
 
@@ -419,19 +419,19 @@ function ScheduleEditor() {
                   delay={ {  hide: 100, show: 200 } }
                   overlay={ (props) => (
                     <Tooltip { ...props }>
-                      show upcoming
+                      manage campaigns
                     </Tooltip>
                 )}
                   placement="bottom"
                 >
 
-                  <a href="../../upcoming"><List /></a>
+                  <a href="../../manage"><List /></a>
                   
                 </OverlayTrigger>
                 
               </div>
               
-              message editor
+              edit campaign message
 
             </h5>
 
@@ -583,4 +583,4 @@ function ScheduleEditor() {
 
 }
 
-export default ScheduleEditor
+export default MessageEditor

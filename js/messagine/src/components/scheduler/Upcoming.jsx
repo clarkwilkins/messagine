@@ -112,7 +112,8 @@ function Upcoming() {
         starts2,
         targets
       } = row[1]
-      const link = `./edit/${campaignId}/${messageId}`
+      const campaignLink = `../campaigns/edit/${campaignId}`
+      const messageLink = `../campaigns/edit/${campaignId}/${messageId}`
 
       return (
 
@@ -123,7 +124,7 @@ function Upcoming() {
 
           <Col xs={12} sm={6}>
 
-            <a href={link}>
+            <a href={campaignLink}>
           
               <div className="size-80">campaign</div>
 
@@ -135,43 +136,43 @@ function Upcoming() {
 
           <Col xs={12} sm={6}>
           
-            <a href={link}>
+            <div>
               
               <div className="size-80">lifecycle</div>
 
               <div>{starts2} &#8212; {ends2}</div>
 
-            </a>
+            </div>
             
           </Col>
 
           <Col xs={12} sm={6}>
 
-            <a href={link}>
+            <div>
             
               <div className="size-80">interval</div>
 
               <div>{intervals[interval]}</div>
 
-            </a>
+            </div>
             
           </Col>
 
           <Col xs={12} sm={6}>
           
-            <a href={link}>
+            <div>
               
               <div className="size-80">next run</div>
 
               <div>{nextRun2} &#8212; {moment.unix(nextRun).fromNow()}</div>
 
-            </a>
+            </div>
             
           </Col>
 
           <Col xs={12} sm={6}>
 
-            <a href={link}>
+            <a href={messageLink}>
               
               <div className="size-80">next message</div>
 
@@ -183,13 +184,13 @@ function Upcoming() {
 
           <Col xs={12} sm={6}>
             
-            <a href={link}>
+            <div>
               
               <div className="size-80">targets</div>
 
               <div>{targets}</div>
 
-            </a>
+            </div>
             
           </Col>
 

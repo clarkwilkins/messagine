@@ -4,8 +4,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import App from "./App";
 import LoginWithKey from "./components/users/LoginKey"
 import ManageLists from "./components/lists/ManageLists"
+import MessageEditor from "./components/campaigns/MessageEditor"
 import NewList from "./components/lists/NewList"
-import ScheduleEditor from "./components/scheduler/ScheduleEditor"
 import Upcoming from "./components/scheduler/Upcoming"
 
 const container = document.getElementById('root');
@@ -35,13 +35,13 @@ root.render(
           />
 
           <Route 
-            element={ <NewList /> }
-            path="lists/new"
+            element={ <MessageEditor /> }
+            path="campaigns/edit/:campaignId/:messageId"
           />
 
           <Route 
-            element={ <ScheduleEditor /> }
-            path="scheduler/edit/:campaignId/:messageId"
+            element={ <NewList /> }
+            path="lists/new"
           />
 
           <Route 
