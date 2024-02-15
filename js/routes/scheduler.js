@@ -25,6 +25,7 @@ const calculateNextRun = ({ interval, starts }) => {
   const hour = startsMoment.hour()
   const minute = startsMoment.minute()
   const nowMoment = moment()
+  const dayOfWeek = startsMoment.day() // all weekly intervals start on the same day as the campaign start value
 
   if (interval == 1) { // Set nextRunTime to the next weekday after now
     
@@ -915,7 +916,7 @@ router.post("/upcoming", async (req, res) => {
     }    
     
     const upcoming = {}
-    let queryText = `SELECT c.campaign_id, c.campaign_name, c.ends, c.interval, c.next_run, c.starts, m.message_id, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
+    let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.next_run, c.starts, m.message_id, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
     let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
     if (!results.rows) {
@@ -938,6 +939,7 @@ router.post("/upcoming", async (req, res) => {
       let {
         campaign_id: campaignId,
         campaign_name: campaignName,
+        campaign_repeats: repeats,
         ends,
         interval,
         message_id: messageId,
@@ -960,6 +962,7 @@ router.post("/upcoming", async (req, res) => {
           messageName: stringCleaner(messageName),
           nextRun: +nextRun,
           nextRun2: moment.unix(nextRun).format('YYYY.MM.DD HH.mm'),
+          repeats,
           starts: +starts,
           starts2: moment.unix(starts).format('YYYY.MM.DD HH.mm'),
           targets: 0
