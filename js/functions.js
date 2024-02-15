@@ -420,10 +420,7 @@ exports.sendMail = async (addressee, html, subject, testMode) => {
 
     const text = 'Please read this email in a HTML-capable browser.'
     const sender = SENDGRID_SENDER
-
     emailResults = await sgMail.send({ to: addressee, html, from: sender, subject, text })
-    // console.log('sg: ', await sgMail.send({ to: addressee, html, from: sender, subject, text }))
-
 
   } catch(e) {
 

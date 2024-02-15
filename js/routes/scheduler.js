@@ -26,74 +26,74 @@ const calculateNextRun = ({ interval, starts }) => {
   const minute = startsMoment.minute()
   const nowMoment = moment()
 
-  if (interval == 1) { // set nextRunTime to the next weekday after now
+  if (interval == 1) { // Set nextRunTime to the next weekday after now
     
     const nowMomentX = +moment().format('X')
     nextRunTime = nowMoment.clone().hour(hour).minute(minute).second(0)
 
     while (nextRunTime.isoWeekday() >= 6 && +nextRunTime.format('X') < nowMomentX) { nextRunTime.add(1, 'days') }
 
-  } else if (interval === 2) { // set nextRunTime for the next day
+  } else if (interval === 2) { // Set nextRunTime for the next day.
 
     nextRunTime = nowMoment.clone().add(1, 'days').hour(hour).minute(minute)
 
-  } else if (interval == 3) { // set nextRunTime to one week
+  } else if (interval == 3) { // Set nextRunTime to one week.
 
     nextRunTime = nowMoment.clone().add(1, 'weeks').day(dayOfWeek).hour(hour).minute(minute)
 
-  } else if (interval == 4) { // set nextRunTime to two weeks
+  } else if (interval == 4) { // Set nextRunTime to two weeks.
 
     nextRunTime = nowMoment.clone().add(1, 'weeks').day(dayOfWeek).hour(hour).minute(minute)
 
-  } else if (interval == 5) { // set nextRunTime to one month
+  } else if (interval == 5) { // Set nextRunTime to one month.
 
     nextRunTime = nowMoment.clone().add(1, 'months').day(dayOfWeek).hour(hour).minute(minute)
 
-  } else if (interval == 6) { // set nextRunTime to the first day of the next month
+  } else if (interval == 6) { // Set nextRunTime to the first day of the next month.
   
     nextRunTime = nowMoment.clone().add(1, 'months').startOf('month').hour(hour).minute(minute)
 
-  } else if (interval == 7) { // set nextRunTime to the first weekday of the next month
+  } else if (interval == 7) { // Set nextRunTime to the first weekday of the next month.
   
     nextRunTime = nowMoment.clone().add(1, 'months').startOf('month').isoWeekday(1).hour(hour).minute(minute)
 
-  } else if (interval == 8) { // set nextRunTime to three months from now (quarterly)
+  } else if (interval == 8) { // Set nextRunTime to three months from now (quarterly).
 
     nextRunTime = nowMoment.clone().add(3, 'years').hour(hour).minute(minute)
 
-  } else if (interval == 9) { // set nextRunTime to the first day of the next quarter
+  } else if (interval == 9) { // Set nextRunTime to the first day of the next quarter.
   
     nextRunTime = nowMoment.clone().add(1, 'quarters').startOf('quarter').hour(hour).minute(minute)
 
-  } else if (interval == 10) { // set nextRunTime to the first weekday of the next quarter
+  } else if (interval == 10) { // Set nextRunTime to the first weekday of the next quarter.
   
     nextRunTime = nowMoment.clone().add(1, 'quarters').startOf('quarter').isoWeekday(1).hour(hour).minute(minute)
 
-  } else if (interval == 11) { // set nextRunTime to six months from now (semiannual)
+  } else if (interval == 11) { // Set nextRunTime to six months from now (semiannual).
 
     nextRunTime = nowMoment.clone().add(6, 'months').hour(hour).minute(minute)
 
-  } else if (interval == 12) { // set nextRunTime to the first day of the next semiannual
+  } else if (interval == 12) { // Set nextRunTime to the first day of the next semiannual.
 
     nextRunTime = nowMoment.clone().add(6, 'months').startOf('month').hour(hour).minute(minute)
 
-  } else if (interval == 13) { // set nextRunTime to the first weekday of the next semiannual
+  } else if (interval == 13) { // Set nextRunTime to the first weekday of the next semiannual.
 
     nextRunTime = nowMoment.clone().add(6, 'months').startOf('month').isoWeekday(1).hour(hour).minute(minute)
 
-  } else if (interval == 14) { // set nextRunTime to one year from now
+  } else if (interval == 14) { // Set nextRunTime to one year from now.
 
     nextRunTime = nowMoment.clone().add(1, 'years').hour(hour).minute(minute)
 
-  } else if (interval == 15) { // set nextRunTime to the first day of the next year
+  } else if (interval == 15) { // Set nextRunTime to the first day of the next year.
 
     nextRunTime = nowMoment.clone().add(1, 'years').startOf('month').hour(hour).minute(minute)
 
-  } else if (interval == 16) { // set nextRunTime to the first weekday of the next year
+  } else if (interval == 16) { // Set nextRunTime to the first weekday of the next year.
 
     nextRunTime = nowMoment.clone().add(1, 'years').startOf('month').isoWeekday(1).hour(hour).minute(minute)
 
-  } console.log(`nextRunTime: ${nextRunTime}`)
+  }
   
   return +nextRunTime.format('X')
 
@@ -122,7 +122,7 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
     
   }
 
-  Object.values(results[0].rows).map(row => { blockAll.push(row.contact_id) }) // contains all completely blocked contact IDs
+  Object.values(results[0].rows).map(row => { blockAll.push(row.contact_id) }) // Contains all completely blocked contact IDs.
 
   Object.values(results[1].rows).map(row => {
 
@@ -148,7 +148,7 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
 
 }
 
-const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, errorNumber, messageContent, messageId, messageSubject, nextMessage, userId }) => {
+const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, errorNumber, messageContent, messageId, messageSubject, nextMessage, unsubUrl, userId }) => {
 
   const now = moment().format('X')
   const nowRunning = 'scheduler.js:processCampaigns'
@@ -158,7 +158,7 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
     sendMail
   } = require ('../functions')
 
-  // get dynamic replacements (to be applied to messageContent)
+  // Get dynamic replacements (to be applied to messageContent).
 
   const {
     dynamicValues,
@@ -173,7 +173,7 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
 
   }
 
-  // dynamic values are inserted into the message content if nextMessage is not present, so all recipients are getting the same message
+  // Dynamic values are inserted into the message content if nextMessage is not present, so all recipients are getting the same message.
 
   if (!nextMessage) {
 
@@ -182,7 +182,7 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
       const newValue = stringCleaner(row.newValue)
       const targetName = stringCleaner(row.targetName)
 
-      // the target string is programmatic c/o ChatGPT 3.5
+      // The target string is programmatic c/o ChatGPT 3.5.
 
       const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
       messageContent = replace(messageContent, placeholderRegex, newValue)
@@ -199,7 +199,8 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
       email
     } = row[1]
 
-    // IMPORTANT! right here is where we engage in message substitution if indicated
+    // IMPORTANT! right here is where we engage in message substitution if indicated.
+    // When this is running, we have to updated messageContent for each user because it's NOT guaranteed to be the same on every iteration.
 
     if (nextMessage[contactId] && nextMessage[contactId] !== messageId) {
 
@@ -212,18 +213,23 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
       messageId = replacementId
       messageSubject = replacementSubject
 
-      // use a template where specified by messageContent
+      // Use a template where specified by messageContent.
 
       if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8')
 
-      // dynamic values are inserted into the **replacement** messsage
+      // Insert the unsubscribe message.
+
+      const placeholderRegex = new RegExp(`\\[UNSUB_MESSAGE\\]`, 'g')
+      messageContent = replace(messageContent, placeholderRegex, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`)
+
+      // Dynamic values are inserted into the **replacement** messsage.
 
       Object.values(dynamicValues).map(row => { 
         
         const newValue = stringCleaner(row.newValue)
         const targetName = stringCleaner(row.targetName)
 
-        // the target string is programmatic c/o ChatGPT 3.5
+        // The target string is programmatic c/o ChatGPT 3.5
 
         const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
         messageContent = replace(messageContent, placeholderRegex, newValue)
@@ -232,11 +238,11 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
 
     }
 
-    // perform all global replacements
+    // Perform all global replacements.
 
     messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName)
 
-    // send the mail nopw
+    // Send the mail now.
 
     const response = await sendMail (email, messageContent, messageSubject)
     const {
@@ -246,7 +252,7 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
 
     let eventDetails
 
-    if (statusCode == 200 || statusCode == 202) { // record successful send event in message_tracking
+    if (statusCode == 200 || statusCode == 202) { // Record successful send event in message_tracking.
 
       queryText = `INSERT INTO message_tracking(campaign_id, contact_id, message_id, sent) VALUES('${campaignId}', '${contactId}', '${messageId}', '${+moment().format('X')}')`
       result = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
@@ -269,19 +275,19 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
     
     } else {
 
-      // start with the basics of what's running right now
+      // Start with the basics of what's running right now.
 
       eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body?.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`
 
-      // append all error messages to the details
+      // Append all error messages to the details.
 
       try {
         
         response.body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
 
-      } catch(e) {} // no errors to append
+      } catch(e) {} // No errors to append.
 
-      // record the errors on this send to the event log (not the errors API)
+      // Record the errors on this send to the event log (not the errors API).
 
       recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
 
@@ -289,7 +295,7 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
     
   })
 
-  // before exiting, update the dynamic values just used, so they flow to the end of the rotation
+  // Before exiting, update the dynamic values just used, so they flow to the end of the rotation.
 
   queryText = ''
 
@@ -348,9 +354,9 @@ router.post("/run", async (req, res) => {
     }
 
     const { apiTesting } = req.body
-    const userId = API_ACCESS_TOKEN // we need a user ID but this runs as a crontab job
+    const userId = API_ACCESS_TOKEN // We need a user ID but this runs as a crontab job.
 
-    // get all campaigns that have a message that is eligible to run now
+    // Get all campaigns that have a message that is eligible to run now.
 
     let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, c.starts, c.unsub_url, cm.position, m.content, m.message_id, m.message_name, m.repeatable, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND (c.next_run <= ${moment().format('X')} OR c.next_run IS NULL) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position`
     let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
@@ -371,13 +377,13 @@ router.post("/run", async (req, res) => {
     }
 
     const eligibleCampaigns = results.rows
-    const campaignLimiter = [] // this will be used below to prevent sending more than 1 eligible message per a campaign send cycle
+    const campaignLimiter = [] // This will be used below to prevent sending more than 1 eligible message per a campaign send cycle.
 
     const setNextRun = async({ apiTesting, campaignId, ends, interval, starts }) => {
 
       let nextRunTime
 
-      // convert starts to a Moment object and extract hour and minute
+      // Convert starts to a Moment object and extract hour and minute
     
       const startsMoment = moment.unix(starts)
       const dayOfWeek = startsMoment.day()
@@ -385,69 +391,69 @@ router.post("/run", async (req, res) => {
       const minute = startsMoment.minute()
       const nowMoment = moment()
 
-      if (interval == 1) { // set nextRunTime to the next weekday after now
+      if (interval == 1) { // Set nextRunTime to the next weekday after now
         
         nextRunTime = nowMoment.clone().add(1, 'days').hour(hour).minute(minute)
 
         while (nextRunTime.isoWeekday() >= 6) { nextRunTime.add(1, 'days') }
    
-      } else if (interval === 2) { // set nextRunTime for the next day
+      } else if (interval === 2) { // Set nextRunTime for the next day
 
         nextRunTime = nowMoment.clone().add(1, 'days').hour(hour).minute(minute)
 
-      } else if (interval == 3) { // set nextRunTime to one week
+      } else if (interval == 3) { // Set nextRunTime to one week
 
         nextRunTime = nowMoment.clone().add(1, 'weeks').day(dayOfWeek).hour(hour).minute(minute)
 
-      } else if (interval == 4) { // set nextRunTime to two weeks
+      } else if (interval == 4) { // Set nextRunTime to two weeks
 
         nextRunTime = nowMoment.clone().add(1, 'weeks').day(dayOfWeek).hour(hour).minute(minute)
 
-      } else if (interval == 5) { // set nextRunTime to one month
+      } else if (interval == 5) { // Set nextRunTime to one month
 
         nextRunTime = nowMoment.clone().add(1, 'months').day(dayOfWeek).hour(hour).minute(minute)
 
-      } else if (interval == 6) { // set nextRunTime to the first day of the next month
+      } else if (interval == 6) { // Set nextRunTime to the first day of the next month
       
         nextRunTime = nowMoment.clone().add(1, 'months').startOf('month').hour(hour).minute(minute)
 
-      } else if (interval == 7) { // set nextRunTime to the first weekday of the next month
+      } else if (interval == 7) { // Set nextRunTime to the first weekday of the next month
       
         nextRunTime = nowMoment.clone().add(1, 'months').startOf('month').isoWeekday(1).hour(hour).minute(minute)
     
-      } else if (interval == 8) { // set nextRunTime to three months from now (quarterly)
+      } else if (interval == 8) { // Set nextRunTime to three months from now (quarterly)
 
         nextRunTime = nowMoment.clone().add(3, 'years').hour(hour).minute(minute)
 
-      } else if (interval == 9) { // set nextRunTime to the first day of the next quarter
+      } else if (interval == 9) { // Set nextRunTime to the first day of the next quarter
       
         nextRunTime = nowMoment.clone().add(1, 'quarters').startOf('quarter').hour(hour).minute(minute)
 
-      } else if (interval == 10) { // set nextRunTime to the first weekday of the next quarter
+      } else if (interval == 10) { // Set nextRunTime to the first weekday of the next quarter
       
         nextRunTime = nowMoment.clone().add(1, 'quarters').startOf('quarter').isoWeekday(1).hour(hour).minute(minute)
     
-      } else if (interval == 11) { // set nextRunTime to six months from now (semiannual)
+      } else if (interval == 11) { // Set nextRunTime to six months from now (semiannual)
 
         nextRunTime = nowMoment.clone().add(6, 'months').hour(hour).minute(minute)
     
-      } else if (interval == 12) { // set nextRunTime to the first day of the next semiannual
+      } else if (interval == 12) { // Set nextRunTime to the first day of the next semiannual
 
         nextRunTime = nowMoment.clone().add(6, 'months').startOf('month').hour(hour).minute(minute)
     
-      } else if (interval == 13) { // set nextRunTime to the first weekday of the next semiannual
+      } else if (interval == 13) { // Set nextRunTime to the first weekday of the next semiannual
 
         nextRunTime = nowMoment.clone().add(6, 'months').startOf('month').isoWeekday(1).hour(hour).minute(minute)
 
-      } else if (interval == 14) { // set nextRunTime to one year from now
+      } else if (interval == 14) { // Set nextRunTime to one year from now
 
         nextRunTime = nowMoment.clone().add(1, 'years').hour(hour).minute(minute)
     
-      } else if (interval == 15) { // set nextRunTime to the first day of the next year
+      } else if (interval == 15) { // Set nextRunTime to the first day of the next year
 
         nextRunTime = nowMoment.clone().add(1, 'years').startOf('month').hour(hour).minute(minute)
     
-      } else if (interval == 16) { // set nextRunTime to the first weekday of the next year
+      } else if (interval == 16) { // Set nextRunTime to the first weekday of the next year
 
         nextRunTime = nowMoment.clone().add(1, 'years').startOf('month').isoWeekday(1).hour(hour).minute(minute)
 
@@ -455,7 +461,7 @@ router.post("/run", async (req, res) => {
 
       nextRunTime = +moment(nextRunTime).format('X')
 
-      // if the campaign has already ended, we do NOT want to update the run time and have it trigger again next interval
+      // If the campaign has already ended, we do NOT want to update the run time and have it trigger again next interval
 
       if (nextRunTime > ends) {
 
@@ -465,7 +471,7 @@ router.post("/run", async (req, res) => {
 
       }
 
-      // set the next scheduled run time
+      // Set the next scheduled run time
 
       const queryText = `UPDATE campaigns SET next_run = ${nextRunTime} WHERE campaign_id = '${campaignId}'`
       const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
@@ -491,7 +497,7 @@ router.post("/run", async (req, res) => {
 
     }
 
-    // get all blocked contacts and unsubscribes now because they will be used to filter the lists below
+    // Get all blocked contacts and unsubscribes now because they will be used to filter the lists below.
 
     const {
       blockAll,
@@ -511,7 +517,7 @@ router.post("/run", async (req, res) => {
       
       try {        
 
-        // get the campaign parameters and the next message in line to send
+        // Get the campaign parameters and the next message in line to send.
 
         let {
           campaign_id: campaignId,
@@ -528,18 +534,21 @@ router.post("/run", async (req, res) => {
           unsub_url: unsubUrl
         } = row
 
-        // // sometimes there will be N > 1 messages waiting to run on a campaign cycle, but we need to not send more than one per interval
+        console.log('campaignLimiter', campaignLimiter)
+        console.log(`campaignId: ${campaignId}`)
+
+        // Sometimes there will be N > 1 messages waiting to run on a campaign cycle, but we need to not send more than one per interval.
 
         if (campaignLimiter.includes(campaignId)) {
 
           console.log(`${nowRunning}: campaign ${campaignId} was limited to sending just one message per cycle`)
-          return { campaignsProcessedSuccess: true } // note that allCampaignsProcessedResults will only have this single value when the limiter is invoked.
+          return { campaignsProcessedSuccess: true } // Note that allCampaignsProcessedResults will only have this single value when the limiter is invoked.
 
         }
 
         campaignLimiter.push(campaignId) // prevents the campaign from sending any more emails on this run
 
-        // check for a valid unsubscribe URL
+        // Check for a valid unsubscribe URL.
 
         if (!isUrl(unsubUrl)) {
 
@@ -554,11 +563,11 @@ router.post("/run", async (req, res) => {
 
         }
 
-        // use a template where specified by messageContent
+        // Use a template where specified by messageContent.
 
         if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8')
 
-        // check for a placeholder to insert the unsub link
+        // Check for a placeholder to insert the unsub link.
 
         if (!messageContent.includes('[UNSUB_MESSAGE]')) {
 
@@ -573,15 +582,16 @@ router.post("/run", async (req, res) => {
 
         }
 
-        // insert the unsubscribe message
+        // Insert the unsubscribe message.
 
         const placeholderRegex = new RegExp(`\\[UNSUB_MESSAGE\\]`, 'g')
         messageContent = replace(messageContent, placeholderRegex, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`)
-        // filter the mailing list and make sure there is at least one valid recipient
+
+        // Filter the mailing list and make sure there is at least one valid recipient.
 
         const eligibleRecipients = {}
 
-        // get all contacts on the mailing list that are active
+        // Get all contacts on the mailing list that are active.
 
         queryText = `SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE c.active = true AND c.contact_id = lc.contact_id AND lc.list_id = '${listId}' ORDER BY contact_name`
         results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
@@ -601,7 +611,7 @@ router.post("/run", async (req, res) => {
 
         }
 
-        // filter blocked and unsubscribed contacts
+        // Filter blocked and unsubscribed contacts.
 
         Object.values(results.rows).map(row => {
 
@@ -625,18 +635,17 @@ router.post("/run", async (req, res) => {
 
         })
 
-        // when the campaign is not repeating, we need to filter out contacts that have seen every message already and set a specific message (first unseen one)
+        // When the campaign is not repeating, we need to filter out contacts that have seen every message already and set a specific message (first unseen one).
 
-        const nextMessage = {} // will hold the next message to be sent to each recipient
+        const nextMessage = {} // Will hold the next message to be sent to each recipient
 
         if (Object.keys(eligibleRecipients).length > 0 && !campaignRepeats) {
 
-          const alreadySent = {} // will hold messages already sent to each contact
-          const availableMessages = [] // will hold all active messages in this campaign
-          const messageIds = [] // will hold message ids in position order
-          // alreadySent['1e81deb9-59cc-443c-910f-f17a46bb4391'] = ['7031c5f7-a17b-468d-acb2-4b94e7e7a576', 'cbc41237-ffe2-41ae-850b-63b40365aee6']
+          const alreadySent = {} // Will hold messages already sent to each contact.
+          const availableMessages = [] // Will hold all active messages in this campaign.
+          const messageIds = [] // Will hold message ids in position order.
 
-          // get all campaign messages ordered by position and message tracking info for this campaign 
+          // Get all campaign messages ordered by position and message tracking info for this campaign.
 
           queryText = `SELECT message_id FROM campaign_messages WHERE campaign_id = '${campaignId}' ORDER BY position; SELECT contact_id, message_id FROM message_tracking WHERE campaign_id = '${campaignId}'`
           results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
@@ -671,7 +680,7 @@ router.post("/run", async (req, res) => {
 
           })
         
-          // get every active message on the campaign and store in available messages (ordered by position)
+          // Get every active message on the campaign and store in available messages (ordered by position).
 
           queryText = `SELECT m.content, m.message_id, m.message_name, m.subject FROM campaign_messages cm, messages m WHERE cm.campaign_id = '${campaignId}' AND cm.message_id = m.message_id AND m.active = true ORDER BY position`
           results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
@@ -709,35 +718,35 @@ router.post("/run", async (req, res) => {
 
           })
 
-          // now check every member of the eligibleRecipients list to see if they have seen every available message
+          // Now check every member of the eligibleRecipients list to see if they have seen every available message.
 
           Object.keys(eligibleRecipients).map(contactId => {
 
-            if (!alreadySent[contactId]) { // this contact has not seen anything, and is sent the first message
+            if (!alreadySent[contactId]) { // This contact has not seen anything, and is sent the first message.
 
               nextMessage[contactId] = availableMessages[0]
             
-            } else { // need to filter out what they have already seen
+            } else { // Need to filter out what they have already seen.
 
               availableMessages.map(messageData => {
 
-                if (nextMessage[contactId]) return // this contact has already been assigned a message for this run
+                if (nextMessage[contactId]) return // This contact has already been assigned a message for this run.
 
-                if (alreadySent[contactId].includes(messageData.messageId)) return // this contact has already seen this message
+                if (alreadySent[contactId].includes(messageData.messageId)) return // This contact has already seen this message.
               
-                nextMessage[contactId] = messageData // assign this message because they've never seen it
+                nextMessage[contactId] = messageData // Assign this message because they've never seen it.
                 
               })
             
             }
 
-            if (!nextMessage[contactId]) delete eligibleRecipients[contactId] // this contact has no message available
+            if (!nextMessage[contactId]) delete eligibleRecipients[contactId] // This contact has no message available.
 
           })
 
         }
 
-        // exit now if there are no eligible recipients
+        // Exit now if there are no eligible recipients.
 
         if (Object.keys(eligibleRecipients).length === 0) {  
 
@@ -752,7 +761,7 @@ router.post("/run", async (req, res) => {
           
         }
 
-        // the campaign message will be sent to the mailing list after additional processing, see processCampaigns
+        // The campaign message will be sent to the mailing list after additional processing, see processCampaigns.
     
         const {
           campaignsProcessedFailure,
@@ -765,10 +774,11 @@ router.post("/run", async (req, res) => {
           messageId,
           messageSubject: stringCleaner(messageSubject),
           nextMessage, // only used when the campaign is not repeating
+          unsubUrl,
           userId
         })
         
-        // if the campaign is repeatable, setting last_sent moves the current message to the end of the eligible messages list
+        // If the campaign is repeatable, setting last_sent moves the current message to the end of the eligible messages list.
 
         if (repeatable) { 
 
@@ -792,7 +802,7 @@ router.post("/run", async (req, res) => {
 
         }
 
-        // set the next run time for this campaign
+        // Set the next run time for this campaign.
 
         const {
           setNextRunFailure,
@@ -801,7 +811,7 @@ router.post("/run", async (req, res) => {
 
         if (!setNextRunSuccess) return { campaignsProcessedFailure: setNextRunFailure, campaignsProcessedSuccess: false }
     
-        // log or handle the successful campaign processing (to be replaced with history)
+        // Log or handle the successful campaign processing (to be replaced with history).
 
         const eventDetails = `${nowRunning}: campaign ${campaignId} processed successfully`
         recordEvent ({ apiTesting, event: 3, eventDetails, eventTarget: campaignId, userId })
@@ -828,11 +838,11 @@ router.post("/run", async (req, res) => {
 
     })
     
-    // creates an array of the results of processing each eligible campaign
+    // Creates an array of the results of processing each eligible campaign.
 
     const allCampaignsProcessedResults = await Promise.all(processCampaignsPromises)
 
-    // this returns true only if every campaign processed with no error
+    // This returns true only if every campaign processed with no error.
   
     const allCampaignsProcessed = allCampaignsProcessedResults.every((result) => !result.campaignsProcessedFailure)
   
@@ -898,7 +908,7 @@ router.post("/upcoming", async (req, res) => {
 
     } 
 
-    // get unsubs first, because they are not counted as subscribers
+    // Get unsubs first, because they are not counted as subscribers.
 
     const {
       getUnsubsFailure,
