@@ -149,83 +149,52 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
 
 }
 
-const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, errorNumber, messageContent, messageId, messageSubject, nextMessage, unsubUrl, userId }) => {
+const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligibleRecipients, errorNumber, messageContent, messageId, messageSubject, nextMessage, unsubUrl, userId }) => {
 
-  const now = moment().format('X')
-  const nowRunning = 'scheduler.js:processCampaigns'
-  const success = false
+
   const { 
     getDynamicMessageReplacements,
+    recordError,
     sendMail
   } = require ('../functions')
+  const nowRunning = 'scheduler.js:processCampaigns'
 
-  // Get dynamic replacements (to be applied to messageContent).
+  try {
 
-  const {
-    dynamicValues,
-    failure: getDynamicValuesFailure,
-    success: getDynamicValuesSuccess
-  } = await getDynamicMessageReplacements({ errorNumber, messageId, userId })
+    const now = moment().format('X')
+    const success = false
 
-  if (!getDynamicValuesSuccess) {
+    // In the case of a repeating campaign, all list contacts are going to get the same basic email so we only do dynamic updates once.
 
-    console.log(nowRunning + ": exited due to error on function getDynamicMessageReplacements\n")
-    return ({ failure: getDynamicValuesFailure, success })
+    let dynamicValues
 
-  }
+    if (campaignRepeats) {
 
-  // Dynamic values are inserted into the message content if nextMessage is not present, so all recipients are getting the same message.
-
-  if (!nextMessage) {
-
-    Object.values(dynamicValues).map(row => { 
-      
-      const newValue = stringCleaner(row.newValue)
-      const targetName = stringCleaner(row.targetName)
-
-      // The target string is programmatic c/o ChatGPT 3.5.
-
-      const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
-      messageContent = replace(messageContent, placeholderRegex, newValue)
-
-    })
-
-  }
-
-  Object.entries(eligibleRecipients).map(async row => {
-
-    const contactId = row[0]
-    const {
-      contactName,
-      email
-    } = row[1]
-
-    // IMPORTANT! right here is where we engage in message substitution if indicated.
-    // When this is running, we have to updated messageContent for each user because it's NOT guaranteed to be the same on every iteration.
-
-    if (nextMessage[contactId] && nextMessage[contactId] !== messageId) {
+      // Get dynamic replacements (to be applied to messageContent).
 
       const {
-        content: replacementContent,
-        messageId: replacementId,
-        subject: replacementSubject
-      } = nextMessage[contactId]
-      messageContent = replacementContent
-      messageId = replacementId
-      messageSubject = replacementSubject
+        dynamicValues: newDynamicValues,
+        failure: getDynamicValuesFailure,
+        success: getDynamicValuesSuccess
+      } = await getDynamicMessageReplacements({ errorNumber, messageId, userId })
 
-      // Use a template where specified by messageContent.
+      if (!getDynamicValuesSuccess) {
 
-      if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8')
+        console.log(nowRunning + ": exited due to error on function getDynamicMessageReplacements\n")
+        return ({ failure: getDynamicValuesFailure, success })
 
-      // Dynamic values are inserted into the **replacement** messsage.
+      }
+
+      dynamicValues = newDynamicValues
+
+      // Dynamic values are inserted into the message content if nextMessage is not present, so all recipients are getting the same message.
 
       Object.values(dynamicValues).map(row => { 
         
         const newValue = stringCleaner(row.newValue)
         const targetName = stringCleaner(row.targetName)
 
-        // The target string is programmatic c/o ChatGPT 3.5
+        // The target string is programmatic c/o ChatGPT 3.5.
 
         const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
         messageContent = replace(messageContent, placeholderRegex, newValue)
@@ -234,32 +203,121 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
 
     }
 
-    // Each message gets the individual contact name.
+    Object.entries(eligibleRecipients).map(async row => {
 
-    messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName) 
+      const contactId = row[0]
+      const {
+        contactName,
+        email
+      } = row[1]
 
-    // Add the unsubcribe URL.
-    
-    messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`) 
-    
-    // Send the mail now.
+      // IMPORTANT! right here is where we engage in message substitution if indicated. When this is running, we have to update messageContent for each user because it's NOT guaranteed to be the same on every iteration. campaignRepeats is added as a safety check to make sure this is not a repeating campaign where the dynamic values have already been replaced (see above).
 
-    const response = await sendMail (email, messageContent, messageSubject)
-    const {
-      body,
-      statusCode
-    } = response[0]
+      if (nextMessage[contactId] && !campaignRepeats) {
 
-    let eventDetails
+        const {
+          content: replacementContent,
+          messageId: replacementId,
+          subject: replacementSubject
+        } = nextMessage[contactId]
+        messageContent = replacementContent
+        messageId = replacementId
+        messageSubject = replacementSubject
 
-    if (statusCode == 200 || statusCode == 202) { // Record successful send event in message_tracking.
+        // Use a template where specified by messageContent.
 
-      queryText = `INSERT INTO message_tracking(campaign_id, contact_id, message_id, sent) VALUES('${campaignId}', '${contactId}', '${messageId}', '${+moment().format('X')}')`
-      result = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8')
 
-      if (!results.rows) { 
+        // Dynamic values are inserted into the **replacement** messsage.
 
-        const failure = 'database error when recording the send event'
+        Object.values(dynamicValues).map(row => { 
+          
+          const newValue = stringCleaner(row.newValue)
+          const targetName = stringCleaner(row.targetName)
+
+          // The target string is programmatic c/o ChatGPT 3.5
+
+          const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
+          messageContent = replace(messageContent, placeholderRegex, newValue)
+
+        })
+
+      }
+
+      // Each message gets the individual contact name.
+
+      messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName) 
+
+      // Add the unsubcribe URL.
+      
+      messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`) 
+      
+      // Send the mail now.
+
+      const response = await sendMail (email, messageContent, messageSubject)
+      const {
+        body,
+        statusCode
+      } = response[0]
+
+      let eventDetails
+
+      if (statusCode == 200 || statusCode == 202) { // Record successful send event in message_tracking.
+
+        queryText = `INSERT INTO message_tracking(campaign_id, contact_id, message_id, sent) VALUES('${campaignId}', '${contactId}', '${messageId}', '${+moment().format('X')}')`
+        results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+
+        if (!results) { 
+
+          const failure = 'database error when recording the send event'
+          console.log(`${nowRunning}: ${failure}\n`)
+          await recordError ({
+            context: 'api: ' + nowRunning,
+            details: queryText,
+            errorMessage: failure,
+            errorNumber,
+            userId
+          })
+      
+          return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+      
+        }
+      
+      } else {
+
+        // Start with the basics of what's running right now.
+
+        eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body?.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`
+
+        // Append all error messages to the details.
+
+        try {
+          
+          response.body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+
+        } catch(e) {} // No errors to append.
+
+        // Record the errors on this send to the event log (not the errors API).
+
+        recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
+
+      }
+      
+    })
+
+    // Before exiting, update the dynamic values just used, so they flow to the end of the rotation.
+
+    try { 
+
+      queryText = ''
+
+      Object.keys(dynamicValues).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
+
+      results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
+
+      if (!results) { 
+
+        const failure = 'database error when updating the last_run parameter on dynamic values used on this campaign run'
         console.log(`${nowRunning}: ${failure}\n`)
         await recordError ({
           context: 'api: ' + nowRunning,
@@ -268,58 +326,30 @@ const processCampaigns = async ({ apiTesting, campaignId, eligibleRecipients, er
           errorNumber,
           userId
         })
-    
+
         return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
-    
+
       }
-    
-    } else {
 
-      // Start with the basics of what's running right now.
+    } catch(e) {} // dynamicValues may be undefined
 
-      eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body?.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`
+    // Everything worked.
 
-      // Append all error messages to the details.
+    return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true, })
 
-      try {
-        
-        response.body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+  } catch(e) {
 
-      } catch(e) {} // No errors to append.
-
-      // Record the errors on this send to the event log (not the errors API).
-
-      recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
-
-    }
-    
-  })
-
-  // Before exiting, update the dynamic values just used, so they flow to the end of the rotation.
-
-  queryText = ''
-
-  Object.keys(dynamicValues).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
-
-  results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
-
-  if (!results) { 
-
-    const failure = 'database error when updating the last_run parameter on dynamic values used on this campaign run'
-    console.log(`${nowRunning}: ${failure}\n`)
     await recordError ({
       context: 'api: ' + nowRunning,
-      details: queryText,
-      errorMessage: failure,
+      details: 'exception thrown',
+      errorMessage: e.message,
       errorNumber,
       userId
     })
-
-    return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+    console.log(`${nowRunning}: ${e.message}\n`)
+    return ({ campaignsProcessedFailure: `exception thrown ${e.message}`, campaignsProcessedSuccess: false, })
 
   }
-
-  return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true, })
 
 }
 
@@ -760,6 +790,7 @@ router.post("/run", async (req, res) => {
           campaignsProcessedSuccess
         } = await processCampaigns({
           campaignId,
+          campaignRepeats,
           eligibleRecipients,
           errorNumber,
           messageContent: stringCleaner(messageContent),
