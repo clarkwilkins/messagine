@@ -100,6 +100,143 @@ const calculateNextRun = ({ interval, starts }) => {
 
 }
 
+const checkSchedule = async({ campaignId, campaignRepeats, errorNumber, listId, nowRunning, userId }) => {
+
+  const checkScheduleSuccess = false
+
+  // Get all contacts on the campaign's mailing list that are actually eligible to receive a message from this campaign.
+
+  let queryText = `SELECT contact_id FROM contacts WHERE active = true AND block_all = false AND contact_id NOT IN (SELECT contact_id FROM unsubs WHERE campaign_id = '${campaignId}') AND contact_id IN (SELECT contact_id FROM list_contacts WHERE list_id = '${listId}') ORDER BY contact_name, company_name`
+  let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+
+  if (!results) {
+
+    const failure = 'database error when getting unsub information'
+    await recordError ({
+      context: `api: ${nowRunning}.getUnsubs`,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    })
+
+    return({ checkScheduleFailure: failure, checkScheduleSuccess})
+    
+  }
+
+  // Initially, we consider everyone on the list (active, not blocked, not unsubscribed) as eligible for the next message.
+  // campaignMessages: the message content and name for each campaign-linked message.
+  // messageTargets: the final list of all contacts that will get a message, along with all message parameters.
+  // unseenMessages: used in non-repeating lists to determine if a linked contact has any eligible messages.
+
+  const campaignMessages = {}
+  const messageTargets = {}
+  const unseenMessages = {}
+
+  Object.values(results.rows).map(row => { messageTargets[row.contact_id] = { eligible: true } })
+
+  // Get the campaign messages for this campaign. Position ordering allows us to end up with the next message to be sent (if any) in the first position.
+
+  queryText = `SELECT m.content, m.message_id, m.message_name FROM campaign_messages cm, messages m WHERE cm.campaign_id = '${campaignId}' AND cm.message_id = m.message_id ORDER BY last_sent, cm.position`
+  results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+
+  if (!results) {
+
+    const failure = 'database error when getting the messages on this campaign'
+    await recordError ({
+      context: `api: ${nowRunning}.getUnsubs`,
+      details: queryText,
+      errorMessage: failure,
+      errorNumber,
+      userId
+    })
+
+  }
+
+  Object.values(results.rows).map((row, key) => {
+
+    const {
+      content: messageContent,
+      message_id: messageId,
+      message_name: messageName
+    } = row;
+    campaignMessages[messageId] = {
+      messageContent: stringCleaner(messageContent),
+      messageName: stringCleaner(messageName)
+    }
+
+    // The sorting order above makes sure the first message is the next one that's going to be sent (assuming this is a repeating campaign).
+    
+    if (key < 1 && campaignRepeats) Object.keys(messageTargets).map(key => {
+      
+      messageTargets[key].messageContent = stringCleaner(messageContent)
+      messageTargets[key].messageName = stringCleaner(messageName)
+      messageTargets[key].nextMessage = messageId
+
+    })
+
+  })
+
+  // However, if the campaign is not repeating, we need to check if there are *any* messages they have not seen and pick up the first one (yes) or make them ineligible (no)
+
+
+  if (!campaignRepeats) {  
+
+    const messageIds = Object.keys(campaignMessages)
+
+    // Get the messages each member of the contact list has seen on this campaign.
+
+    queryText = `SELECT contact_id, message_id FROM message_tracking WHERE campaign_id = '${campaignId}' ORDER BY contact_id`
+    results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+
+    if (!results) {
+
+      const failure = 'database error when getting all message tracking for this campaign'
+      await recordError ({
+        context: `api: ${nowRunning}.getUnsubs`,
+        details: queryText,
+        errorMessage: failure,
+        errorNumber,
+        userId
+      })
+
+    }
+
+    Object.values(results.rows).map(row => {
+
+      const {
+        contact_id: contactId,
+        message_id: messageId
+      } = row
+
+      // To start, we set all messages in the campaign as unseen by this contact.
+
+      if (!unseenMessages[contactId]) unseenMessages[contactId] = messageIds
+
+      unseenMessages[contactId].map((thisMessageId, key) => {
+
+        // Remove the messageId if this contact has already seen it.
+
+        if (thisMessageId === messageId ) delete unseenMessages[contactId][key]
+
+      })
+
+    })
+
+    Object.keys(unseenMessages).forEach(key => { 
+
+      // If the object is empty, the contact has seen all available messages and can be removed from unseenMessages.
+  
+      if (unseenMessages[key].every(item => item === undefined)) delete messageTargets[key]
+      
+    })
+
+  }
+
+  return { checkScheduleSuccess: true, messageTargets }
+
+}
+
 const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
 
   const blockAll = []
@@ -151,11 +288,11 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
 
 const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligibleRecipients, errorNumber, messageContent, messageId, messageSubject, nextMessage, unsubUrl, userId }) => {
 
-
   const { 
     getDynamicMessageReplacements,
     recordError,
-    sendMail
+    sendMail,
+    updateDynamicText
   } = require ('../functions')
   const nowRunning = 'scheduler.js:processCampaigns'
 
@@ -166,43 +303,23 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
     // In the case of a repeating campaign, all list contacts are going to get the same basic email so we only do dynamic updates once.
 
-    let dynamicValues
+    const {
+      dynamicValues: allDynamicValues,
+      failure: getDynamicValuesFailure,
+      success: getDynamicValuesSuccess
+    } = await getDynamicMessageReplacements({ campaignId, errorNumber, userId })
 
-    if (campaignRepeats) {
+    if (!getDynamicValuesSuccess) {
 
-      // Get dynamic replacements (to be applied to messageContent).
-
-      const {
-        dynamicValues: newDynamicValues,
-        failure: getDynamicValuesFailure,
-        success: getDynamicValuesSuccess
-      } = await getDynamicMessageReplacements({ errorNumber, messageId, userId })
-
-      if (!getDynamicValuesSuccess) {
-
-        console.log(nowRunning + ": exited due to error on function getDynamicMessageReplacements\n")
-        return ({ failure: getDynamicValuesFailure, success })
-
-      }
-
-      dynamicValues = newDynamicValues
-
-      // Dynamic values are inserted into the message content if nextMessage is not present, so all recipients are getting the same message.
-
-      Object.values(dynamicValues).map(row => { 
-        
-        const newValue = stringCleaner(row.newValue)
-        const targetName = stringCleaner(row.targetName)
-
-        // The target string is programmatic c/o ChatGPT 3.5.
-
-        const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
-        messageContent = replace(messageContent, placeholderRegex, newValue)
-
-      })
+      console.log(`${nowRunning}: exited due to error on function getDynamicMessageReplacements\n`)
+      return ({ failure: getDynamicValuesFailure, success })
 
     }
 
+    // This runs the dynamic replacements for the main message content.
+
+    messageContent = updateDynamicText({ dynamicValues: allDynamicValues[messageId], messageContent }) 
+    
     Object.entries(eligibleRecipients).map(async row => {
 
       const contactId = row[0]
@@ -226,21 +343,11 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
         // Use a template where specified by messageContent.
 
-        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8')
+        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8') 
 
-        // Dynamic values are inserted into the **replacement** messsage.
-
-        Object.values(dynamicValues).map(row => { 
+        // Update the content with any dynamic values associated with this particular message ID.
           
-          const newValue = stringCleaner(row.newValue)
-          const targetName = stringCleaner(row.targetName)
-
-          // The target string is programmatic c/o ChatGPT 3.5
-
-          const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
-          messageContent = replace(messageContent, placeholderRegex, newValue)
-
-        })
+        messageContent = updateDynamicText({ dynamicValues: allDynamicValues[messageId], messageContent })
 
       }
 
@@ -248,10 +355,10 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
       messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName) 
 
-      // Add the unsubcribe URL.
+      // Add the unsubscribe URL.
       
       messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`) 
-      
+
       // Send the mail now.
 
       const response = await sendMail (email, messageContent, messageSubject)
@@ -356,7 +463,7 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 router.post("/run", async (req, res) => { 
 
   const nowRunning = "/campaigns/run"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running\n`)
   const errorNumber = 41
   const success = false
 
@@ -378,7 +485,7 @@ router.post("/run", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}\n`)
       return res.status(422).send({ failure: errorMessage, success })
 
     }
@@ -869,7 +976,7 @@ router.post("/run", async (req, res) => {
   
     const allCampaignsProcessed = allCampaignsProcessedResults.every((result) => !result.campaignsProcessedFailure)
   
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished\n`)
     return res.status(200).send({ success: true, allCampaignsProcessed, allCampaignsProcessedResults })
 
   } catch (e) {
@@ -892,7 +999,7 @@ router.post("/run", async (req, res) => {
 router.post("/upcoming", async (req, res) => { 
 
   const nowRunning = "/scheduler/upcoming"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running\n`)
 
   const errorNumber = 45
   const success = false
@@ -916,7 +1023,7 @@ router.post("/upcoming", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}\n`)
       return res.status(422).send({ failure: errorMessage, success })
 
     }
@@ -926,7 +1033,7 @@ router.post("/upcoming", async (req, res) => {
 
     if (userLevel < 1) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
+      console.log(`${nowRunning}: , invalid user ID\n`)
       return res.status(404).send({ failure: 'invalid user ID', success })
 
     } 
@@ -947,7 +1054,7 @@ router.post("/upcoming", async (req, res) => {
     }    
     
     const upcoming = {}
-    let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.next_run, c.starts, m.message_id, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
+    let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.next_run, c.starts, m.message_id, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
     let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
     if (!results.rows) {
@@ -973,6 +1080,7 @@ router.post("/upcoming", async (req, res) => {
         campaign_repeats: repeats,
         ends,
         interval,
+        list_id: listId,
         message_id: messageId,
         message_name: messageName,
         next_run: nextRun,
@@ -985,10 +1093,12 @@ router.post("/upcoming", async (req, res) => {
 
         upcoming[campaignId] = {
           campaignName,
+          campaignTargets: null,
           ends: +ends,
           ends2: moment.unix(ends).format('YYYY.MM.DD HH.mm'),
           interval: +interval,
           interval2: intervals[interval],
+          listId,
           messageId,
           messageName: stringCleaner(messageName),
           nextRun: +nextRun,
@@ -999,49 +1109,35 @@ router.post("/upcoming", async (req, res) => {
           targets: 0
         }
 
-      }
+      }      
 
     })
 
-    queryText = "SELECT c.campaign_id, lc.contact_id, lc.list_id FROM campaigns c, list_contacts lc WHERE c.active = true AND c.list_id = lc.list_id"
-    results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    // Prepare for Promise.all() to handle asynchronous checkSchedule calls
 
-    if (!results.rows) {
+    const checkSchedulePromises = results.rows.map(row => {
 
-      const failure = 'database error when all list contacts'
-      console.log(`${nowRunning}: ${failure}\n`)
-      await recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      })
-      return res.status(200).send({ failure, success })
-      
-    }
-
-    Object.values(results.rows).map(row => {
-
-      const {
+      const { 
         campaign_id: campaignId,
-        contact_id: contactId,
-        list_id: listId
+        campaign_repeats: campaignRepeats,
+        list_id: listId  
       } = row
-
-      if (!unsubs[listId]) {
-
-        upcoming[campaignId].targets += 1
-
-      } else if (!unsubs[listId].includes(contactId)) {
-        
-        upcoming[campaignId].targets += 1
-
-      }
+      return checkSchedule({ campaignId, campaignRepeats, errorNumber, listId, nowRunning, userId }).then(scheduleCheckResult => ({
+        campaignId,
+        scheduleCheckResult,
+      }))
 
     })
 
-    console.log(nowRunning + ": finished\n")
+    // Wait for all checks to complete.
+
+    const allScheduleChecks = await Promise.all(checkSchedulePromises)
+
+    // Now put the campaign targets (what each contact will be sent) on the "upcoming" object that gets returned.
+
+    allScheduleChecks.forEach(({ campaignId, scheduleCheckResult }) => upcoming[campaignId].campaignTargets = scheduleCheckResult.messageTargets )
+
+    console.log(`${nowRunning}: finished\n`)
     return res.status(200).send({ upcoming, success: true })
 
   } catch (e) {

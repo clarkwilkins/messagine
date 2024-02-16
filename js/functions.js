@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const { replace } = require('lodash');
 const fs = require ('fs');
 const moment = require('moment-timezone');
 const request = require('request');
@@ -49,7 +49,7 @@ exports.containsHTML = string => { // c/o ChatGPT 3.5
 
 exports.dateToTimestamp = date => {
 
-  date = _.replace(date, /GMT/, '')
+  date = replace(date, /GMT/, '')
   date = date.substring(0, 30); // remove everything after the timezone
   date = +moment(date, 'DDD MMM YYYY HH:mm:ss Z').format('X')
   return date
@@ -153,7 +153,7 @@ exports.deleteCampaignMessage = async({ apiTesting, campaignId, errorNumber, mes
 
 }
 
-exports.getDynamicMessageReplacements = async ({ errorNumber, messageId, userId }) => {
+exports.getDynamicMessageReplacements = async ({ campaignId, errorNumber, userId }) => {
 
   const db = require('./db')
   const nowRunning = 'functions.js:getDynamicMessageReplacements'
@@ -164,7 +164,7 @@ exports.getDynamicMessageReplacements = async ({ errorNumber, messageId, userId 
     stringCleaner
   } = require ('./functions')
 
-  const queryText = " SELECT DISTINCT ON (target_name) * FROM dynamic_values WHERE message_id = '" + messageId + "' ORDER BY target_name, last_used "
+  const queryText = `SELECT DISTINCT ON (target_name) * FROM dynamic_values WHERE message_id IN ( SELECT message_id FROM campaign_messages WHERE campaign_id = '${campaignId}') ORDER BY target_name, last_used`
   const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
   if (!results?.rows) {
@@ -188,10 +188,16 @@ exports.getDynamicMessageReplacements = async ({ errorNumber, messageId, userId 
 
     const {
       dynamic_id: dynamicId,
+      message_id: messageId,
       new_value: newValue,
       target_name: targetName
     } = row
-    dynamicValues[dynamicId] = { 
+
+    // This object has to account for multiple sets of dynamic values based on each specific message ID. The use-case is a non-repeating campaign where some users may get one message, and others, another. In this, different sets of dynamic values are possible.
+
+    if (!dynamicValues[messageId]) dynamicValues[messageId] = {}
+    
+    dynamicValues[messageId][dynamicId] = { 
       newValue: stringCleaner(newValue, false, !containsHTML(newValue)),
       targetName: stringCleaner(targetName)
     }
@@ -323,7 +329,8 @@ exports.recordEvent = async({ apiTesting, event, eventDetails, eventTarget, user
     recordError,
     stringCleaner
   } = require ('./functions')
-  try { // console.log(`Campaign ${campaignId} processed successfully`)
+
+  try { 
 
     const queryText = " INSERT INTO events (event_details, event_target, event_time, event_type, user_id) VALUES('" + stringCleaner(eventDetails, true) + "', '" + eventTarget + "', " + now + ", " + event + ", '" + userId + "'); "
     const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
@@ -422,8 +429,13 @@ exports.sendMail = async (addressee, html, subject, testMode) => {
     const sender = SENDGRID_SENDER
     emailResults = await sgMail.send({ to: addressee, html, from: sender, subject, text })
 
+    // The next line is useful if we want to comment out the Sendgrid API above for test purposes.
+
+    // emailResults = [ { statusCode: 200, status: 'Sendmail bypassed' } ]
+
   } catch(e) {
 
+    console.log('Sendgrid errors', e.response.body.errors)
     console.log('e', e)
     emailResults = [ { statusCode: 200, status: 'Sendmail threw a local exception: ' + e.message } ]
 
@@ -435,13 +447,37 @@ exports.sendMail = async (addressee, html, subject, testMode) => {
 
 exports.stringCleaner = (string, toDb, nl2br) => {
 
-  if (!toDb) string = _.replace(_.replace(string, /""/g, '"'), /''/g, "'").trim()
+  if (!toDb) string = replace(replace(string, /""/g, '"'), /''/g, "'").trim()
 
-  if (toDb) string = _.replace(_.replace(string, /"/g, '""'), /'/g, "''").trim()
+  if (toDb) string = replace(replace(string, /"/g, '""'), /'/g, "''").trim()
 
-  if (nl2br) string = _.replace(string, /\n/g, '<br />')
+  if (nl2br) string = replace(string, /\n/g, '<br />')
 
   return string
+
+}
+
+exports.updateDynamicText = ({ dynamicValues, messageContent }) => {
+
+  // Exit now if this was called for no reason.
+  
+  if (!dynamicValues || Object.keys(dynamicValues).length < 1) return messageContent
+
+  const { stringCleaner } = require ('./functions')
+
+  Object.values(dynamicValues).map(row => { 
+        
+    const newValue = stringCleaner(row.newValue)
+    const targetName = stringCleaner(row.targetName)
+
+    // The target string is programmatic c/o ChatGPT 3.5.
+
+    const placeholderRegex = new RegExp(`\\[${targetName}\\]`, 'g')
+    messageContent = replace(messageContent, placeholderRegex, newValue)
+
+  })
+
+  return messageContent
 
 }
 
