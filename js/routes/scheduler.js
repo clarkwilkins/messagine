@@ -357,7 +357,7 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
       // Add the unsubscribe URL.
       
-      messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}">Manage your subscription preferences here</a></p>`) 
+      messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}?ca=${campaignId}&co=${contactId}">Manage your subscription preferences here</a></p>`) 
 
       // Send the mail now.
 
