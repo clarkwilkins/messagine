@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import App from "./App";
 import LoginWithKey from "./components/users/LoginKey"
+import ManageContacts from "./components/contacts/ManageContacts"
 import ManageLists from "./components/lists/ManageLists"
 import MessageEditor from "./components/campaigns/MessageEditor"
+import NewContact from "./components/contacts/NewContact"
 import NewList from "./components/lists/NewList"
 import Upcoming from "./components/scheduler/Upcoming"
 
@@ -30,6 +32,11 @@ root.render(
         >
 
           <Route 
+            element={ <ManageContacts /> }
+            path="contacts/manage"
+          />
+
+          <Route 
             element={ <ManageLists /> }
             path="lists/manage"
           />
@@ -37,6 +44,11 @@ root.render(
           <Route 
             element={ <MessageEditor /> }
             path="campaigns/edit/:campaignId/:messageId"
+          />
+
+          <Route 
+            element={ <NewContact /> }
+            path="contacts/new"
           />
 
           <Route 

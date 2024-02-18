@@ -94,6 +94,28 @@ function App() {
               </Nav.Link>
             </Nav.Item>
 
+            <Nav.Item className="size-80"><b>contacts</b></Nav.Item>
+
+            <Nav.Item>
+              <Nav.Link
+                as={Link} 
+                onClick={handleClose}
+                to="/contacts/manage"
+              >
+                manage contacts
+              </Nav.Link>
+            </Nav.Item>
+
+            <Nav.Item>
+              <Nav.Link
+                as={Link} 
+                onClick={handleClose}
+                to="/contacts/new"
+              >
+                new contact
+              </Nav.Link>
+            </Nav.Item>
+
             <Nav.Item className="size-80"><b>mailing lists</b></Nav.Item>
 
             <Nav.Item>
