@@ -6,7 +6,6 @@ import {
 } from 'lodash';
 import ErrorModal from '../components/common/ErrorModal';
 import http from "./http";
-// import jwtDecode from 'jwt-decode';
 
 const masterKey = process.env.REACT_APP_API_KEY;
 
@@ -128,6 +127,15 @@ export async function errorHandler( errorPayload ) {
     return e.trace;
     
   }
+
+}
+
+export async function recordEvent({ apiTesting, eventNumber, eventDetails, eventTarget }) {
+
+  const api = 'utilities/record-event'
+  const payload = { apiTesting, eventDetails, eventNumber, eventTarget }
+  const { data } = await apiLoader({ api, payload })
+  return { failure: data.failure, success: data.success }
 
 }
 

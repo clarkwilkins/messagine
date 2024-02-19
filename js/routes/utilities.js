@@ -15,6 +15,7 @@ const { API_ACCESS_TOKEN } = process.env;
 const { 
   getUserLevel,
   recordError,
+  recordEvent,
   stringCleaner,
   validateSchema
 } = require( '../functions.js' );
@@ -357,6 +358,73 @@ router.post( "/hashtags/update", async ( req, res ) => {
       return res.status(200).send({ failure, success })
       
     }
+
+    console.log( nowRunning + ": finished\n" );
+    return res.status( 200 ).send( { success: true } )
+
+  } catch (e) {
+
+    recordError ( {
+      context: `api: ${nowRunning}`,
+      details: stringCleaner(  e.message ),
+      errorMessage: 'exception thrown',
+      errorNumber,
+      userId
+    } );
+    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    console.log ( e );
+    res.status( 500 ).send( newException );
+
+  }
+
+} );
+
+router.post( "/record-event", async ( req, res ) => {
+
+  const nowRunning = "utilities/record-event";
+  console.log(`${nowRunning}: running`);
+
+  let success = false;
+  const errorNumber = 59;
+  
+  try {
+
+    const schema = Joi.object( { 
+      apiTesting: Joi.boolean(),
+      eventDetails: Joi.string().optional().allow('', null),
+      eventNumber: Joi.number().required().integer().positive(),
+      eventTarget: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      userId: Joi.string().required().uuid()
+    } );
+
+    const errorMessage = validateSchema ( nowRunning, recordError, req, schema );
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status( 422 ).send({ failure: errorMessage, success });
+
+    }
+
+    const {
+      apiTesting,
+      eventDetails,
+      eventNumber,
+      eventTarget,
+      userId
+    } = req.body
+
+    const { level: userLevel } = await getUserLevel( userId );
+
+    if ( userLevel < 1 ) {
+
+      console.log( nowRunning + ": aborted, invalid user ID\n" );
+      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+
+    } 
+
+    await recordEvent ({ apiTesting, event: eventNumber, eventDetails, eventTarget, userId })
 
     console.log( nowRunning + ": finished\n" );
     return res.status( 200 ).send( { success: true } )
