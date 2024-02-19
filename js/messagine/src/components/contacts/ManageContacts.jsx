@@ -315,9 +315,9 @@ function ManageContacts() {
       occurred: errorOccurred
     } = errorState
     
-    if ( errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API.
+    if ( errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API..
 
-    // Final setup before rendering.
+    // Final setup before rendering..
 
     const contactsFound = Object.keys(originalContacts).length
     const filteredCount = Object.keys(contacts).length

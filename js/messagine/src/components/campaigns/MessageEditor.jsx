@@ -368,9 +368,9 @@ function MessageEditor() {
       occurred: errorOccurred
     } = errorState
 
-    if ( errorOccurred && !alreadyReported) reportError = true // persist this error to the Simplexable API
+    if ( errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API.
 
-    // final setup before rendering
+    // Final setup before rendering.
 
     if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
 

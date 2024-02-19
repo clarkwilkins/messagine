@@ -260,9 +260,9 @@ function Upcoming() {
       occurred: errorOccurred
     } = errorState
 
-    if (errorOccurred && !alreadyReported) reportError = true; // persist this error to the Simplexable API
+    if (errorOccurred && !alreadyReported) reportError = true; // Persist this error to the Simplexable API.
 
-    // final setup before rendering
+    // Final setup before rendering.
 
     console.log('upcoming', upcoming)
     const upcomingEvents = Object.keys(upcoming).length

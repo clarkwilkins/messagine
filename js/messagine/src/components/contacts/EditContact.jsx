@@ -231,7 +231,7 @@ function EditContact(props) {
 
   try {
 
-    // final setup before rendering
+    // Final setup before rendering.
 
     if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
 
