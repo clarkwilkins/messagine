@@ -1,4 +1,5 @@
 import { 
+  useCallback,
   useEffect,
   useState
 } from 'react'
@@ -10,12 +11,16 @@ import { toast } from 'react-toastify'
 import { 
   Breadcrumb,
   Col,
+  Container,
   Form,
   OverlayTrigger,
   Row,
   Tooltip
 } from 'react-bootstrap'
-import { List } from '@phosphor-icons/react'
+import { 
+  Check,
+  List 
+} from '@phosphor-icons/react'
 import CheckBoxInput from '../common/CheckBoxInput'
 import FormButtons from '../common/FormButtons'
 import TextArea from '../common/TextArea'
@@ -23,7 +28,9 @@ import TextInput from '../common/TextInput'
 import { 
   apiLoader, 
   changeTitle,
-  errorDisplay
+  errorDisplay,
+  recordEvent,
+  stringCleaner
 } from '../../services/handler'
 
 function NewContact() {
@@ -36,7 +43,7 @@ function NewContact() {
     alreadyReported: false,
     context: '',
     details: 'general exception thrown',
-    displayed: 57, // this is only useful when there are child components
+    displayed: 57, // This is only useful when there are child components.
     message: defaultError,
     number: 57,
     occurred: false,
@@ -45,6 +52,9 @@ function NewContact() {
     level,
     toggleDimmer
   } = useOutletContext()
+  const [lists, setLists] = useState({})
+  const [listTargets, setListTargets] = useState([])
+  const [loading, setLoading] = useState() // This is used to load active mailing lists just one time (useEffect).
   const schema = Joi.object({
     companyName: Joi.string().optional().allow( '', null ),
     contactName: Joi.string().required(),
@@ -63,6 +73,119 @@ function NewContact() {
     trigger
   } = useForm({ resolver: joiResolver(schema)})
 
+  // Get all active lists that are accepting new contacts.
+
+  const getAllLists = useCallback(async () => {
+
+    const context = `${nowRunning}.getAllLists`
+
+    try {
+
+      toggleDimmer(true)
+      const api = 'lists/all'
+      const payload = { active: true }
+      const { data } = await apiLoader({ api, payload })
+      const {
+        failure,
+        lists,
+        success
+      } = data
+
+      // Reporting a failure from the API (already logged).
+    
+      if (!success) {
+    
+        if (+level === 9) console.log(`failure: ${failure}`)
+    
+        toggleDimmer(false)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: `failure: ${failure}`,
+          errorAlreadyReported: true,
+          message: `failure: ${failure}`, // Show the failure message on the modal.
+          occurred: true
+        }))
+        return null
+    
+      }
+
+      console.log('lists', lists)
+      const availableLists = {}
+
+      Object.entries(lists).map(list => {
+
+        const {
+          acceptContacts,
+          listName,
+          listNotes
+        } = list[1]
+
+        if (acceptContacts == true) { 
+
+          availableLists[list[0]] = {
+            listName,
+            listNotes
+          }
+
+        }
+
+      })
+
+      setLists(availableLists)
+      toggleDimmer(false)
+      return true
+
+    } catch(e) { // Reporting an exception within the function.
+
+      if (+level === 9) console.log(`exception: ${e.message}`)
+    
+      setErrorState(prevState => ({
+        ...prevState,
+        context,
+        details: e.message,
+        errorAlreadyReported: false,
+        occurred: true
+      }))
+  
+    }
+
+  }, [level, toggleDimmer])
+
+  // Display all lists that are accepting new contacts and include a check mark on lists which will be adding this contact.
+
+  const listsDisplay = () => {
+
+    const context = `${nowRunning}.listsDisplay`
+
+    const rows = Object.entries(lists).map((list, key) => {
+
+      const listId=list[0]
+      const {
+        listName,
+        listNotes
+      } = list[1]
+
+      return (
+
+        <Row
+          className="alternate-1 p-3 hover"
+          key={key}
+          onClick={ () => toggleList(listId)}
+        >
+          
+          <div>{listName}{listTargets.includes(listId) && (<span className = "ml-05 up-3 size-125"><b><Check /></b></span>)}</div>
+          <div className="size-80">{listNotes}</div>
+
+        </Row>
+      )
+
+    })
+
+    return rows
+
+  }
+
   const onReset = () => {
     
     reset()
@@ -79,8 +202,14 @@ function NewContact() {
       toggleDimmer(true)
       const api = 'contacts/new'
       const payload = { ...data }
+      payload.contactName = stringCleaner(payload.contactName, true)
+      payload.contactNotes = stringCleaner(payload.contactNotes, true)
+      payload.email = stringCleaner(payload.email, true)
+      payload.sms = stringCleaner(payload.sms, true)
+      payload.url = stringCleaner(payload.url, true)
       const { data: result } = await apiLoader({ api, payload })
       const {
+        contactId,
         failure,
         success
       } = result
@@ -101,8 +230,72 @@ function NewContact() {
     
       }
 
+      await recordEvent ({ eventNumber: 12, eventTarget: contactId })  // Record contact created event.
+
+      // Define the function that actually does the contact:list linking.
+
+      async function addToList({ contactId, listId }) {
+
+        const api = 'lists/contact-linking'
+        const payload = {
+          contactId,
+          link: true,
+          listId
+        }
+        const { data } = await apiLoader({ api, payload })
+
+        const {
+          failure,
+          success
+        } = data
+        
+        if (!success) {
+  
+          if (+level === 9) console.log(`failure: ${failure}`)
+      
+          toggleDimmer(false)
+          setErrorState(prevState => ({
+            ...prevState,
+            alreadyReported: true,
+            context,
+            message: `failure: ${failure}`,
+            occurred: true
+          }))
+          return { failure, success: false}
+      
+        }
+
+        // Record adding this contact to a mailing list.
+
+        await recordEvent ({ eventNumber: 13, eventDetails: 'contact added to list ' + lists[listId].listName, eventTarget: contactId })
+
+        return { success: true }
+
+      }
+
+      // Define the function to run the async operation on all members of listTargets.
+
+      async function processListTargets(listTargets) {
+
+        const promises = listTargets.map(async (listId) => { return await addToList({ listId, contactId }) })      
+        const results = await Promise.all(promises);
+        return results
+
+      }
+
+      // Add the contact to any selected lists.
+      
+      processListTargets(listTargets)
+        .then(results => {
+          console.log(results); // Logs the result of the async operation for each array element
+        })
+        .catch(error => {
+          console.error(error); // Handles any errors that might occur during the async operations
+        })
+
       toast.success('The new contact was created.')
       onReset()
+      toggleDimmer(false)
 
     } catch(e) {
 
@@ -121,15 +314,75 @@ function NewContact() {
 
   }
 
-  // we need form validation at load time
+  // Add or remove a list that will be adding this contact.
 
-  useEffect(() => { trigger() }, [trigger])
+  const toggleList = listId => {
+
+    if (listTargets.includes(listId)) {
+
+      let filteredArray = listTargets.filter(function(element) { return element !== listId } )
+      setListTargets(filteredArray)
+
+
+    } else {
+
+      listTargets.push(listId)
+      setListTargets(listTargets)
+
+    }
+
+    trigger()
+    
+  }
+
+  // Load active mailing lists once, but check form validation every time.
+
+  useEffect(() => { 
+
+    const context = `${nowRunning}.useEffect`
+
+    const runThis = async () => {
+
+      try {
+
+        if (!loading) {
+
+          setLoading(true) // Only do this once!          
+          toggleDimmer(true)
+          await getAllLists()
+          toggleDimmer(false)
+
+        }
+
+        trigger()
+
+      } catch (e) {
+
+        if (+level === 9) console.log(`exception: ${e.message}`)
+  
+        toggleDimmer(false)
+        setErrorState(prevState => ({
+          ...prevState,
+          context,
+          details: e.message,
+          errorAlreadyReported: false,
+          occurred: true
+        }))
+        setLoading(true)
+      
+      }
+
+    }
+
+    runThis()
+  
+  }, [trigger])
 
   try {
     
-    // setup for error display and (possible) reporting
+    // Setup for error display and (possible) reporting.
 
-    let reportError = false // default condition is there is no error
+    let reportError = false // Default condition is there is no error.
     const {
       alreadyReported,
       context,
@@ -139,11 +392,15 @@ function NewContact() {
       occurred: errorOccurred
     } = errorState
 
-    if (errorOccurred && !alreadyReported) reportError = true // persist this error to the Simplexable API
+    if (errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API.
 
-    // final setup before rendering
+    // Final setup before rendering.
 
     if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
+
+    const availableListsCount = Object.keys(lists).length
+
+    console.log(listTargets)
 
     return (
     
@@ -284,9 +541,19 @@ function NewContact() {
                 label="notes"
                 placeholder="use this to add notes about the contact..."
                 register={register}
-            />
+            />            
 
-            
+            {availableListsCount > 0 && (
+
+              <>
+
+                <div className="size-65"><b>add to lists ({availableListsCount} available)</b></div>
+
+                <Container className="border-gray-2 mt-3 mb-3 width-100 size-80">{listsDisplay()}</Container>
+
+              </>
+
+            )}
 
           <FormButtons
             errors={errors}
@@ -300,7 +567,7 @@ function NewContact() {
 
       </>
 
-)
+    )
 
   } catch(e) {
 

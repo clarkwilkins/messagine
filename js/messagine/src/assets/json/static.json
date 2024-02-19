@@ -11,7 +11,9 @@
     "a contact set a total block on their record",
     "a campaign was not allowed to run because the unsubscribe URL was not found",
     "a campaign message was blocked because the message or template does not contain an [UNSUB_MESSAGE] placeholder",
-    "a list was deleted"
+    "a list was deleted",
+    "the contact was created",
+    "the contact was added to a mailing list"
   ],
   "intervals": [
     "not set",
