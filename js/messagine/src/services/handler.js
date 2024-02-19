@@ -133,7 +133,7 @@ export async function errorHandler( errorPayload ) {
 
 // string sanitization
 
-export function stringCleaner({ string, nl2br }) {
+export function stringCleaner(string, nl2br) {
 
   string = replace( replace( string, /""/g, '"' ) ).trim();
 
