@@ -102,7 +102,7 @@ function MessageEditor() {
     
       if (!success) {
     
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -124,7 +124,7 @@ function MessageEditor() {
 
     } catch(e) { // reporting an exception within the function
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
     
       setErrorState(prevState => ({
         ...prevState,
@@ -172,7 +172,7 @@ function MessageEditor() {
 
     } catch(e) { // reporting an exception within the function
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
     
       setErrorState(prevState => ({
         ...prevState,
@@ -209,7 +209,7 @@ function MessageEditor() {
     
       if (!success) {
     
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -229,7 +229,7 @@ function MessageEditor() {
 
     } catch(e) { // reporting an exception within the function
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
     
       setErrorState(prevState => ({
         ...prevState,
@@ -331,7 +331,7 @@ function MessageEditor() {
 
         } catch(e) { // reporting an exception within the function
 
-          if (level === 9) console.log(`exception: ${e.message}`)
+          if (+level === 9) console.log(`exception: ${e.message}`)
 
           setErrorState(prevState => ({
             ...prevState,

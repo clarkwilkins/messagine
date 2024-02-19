@@ -1,4 +1,4 @@
-import { 
+import {  
   useCallback,
   useEffect,
   useState
@@ -47,7 +47,7 @@ function Upcoming() {
 
   const getUpcoming = useCallback(async () => {
 
-    const context = `${nowRunning}.getScheduled`
+    const context = `${nowRunning}.getUpcoming`
 
     try {
 
@@ -62,7 +62,7 @@ function Upcoming() {
 
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -81,7 +81,7 @@ function Upcoming() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       toggleDimmer(false)
       setErrorState(prevState => ({
@@ -103,6 +103,7 @@ function Upcoming() {
       const campaignId = row[0]
       const {
         campaignName,
+        campaignTargets,
         ends2,
         interval,
         messageId,
@@ -188,7 +189,7 @@ function Upcoming() {
               
               <div className="size-80">targets</div>
 
-              <div>{targets}</div>
+              <div>{Object.keys(campaignTargets).length}</div>
 
             </div>
             
@@ -225,7 +226,7 @@ function Upcoming() {
 
         } catch (e) {
 
-        if (level === 9) console.log(`exception: ${e.message}`)
+        if (+level === 9) console.log(`exception: ${e.message}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -332,7 +333,7 @@ function Upcoming() {
 
   } catch(e) {
 
-    if (level === 9) console.log(`exception: ${e.message}`)
+    if (+level === 9) console.log(`exception: ${e.message}`)
 
     toggleDimmer(false)
     setErrorState(prevState => ({

@@ -104,7 +104,7 @@ function ManageLists() {
 
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
 
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -122,7 +122,7 @@ function ManageLists() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       toggleDimmer(false)
       setErrorState(prevState => ({
@@ -154,7 +154,7 @@ function ManageLists() {
 
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
 
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -172,7 +172,7 @@ function ManageLists() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       toggleDimmer(false)
       setErrorState(prevState => ({
@@ -225,7 +225,7 @@ function ManageLists() {
       
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
 
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -286,7 +286,7 @@ function ManageLists() {
 
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
 
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -302,7 +302,7 @@ function ManageLists() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       setErrorState(prevState => ({
         ...prevState,
@@ -340,7 +340,7 @@ function ManageLists() {
       
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -366,7 +366,7 @@ function ManageLists() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       toggleDimmer(false)
       setErrorState(prevState => ({
@@ -405,7 +405,7 @@ function ManageLists() {
       
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -425,7 +425,7 @@ function ManageLists() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       toggleDimmer(false)
       setErrorState(prevState => ({
@@ -557,7 +557,7 @@ function ManageLists() {
 
       } catch (e) {
 
-        if (level === 9) console.log(`exception: ${e.message}`)
+        if (+level === 9) console.log(`exception: ${e.message}`)
   
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -882,7 +882,7 @@ function ManageLists() {
 
   } catch(e) {
 
-    if (level === 9) console.log(`exception: ${e.message}`)
+    if (+level === 9) console.log(`exception: ${e.message}`)
 
     toggleDimmer(false)
     setErrorState(prevState => ({

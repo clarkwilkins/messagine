@@ -79,7 +79,7 @@ function NewList() {
       
       if (!success) {
 
-        if (level === 9) console.log(`failure: ${failure}`)
+        if (+level === 9) console.log(`failure: ${failure}`)
     
         toggleDimmer(false)
         setErrorState(prevState => ({
@@ -97,7 +97,7 @@ function NewList() {
 
     } catch(e) {
 
-      if (level === 9) console.log(`exception: ${e.message}`)
+      if (+level === 9) console.log(`exception: ${e.message}`)
 
       toggleDimmer(false)
       setErrorState(prevState => ({
@@ -223,7 +223,7 @@ function NewList() {
 
   } catch(e) {
 
-    if (level === 9) console.log(`exception: ${e.message}`)
+    if (+level === 9) console.log(`exception: ${e.message}`)
 
     toggleDimmer(false)
     setErrorState(prevState => ({
