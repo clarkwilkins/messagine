@@ -427,6 +427,7 @@ exports.sendMail = async (addressee, html, subject, testMode) => {
 
     const text = 'Please read this email in a HTML-capable browser.'
     const sender = SENDGRID_SENDER
+    console.log( `Sending ${subject} to ${addressee} @ ${moment().format('YYYY.MM.DD HH.mm.ss')}`)
     emailResults = await sgMail.send({ to: addressee, html, from: sender, subject, text })
 
     // The next line is useful if we want to comment out the Sendgrid API above for test purposes.

@@ -351,17 +351,17 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
       }
 
-      // Each message gets the individual contact name.
-
-      messageContent = replace(messageContent, /\[CONTACT_NAME\]/g, contactName) 
-
       // Add the unsubscribe URL.
       
       messageContent = replace(messageContent, /\[UNSUB_MESSAGE\]/g, `<p><a href="${unsubUrl}?ca=${campaignId}&co=${contactId}">Manage your subscription preferences here</a></p>`) 
 
+      // Each message gets the individual contact name. This is done last because the contact name changes on every email.
+
+      const thisMessage = replace(messageContent, /\[CONTACT_NAME\]/g, contactName) 
+
       // Send the mail now.
 
-      const response = await sendMail (email, messageContent, messageSubject)
+      const response = await sendMail (email, thisMessage, messageSubject)
       const {
         body,
         statusCode
@@ -463,7 +463,7 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 router.post("/run", async (req, res) => { 
 
   const nowRunning = "/campaigns/run"
-  console.log(`${nowRunning}: running\n`)
+  console.log(`${nowRunning}: running ${moment().format('YYYY.MM.DD HH.mm.ss')}`)
   const errorNumber = 41
   const success = false
 
@@ -941,7 +941,7 @@ router.post("/run", async (req, res) => {
 
         if (!setNextRunSuccess) return { campaignsProcessedFailure: setNextRunFailure, campaignsProcessedSuccess: false }
     
-        // Log or handle the successful campaign processing (to be replaced with history).
+        // Log or handle the successful campaign processing
 
         const eventDetails = `${nowRunning}: campaign ${campaignId} processed successfully`
         recordEvent ({ apiTesting, event: 3, eventDetails, eventTarget: campaignId, userId })
@@ -999,7 +999,7 @@ router.post("/run", async (req, res) => {
 router.post("/upcoming", async (req, res) => { 
 
   const nowRunning = "/scheduler/upcoming"
-  console.log(`${nowRunning}: running\n`)
+  console.log(`${nowRunning}: running ${moment().format('YYYY.MM.DD HH.mm.ss')}`)
 
   const errorNumber = 45
   const success = false
