@@ -130,7 +130,7 @@ export async function errorHandler( errorPayload ) {
 
 }
 
-export async function recordEvent({ apiTesting, eventNumber, eventDetails, eventTarget }) {
+export async function recordEvent({ apiTesting, eventDetails, eventNumber, eventTarget }) {
 
   const api = 'utilities/record-event'
   const payload = { apiTesting, eventDetails, eventNumber, eventTarget }

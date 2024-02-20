@@ -13,7 +13,11 @@ import {
   Row,
   Tooltip
 } from 'react-bootstrap'
-import { List } from '@phosphor-icons/react'
+import { 
+  List,
+  PersonSimpleRun
+} from '@phosphor-icons/react'
+import DryRun from './DryRun'
 import Loading from '../common/Loading'
 import { 
   apiLoader, 
@@ -43,6 +47,7 @@ function Upcoming() {
   } = useOutletContext()
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [showDryRun, setShowDryRun] = useState()
   const [upcoming, setUpcoming] = useState({})
 
   const getUpcoming = useCallback(async () => {
@@ -95,6 +100,8 @@ function Upcoming() {
     }
 
   }, [level, toggleDimmer])
+
+  const toggleDryRun = () => setShowDryRun(!showDryRun)
 
   const upcomingList = () => {
 
@@ -184,14 +191,10 @@ function Upcoming() {
           </Col>
 
           <Col xs={12} sm={6}>
-            
-            <div>
-              
-              <div className="size-80">targets</div>
+                          
+            <div className="size-80">targets</div>
 
-              <div>{Object.keys(campaignTargets).length}</div>
-
-            </div>
+            <div>{Object.keys(campaignTargets).length}</div>
             
           </Col>
 
@@ -204,6 +207,17 @@ function Upcoming() {
     return rows
 
   }
+
+  // updateErrorState can be passed to child components to allow them to update the parent when they have an error
+
+  const updateErrorState = (newErrorState) => {
+
+    setErrorState(prevState => ({
+      ...prevState,
+      ...newErrorState
+    }));
+
+  };
 
   useEffect(() => {
 
@@ -218,7 +232,6 @@ function Upcoming() {
               setLoading(true) // only do this once!          
               toggleDimmer(true)
               await getUpcoming()
-
               setLoaded(true)
               toggleDimmer(false)
 
@@ -264,7 +277,6 @@ function Upcoming() {
 
     // Final setup before rendering.
 
-    console.log('upcoming', upcoming)
     const upcomingEvents = Object.keys(upcoming).length
 
     return (
@@ -316,12 +328,31 @@ function Upcoming() {
                 </OverlayTrigger>
                 
               </div>
+
+              <div className="float-right ml-05">
+
+                <OverlayTrigger
+                  delay={ {  hide: 100, show: 200 } }
+                  overlay={ (props) => (
+                    <Tooltip { ...props }>
+                      {!showDryRun && (<span>dry-run the schedule</span>)}
+                      {showDryRun && (<span>hide dry-run results</span>)}
+                    </Tooltip>
+                 )}
+                  placement="bottom"
+                >
+                  <div onClick={ () => toggleDryRun() }><PersonSimpleRun /></div>
+                </OverlayTrigger>
+                
+              </div>
               
               upcoming scheduled events ({upcomingEvents} campaign{upcomingEvents !== 1 &&(<span>s</span>)})
 
             </h5>
 
-            {upcomingEvents && (<Container className="mt-3 mb-3 border-gray-2 size-80">{upcomingList()}</Container>)}
+            {upcomingEvents && (<Container className="mt-3 mb-3 border-gray-2 size-80 width-100">{upcomingList()}</Container>)}
+
+            {showDryRun && (<DryRun updateErrorState={updateErrorState} />)}
 
           </>
 

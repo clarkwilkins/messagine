@@ -286,7 +286,20 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
 
 }
 
-const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligibleRecipients, errorNumber, messageContent, messageId, messageSubject, nextMessage, unsubUrl, userId }) => {
+const processCampaigns = async ({ 
+  apiTesting, 
+  campaignId, 
+  campaignRepeats, 
+  dryRun, 
+  eligibleRecipients, 
+  errorNumber, 
+  messageContent, 
+  messageId, 
+  messageSubject, 
+  nextMessage, 
+  unsubUrl, 
+  userId 
+}) => {
 
   const { 
     getDynamicMessageReplacements,
@@ -295,6 +308,8 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
     updateDynamicText
   } = require ('../functions')
   const nowRunning = 'scheduler.js:processCampaigns'
+
+  const dryRunInformation = []; // This holds events when dryRun is set.
 
   try {
 
@@ -361,52 +376,70 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
       // Send the mail now.
 
-      const response = await sendMail (email, thisMessage, messageSubject)
-      const {
-        body,
-        statusCode
-      } = response[0]
+      if (!dryRun) {
 
-      let eventDetails
+        const response = await sendMail (email, thisMessage, messageSubject)
+        const {
+          body,
+          statusCode
+        } = response[0]
 
-      if (statusCode == 200 || statusCode == 202) { // Record successful send event in message_tracking.
+        let eventDetails
 
-        queryText = `INSERT INTO message_tracking(campaign_id, contact_id, message_id, sent) VALUES('${campaignId}', '${contactId}', '${messageId}', '${+moment().format('X')}')`
-        results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+        if (statusCode == 200 || statusCode == 202) { 
+          
+          // Record successful send event in message_tracking.
 
-        if (!results) { 
+          queryText = `INSERT INTO message_tracking(campaign_id, contact_id, message_id, sent) VALUES('${campaignId}', '${contactId}', '${messageId}', '${+moment().format('X')}')`
+          results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
 
-          const failure = 'database error when recording the send event'
-          console.log(`${nowRunning}: ${failure}\n`)
-          await recordError ({
-            context: 'api: ' + nowRunning,
-            details: queryText,
-            errorMessage: failure,
-            errorNumber,
-            userId
-          })
-      
-          return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
-      
+          if (!results) { 
+
+            const failure = 'database error when recording the send event'
+            console.log(`${nowRunning}: ${failure}\n`)
+            await recordError ({
+              context: 'api: ' + nowRunning,
+              details: queryText,
+              errorMessage: failure,
+              errorNumber,
+              userId
+            })
+        
+            return ({ campaignsProcessedFailure: failure, campaignsProcessedSuccess: false })
+        
+          }
+        
+        } else { 
+          
+          // Start with the basics of what's running right now.
+
+          eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body?.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`
+
+          // Append all error messages to the details.
+
+          try {
+            
+            response.body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
+
+          } catch(e) {} // No errors to append.
+
+          // Record the errors on this send to the event log (not the errors API).
+
+          recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
+
         }
-      
+
       } else {
 
-        // Start with the basics of what's running right now.
+        // Process dry run information
 
-        eventDetails = `Sendgrid reported statusCode: ${statusCode} and (${body?.errors.length}) error(s) while sending to ${contactName}, ${email}, ${contactId}:`
-
-        // Append all error messages to the details.
-
-        try {
-          
-          response.body.errors.map(row => {  eventDetails += `\nmessage: ${row.message}` })
-
-        } catch(e) {} // No errors to append.
-
-        // Record the errors on this send to the event log (not the errors API).
-
-        recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
+        dryRunInformation.push({
+          contactName,
+          email,
+          messageContent: thisMessage,
+          messageId,
+          messageSubject
+        })
 
       }
       
@@ -442,7 +475,7 @@ const processCampaigns = async ({ apiTesting, campaignId, campaignRepeats, eligi
 
     // Everything worked.
 
-    return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true, })
+    return ({ campaignsProcessedFailure: false, campaignsProcessedSuccess: true, dryRunInformation })
 
   } catch(e) {
 
@@ -478,7 +511,9 @@ router.post("/run", async (req, res) => {
 
     const schema = Joi.object({
       apiTesting: Joi.boolean(),
-      masterKey: Joi.any()
+      dryRun: Joi.boolean(),
+      masterKey: Joi.any(), // This would be coming in from React and is ignored.
+      userId: Joi.any() // This would be coming in from React and is ignored.
     })
 
     const errorMessage = validateSchema(nowRunning, recordError, req, schema)
@@ -490,12 +525,22 @@ router.post("/run", async (req, res) => {
 
     }
 
-    const { apiTesting } = req.body
+    let { 
+      apiTesting,
+      dryRun
+    } = req.body
+
+    if (dryRun) apiTesting = true // If this is a dry run, we don't want to commit any changes.
+
     const userId = API_ACCESS_TOKEN // We need a user ID but this runs as a crontab job.
 
     // Get all campaigns that have a message that is eligible to run now.
 
-    let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, c.starts, c.unsub_url, cm.position, m.content, m.message_id, m.message_name, m.repeatable, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true AND (c.next_run <= ${moment().format('X')} OR c.next_run IS NULL) AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position`
+    let queryText = "SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.message_series, c.next_run, c.starts, c.unsub_url, cm.position, m.content, m.message_id, m.message_name, m.repeatable, m.subject FROM campaigns c, campaign_messages cm, messages m WHERE c.active = true" 
+    
+    if (!dryRun) queryText += ` AND (c.next_run <= ${moment().format('X')} OR c.next_run IS NULL)`
+    
+    queryText += " AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position"
     let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
     if (!results.rows) {
@@ -883,6 +928,7 @@ router.post("/run", async (req, res) => {
           recordEvent ({ apiTesting, event: 1, eventDetails, eventTarget: campaignId, userId })
           return {
             campaignId,
+            campaignName,
             messageId,
             noEligibleRecipients: true,
             campaignsProcessedSuccess: true
@@ -894,10 +940,12 @@ router.post("/run", async (req, res) => {
     
         const {
           campaignsProcessedFailure,
-          campaignsProcessedSuccess
+          campaignsProcessedSuccess,
+          dryRunInformation
         } = await processCampaigns({
           campaignId,
           campaignRepeats,
+          dryRun,
           eligibleRecipients,
           errorNumber,
           messageContent: stringCleaner(messageContent),
@@ -948,9 +996,11 @@ router.post("/run", async (req, res) => {
     
         return {
           campaignId,
-          messageId: row.message_id,
+          campaignName,
           campaignsProcessedFailure,
-          campaignsProcessedSuccess
+          campaignsProcessedSuccess,
+          dryRunInformation,
+          messageId: row.message_id
         }
 
       } catch (error) {
