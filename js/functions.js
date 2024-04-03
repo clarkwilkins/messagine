@@ -165,6 +165,7 @@ exports.getDynamicMessageReplacements = async ({ campaignId, errorNumber, userId
   } = require ('./functions')
 
   const queryText = `SELECT DISTINCT ON (target_name) * FROM dynamic_values WHERE message_id IN ( SELECT message_id FROM campaign_messages WHERE campaign_id = '${campaignId}') ORDER BY target_name, last_used`
+  console.log(queryText)
   const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
 
   if (!results?.rows) {
@@ -503,7 +504,7 @@ exports.validateSchema = (nowRunning, recordError, req, schema) => {
    }
     
 
- } catch (e) { console.log (nowRunning + ': failed with an exception: ', e); }  
+  } catch (e) { console.log (nowRunning + ': failed with an exception: ', e); }  
   
 }
 

@@ -313,7 +313,7 @@ const processCampaigns = async ({
 
   try {
 
-    const now = moment().format('X')
+    const now = +moment().format('X')
     const success = false
 
     // In the case of a repeating campaign, all list contacts are going to get the same basic email so we only do dynamic updates once.
@@ -324,12 +324,15 @@ const processCampaigns = async ({
       success: getDynamicValuesSuccess
     } = await getDynamicMessageReplacements({ campaignId, errorNumber, userId })
 
+    // Uncomment the next line to see what substitutions are going to be made.
+    // console.log('dynamicValues', allDynamicValues[messageId])
+
     if (!getDynamicValuesSuccess) {
 
       console.log(`${nowRunning}: exited due to error on function getDynamicMessageReplacements\n`)
       return ({ failure: getDynamicValuesFailure, success })
 
-    }
+    }    
 
     // This runs the dynamic replacements for the main message content.
 
@@ -429,7 +432,7 @@ const processCampaigns = async ({
 
         }
 
-      } else {
+      } else { 
 
         // Process dry run information
 
@@ -449,9 +452,11 @@ const processCampaigns = async ({
 
     try { 
 
+      if (dryRun) apiTesting = true // The values should NOY be rotated if this is not an actual run.
+
       queryText = ''
 
-      Object.keys(dynamicValues).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
+      Object.keys(allDynamicValues).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
 
       results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
 

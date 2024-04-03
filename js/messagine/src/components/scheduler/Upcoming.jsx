@@ -229,27 +229,27 @@ function Upcoming() {
 
           if (!loading) {
 
-              setLoading(true) // only do this once!          
-              toggleDimmer(true)
-              await getUpcoming()
-              setLoaded(true)
-              toggleDimmer(false)
+            setLoading(true) // only do this once!          
+            toggleDimmer(true)
+            await getUpcoming()
+            setLoaded(true)
+            toggleDimmer(false)
 
           }
 
         } catch (e) {
 
-        if (+level === 9) console.log(`exception: ${e.message}`)
-    
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-            ...prevState,
-            context,
-            details: e.message,
-            errorAlreadyReported: false,
-            occurred: true
-        }))
-        setLoaded(true)
+          if (+level === 9) console.log(`exception: ${e.message}`)
+      
+          toggleDimmer(false)
+          setErrorState(prevState => ({
+              ...prevState,
+              context,
+              details: e.message,
+              errorAlreadyReported: false,
+              occurred: true
+          }))
+          setLoaded(true)
         
         }
 
