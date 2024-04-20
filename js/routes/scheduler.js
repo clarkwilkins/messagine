@@ -456,7 +456,7 @@ const processCampaigns = async ({
 
       queryText = ''
 
-      Object.keys(allDynamicValues).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
+      Object.keys(allDynamicValues[messageId]).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
 
       results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
 
