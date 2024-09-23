@@ -41,11 +41,16 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
@@ -56,12 +61,26 @@ router.post( "/all", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
     
@@ -76,9 +95,9 @@ router.post( "/all", async ( req, res ) => {
     if ( stringFilter.length > 2 ) queryText += " AND l.list_name ILIKE '%" + stringFilter + "%' ";
 
     queryText += " ORDER BY active DESC, list_name; ";
-    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting list records';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -141,7 +160,7 @@ router.post( "/all", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
     } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -175,11 +194,16 @@ router.post( "/contact-linking", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
@@ -192,12 +216,26 @@ router.post( "/contact-linking", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
     
@@ -214,9 +252,9 @@ router.post( "/contact-linking", async ( req, res ) => {
 
     }
 
-    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting list records';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -243,7 +281,7 @@ router.post( "/contact-linking", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
     } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -275,11 +313,16 @@ router.post( "/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
@@ -290,17 +333,31 @@ router.post( "/delete", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
 
-    }
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    } 
 
     let queryText = `DELETE FROM lists WHERE list_id = '${listId}' AND locked <= ${userLevel} RETURNING *`
-    let results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    let results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
@@ -328,7 +385,7 @@ router.post( "/delete", async ( req, res ) => {
     // cleanup
 
     queryText = `DELETE FROM list_contacts WHERE list_id = '${listId}'; DELETE FROM events WHERE event_target = '${listId}'`
-    results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
@@ -346,7 +403,13 @@ router.post( "/delete", async ( req, res ) => {
     }
 
     const eventDetails = `Mailing list <b>${listName}</b> was deleted.`
-    await recordEvent ({ apiTesting, event: 11, eventDetails, eventTarget: userId, userId })
+    await recordEvent ({ 
+      apiTesting, 
+      event: 11, 
+      eventDetails, 
+      eventTarget: userId, 
+      userId 
+    });
 
     console.log( nowRunning + ": finished\n" );
     return res.status( 200 ).send( { success: true } );
@@ -360,7 +423,7 @@ router.post( "/delete", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
     } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -391,11 +454,16 @@ router.post( "/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
@@ -405,19 +473,33 @@ router.post( "/load", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     let queryText = " SELECT l.*, u.user_name FROM lists l, users u WHERE l.list_id = '" + listId + "' AND l.updated_by = u.user_id; ";
-    let results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting the list metadata';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -454,9 +536,9 @@ router.post( "/load", async ( req, res ) => {
     const linkedContacts = {};
 
     queryText = " SELECT c.* FROM contacts c, list_contacts lc WHERE c.contact_id = lc.contact_id AND lc.list_id = '" + listId + "' AND c.active = true AND c.block_all = false ORDER BY c.contact_name, c.company_name, c.email; "
-    results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting the linked contacts';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -519,7 +601,7 @@ router.post( "/load", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
     } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -552,11 +634,16 @@ router.post( "/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
@@ -568,12 +655,26 @@ router.post( "/new", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -583,9 +684,9 @@ router.post( "/new", async ( req, res ) => {
     const now = moment().format( 'X' );
 
     const queryText = `INSERT INTO lists( created, list_id, list_name, list_notes, locked, updated, updated_by ) VALUES( ${now}, '${listId}', '${listName}', '${listNotes}', 0, ${now}, '${userId}' ) ON CONFLICT DO NOTHING RETURNING list_id;`;
-    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when creating a new list record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -618,7 +719,7 @@ router.post( "/new", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
     } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -655,11 +756,16 @@ router.post( "/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
     }
@@ -675,14 +781,28 @@ router.post( "/update", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
 
-    }
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    } 
 
     listName = stringCleaner( listName, true );
     listNotes ? listNotes = stringCleaner( listNotes, true ) : listNotes = '';
@@ -708,9 +828,9 @@ router.post( "/update", async ( req, res ) => {
     }
     
     queryText += " WHERE list_id = '" + listId + "' AND locked <= " + userLevel + " RETURNING list_id; ";
-    results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when updating contact record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -743,7 +863,7 @@ router.post( "/update", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
     } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 

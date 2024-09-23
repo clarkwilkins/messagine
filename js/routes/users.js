@@ -47,11 +47,16 @@ router.post("/all", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
    }
@@ -63,12 +68,26 @@ router.post("/all", async (req, res) => {
 
     // comment out level check if creating the first user and do not supply userId in the JSON
 
-    const { level: userLevel } = await getUserLevel(userId);
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n");
-      return res.status(404).send({ failure: 'invalid user ID', success });
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -77,9 +96,9 @@ router.post("/all", async (req, res) => {
     if (typeof active === 'boolean') queryText += "WHERE active = " + active;
 
     queryText += " ORDER BY active DESC, user_name; ";
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId);
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting users';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -124,7 +143,7 @@ router.post("/all", async (req, res) => {
 
     })
 
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ success: true, users, usersSelector })
 
  } catch (e) {
@@ -136,7 +155,7 @@ router.post("/all", async (req, res) => {
       errorNumber,
       userId: req.body.userId
    });
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
     res.status(500).send(newException);
 
@@ -167,11 +186,16 @@ router.post("/load", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
    }
@@ -183,19 +207,33 @@ router.post("/load", async (req, res) => {
 
     // comment out level check if creating the first user and do not supply userId in the JSON
 
-    const { level: userLevel } = await getUserLevel(userId);
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n");
-      return res.status(404).send({ failure: 'invalid user ID', success });
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     const queryText = " SELECT * FROM users WHERE user_id = '" + thisUser + "' AND level <= " + userLevel + "; ";
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId);
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting the user record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -220,7 +258,7 @@ router.post("/load", async (req, res) => {
       user_name: userName
     } = results.rows[0];    
 
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ 
       active,
       email,
@@ -239,7 +277,7 @@ router.post("/load", async (req, res) => {
       errorNumber,
       userId: req.body.userId
    });
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
     res.status(500).send(newException);
 
@@ -254,6 +292,7 @@ router.post("/login-key", async (req, res) => {
 
   const errorNumber = 3;
   const success = false;
+  const userId = API_ACCESS_TOKEN;
   
   try {
 
@@ -263,18 +302,23 @@ router.post("/login-key", async (req, res) => {
       userId: Joi.any() // this is ignored if present
     });
 
-    const errorMessage = validateSchema (nowRunning, recordError, req, schema);
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
     }
 
     const { key } = req.body;
     const queryText = `SELECT * FROM users WHERE active = true AND token = '${key}';`;
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, API_ACCESS_TOKEN);
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText });
 
     if (!results) {
 
@@ -285,7 +329,7 @@ router.post("/login-key", async (req, res) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       });
       return res.status(200).send({ failure, success })
   
@@ -305,7 +349,7 @@ router.post("/login-key", async (req, res) => {
 
     }
 
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ userRecord, success: true })
 
   } catch (e) {
@@ -315,9 +359,9 @@ router.post("/login-key", async (req, res) => {
       details: stringCleaner( e.message),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: API_ACCESS_TOKEN
+      userId
     });
-    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
     res.status(500).send(newException);
 
@@ -332,6 +376,7 @@ router.post("/login-standard", async (req, res) => {
 
   const errorNumber = 2;
   const success = false;
+  const userId = API_ACCESS_TOKEN;
 
   try {
 
@@ -353,11 +398,16 @@ router.post("/login-standard", async (req, res) => {
       userId: Joi.any().optional() // ignored
     });
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
    }
@@ -369,9 +419,9 @@ router.post("/login-standard", async (req, res) => {
     } = req.body; 
 
     const queryText = " SELECT * FROM users WHERE active = true AND email ILIKE '" + email + "' ";
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, masterKey);
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when checking for an active user with this email address';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -380,7 +430,7 @@ router.post("/login-standard", async (req, res) => {
         details: queryText,
         errorMessage: failure,
         errorNumber,
-        userId: API_ACCESS_TOKEN
+        userId
       });
       return res.status(200).send({ failure, success })
   
@@ -405,7 +455,7 @@ router.post("/login-standard", async (req, res) => {
 
     token = jwt.sign ({ userRecord }, JWT_KEY, { expiresIn: "1h" });
     
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ token, success: true });
 
  } catch (e) {
@@ -415,9 +465,9 @@ router.post("/login-standard", async (req, res) => {
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
-      userId: req.body.userId
+      userId
    });
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
     res.status(500).send(newException);
 
@@ -456,11 +506,16 @@ router.post("/new", async (req, res) => {
       userName: Joi.string().required()
     });
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
    }
@@ -476,12 +531,26 @@ router.post("/new", async (req, res) => {
 
     // comment out level check if creating the first user and do not supply userId in the JSON
 
-    const { level: userLevel } = await getUserLevel(userId);
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 7) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n");
-      return res.status(404).send({ failure: 'invalid user ID', success });
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -495,9 +564,9 @@ router.post("/new", async (req, res) => {
     const newId = uuidv4();
     const token = uuidv4();
     const queryText = " INSERT INTO users (active, email, level, login_hash, token, user_id, user_name) VALUES (true, '" + email + "', " + level + ", '" + loginHash + "', '" + newId + "', '" + token + "', '" + stringCleaner(userName, true) + "') RETURNING *; ";
-    const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting);
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when creating a new user record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -512,7 +581,7 @@ router.post("/new", async (req, res) => {
       
     }
     
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ newId, success: true, token });
 
  } catch (e) {
@@ -524,7 +593,7 @@ router.post("/new", async (req, res) => {
       errorNumber,
       userId: req.body.userId
    });
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
     res.status(500).send(newException);
 
@@ -539,6 +608,7 @@ router.post("/reset-password/part-1", async (req, res) => {
 
   const errorNumber = 4;
   const success = false;
+  const userId = API_ACCESS_TOKEN;
     
   try {
 
@@ -546,12 +616,17 @@ router.post("/reset-password/part-1", async (req, res) => {
       apiTesting: Joi.boolean(),
       email: Joi.string().required().email(),
     });
-    
-    const errorMessage = validateSchema (nowRunning, recordError, req, schema);
+
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
     }
@@ -562,9 +637,9 @@ router.post("/reset-password/part-1", async (req, res) => {
     } = req.body;
 
     let queryText = " SELECT user_id FROM users WHERE active = true AND email ILIKE '" + email + "'; ";
-    let results = await db.noTransaction(queryText, errorNumber, nowRunning, API_ACCESS_TOKEN);
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -588,7 +663,7 @@ router.post("/reset-password/part-1", async (req, res) => {
 
     const resetCode = randomString();
     queryText = " DELETE FROM resets WHERE target = (SELECT user_id FROM users WHERE email = '" + stringCleaner(email, true) + "') OR  expires < " + moment().format('X') + "; INSERT INTO resets (code, expires, target) VALUES ('" + resetCode + "', " + moment().add(1, 'hours').format('X') + ", '" + userId + "') RETURNING *; ";
-    results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting);
+    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results || !results[1].rowCount) {
 
@@ -613,7 +688,7 @@ router.post("/reset-password/part-1", async (req, res) => {
 
     if (apiTesting !== true) await sendMail(email, html, 'Your reset code for access to Messagine');
 
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ success: true });
 
   } catch (e) {
@@ -625,7 +700,7 @@ router.post("/reset-password/part-1", async (req, res) => {
       errorNumber,
       userId: API_ACCESS_TOKEN
     });
-    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
     res.status(500).send(newException);
 
@@ -640,6 +715,7 @@ router.post("/reset-password/part-2", async (req, res) => {
 
   const errorNumber = 5;
   const success = false;
+  const userId = API_ACCESS_TOKEN;
   
   try {
 
@@ -647,12 +723,17 @@ router.post("/reset-password/part-2", async (req, res) => {
       apiTesting: Joi.boolean(),
       resetCode: Joi.string().required().min(8).max(8)
     });
-    
-    const errorMessage = validateSchema (nowRunning, recordError, req, schema);
+
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
     }
@@ -665,9 +746,9 @@ router.post("/reset-password/part-2", async (req, res) => {
     // verify this is a valid reset code
 
     let queryText = " SELECT * FROM resets WHERE code = '" + resetCode + "' AND expires >= " + moment().format('X') + "; ";
-    let results = await db.noTransaction(queryText, errorNumber, nowRunning, API_ACCESS_TOKEN);
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
     
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -691,9 +772,9 @@ router.post("/reset-password/part-2", async (req, res) => {
 
     const { target: userId } = results.rows[0];
     queryText = " SELECT email FROM users WHERE user_id = '" + userId + "'; ";
-    results = await db.noTransaction(queryText, errorNumber, nowRunning, API_ACCESS_TOKEN);
+    results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting the user\'s email address';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -729,7 +810,7 @@ router.post("/reset-password/part-2", async (req, res) => {
 
     const loginHash = await bcrypt.hash(email + resetCode, 10);
     queryText = " UPDATE users SET login_hash = '" + loginHash + "' WHERE user_id = '" + userId + "' RETURNING *; DELETE FROM resets WHERE code = '" + resetCode + "'; ";
-    results = await db.transactionRequired(queryText, errorNumber, nowRunning, API_ACCESS_TOKEN, apiTesting);
+    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results || results[0].rowCount != 1) {
 
@@ -749,7 +830,7 @@ router.post("/reset-password/part-2", async (req, res) => {
     const userRecord = results[0].rows[0];
     token = jwt.sign ({ userRecord }, JWT_KEY, { expiresIn: "1h" });
     
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ token, success: true });
 
   } catch (e) {
@@ -761,7 +842,7 @@ router.post("/reset-password/part-2", async (req, res) => {
       errorNumber,
       userId: API_ACCESS_TOKEN
     });
-    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
     res.status(500).send(newException);
 
@@ -796,12 +877,17 @@ router.post("/update", async (req, res) => {
       userId: Joi.string().required().uuid(),
       userName: Joi.string().required()
     });
-    
-    const errorMessage = validateSchema (nowRunning, recordError, req, schema);
+
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status(422).send({ failure: errorMessage, success });
 
     }
@@ -816,12 +902,26 @@ router.post("/update", async (req, res) => {
       userName
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel(userId);
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n");
-      return res.status(404).send({ failure: 'invalid user ID', success });
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -839,9 +939,9 @@ router.post("/update", async (req, res) => {
     }
     
     queryText += "user_name = '" + stringCleaner(userName, true) + "' WHERE user_id = '" + thisUser + "' RETURNING *; ";
-    const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting);
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when updating the user record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -859,7 +959,7 @@ router.post("/update", async (req, res) => {
     const userRecord = results.rows[0];
     token = jwt.sign ({ userRecord }, JWT_KEY, { expiresIn: "1h" });
     
-    console.log(nowRunning + ": finished\n");
+    console.log(`${nowRunning}: finished`);
     return res.status(200).send({ token, success: true });
 
   } catch (e) {
@@ -871,7 +971,7 @@ router.post("/update", async (req, res) => {
       errorNumber,
       userId
     });
-    const newException = nowRunning + ': failed with an exception: ' + e.message;
+    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
     res.status(500).send(newException);
 

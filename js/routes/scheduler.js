@@ -107,7 +107,7 @@ const checkSchedule = async({ campaignId, campaignRepeats, errorNumber, listId, 
   // Get all contacts on the campaign's mailing list that are actually eligible to receive a message from this campaign.
 
   let queryText = `SELECT contact_id FROM contacts WHERE active = true AND block_all = false AND contact_id NOT IN (SELECT contact_id FROM unsubs WHERE campaign_id = '${campaignId}') AND contact_id IN (SELECT contact_id FROM list_contacts WHERE list_id = '${listId}') ORDER BY contact_name, company_name`
-  let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+  let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
   if (!results) {
 
@@ -138,7 +138,7 @@ const checkSchedule = async({ campaignId, campaignRepeats, errorNumber, listId, 
   // Get the campaign messages for this campaign. Position ordering allows us to end up with the next message to be sent (if any) in the first position.
 
   queryText = `SELECT m.content, m.message_id, m.message_name FROM campaign_messages cm, messages m WHERE cm.campaign_id = '${campaignId}' AND cm.message_id = m.message_id ORDER BY last_sent, cm.position`
-  results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+  results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
   if (!results) {
 
@@ -187,7 +187,7 @@ const checkSchedule = async({ campaignId, campaignRepeats, errorNumber, listId, 
     // Get the messages each member of the contact list has seen on this campaign.
 
     queryText = `SELECT contact_id, message_id FROM message_tracking WHERE campaign_id = '${campaignId}' ORDER BY contact_id`
-    results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
@@ -244,7 +244,7 @@ const getUnsubs = async ({ errorNumber, nowRunning, userId }) => {
   const unsubs = {}
 
   let queryText = "SELECT contact_id FROM contacts WHERE block_all = true; SELECT contact_id, campaign_id FROM unsubs"
-  let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+  let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
   if (!results) {
 
@@ -320,23 +320,29 @@ const processCampaigns = async ({
 
     const {
       dynamicValues: allDynamicValues,
-      failure: getDynamicValuesFailure,
-      success: getDynamicValuesSuccess
-    } = await getDynamicMessageReplacements({ campaignId, errorNumber, userId })
+      failure: getDynamicValuesFailure
+    } = await getDynamicMessageReplacements({ 
+      campaignId, 
+      errorNumber, 
+      userId
+     });
+
+     if (getDynamicValuesFailure) {
+
+      console.log(`${nowRunning}: exited due to error on function getDynamicMessageReplacements`);
+      return res.status(200).send({ 
+        failure: getDynamicValuesFailure, 
+        success 
+      });
+
+    }
 
     // Uncomment the next line to see what substitutions are going to be made.
     // console.log('dynamicValues', allDynamicValues[messageId])
 
-    if (!getDynamicValuesSuccess) {
-
-      console.log(`${nowRunning}: exited due to error on function getDynamicMessageReplacements\n`)
-      return ({ failure: getDynamicValuesFailure, success })
-
-    }    
-
     // This runs the dynamic replacements for the main message content.
 
-    messageContent = updateDynamicText({ dynamicValues: allDynamicValues[messageId], messageContent }) 
+    const { messageContent } = updateDynamicText({ dynamicValues: allDynamicValues[messageId], messageContent }) 
     
     Object.entries(eligibleRecipients).map(async row => {
 
@@ -365,7 +371,7 @@ const processCampaigns = async ({
 
         // Update the content with any dynamic values associated with this particular message ID.
           
-        messageContent = updateDynamicText({ dynamicValues: allDynamicValues[messageId], messageContent })
+        const { messageContent } = updateDynamicText({ dynamicValues: allDynamicValues[messageId], messageContent })
 
       }
 
@@ -394,14 +400,14 @@ const processCampaigns = async ({
           // Record successful send event in message_tracking.
 
           queryText = `INSERT INTO message_tracking(campaign_id, contact_id, message_id, sent) VALUES('${campaignId}', '${contactId}', '${messageId}', '${+moment().format('X')}')`
-          results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+          results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
           if (!results) { 
 
             const failure = 'database error when recording the send event'
             console.log(`${nowRunning}: ${failure}\n`)
             await recordError ({
-              context: 'api: ' + nowRunning,
+              context: `api:  ${nowRunning}`,
               details: queryText,
               errorMessage: failure,
               errorNumber,
@@ -428,7 +434,13 @@ const processCampaigns = async ({
 
           // Record the errors on this send to the event log (not the errors API).
 
-          recordEvent ({ apiTesting, event: 4, eventDetails, eventTarget: campaignId, userId })
+          recordEvent ({ 
+            apiTesting, 
+            event: 4, 
+            eventDetails, 
+            eventTarget: campaignId, 
+            userId 
+          });
 
         }
 
@@ -458,14 +470,14 @@ const processCampaigns = async ({
 
       Object.keys(allDynamicValues[messageId]).map(value => { queryText += `UPDATE dynamic_values SET last_used = ${now} WHERE dynamic_id = '${value}';` })
 
-      results = await db.transactionRequired(queryText, errorNumber, nowRunning, apiTesting)
+      results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
       if (!results) { 
 
         const failure = 'database error when updating the last_run parameter on dynamic values used on this campaign run'
         console.log(`${nowRunning}: ${failure}\n`)
         await recordError ({
-          context: 'api: ' + nowRunning,
+          context: `api:  ${nowRunning}`,
           details: queryText,
           errorMessage: failure,
           errorNumber,
@@ -485,7 +497,7 @@ const processCampaigns = async ({
   } catch(e) {
 
     await recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: 'exception thrown',
       errorMessage: e.message,
       errorNumber,
@@ -520,8 +532,14 @@ router.post("/run", async (req, res) => {
       masterKey: Joi.any(), // This would be coming in from React and is ignored.
       userId: Joi.any() // This would be coming in from React and is ignored.
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -546,9 +564,9 @@ router.post("/run", async (req, res) => {
     if (!dryRun) queryText += ` AND (c.next_run <= ${moment().format('X')} OR c.next_run IS NULL)`
     
     queryText += " AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id AND m.active = true ORDER BY last_sent, position"
-    let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting all campaigns'
       console.log(`${nowRunning}: ${failure}\n`)
@@ -653,17 +671,26 @@ router.post("/run", async (req, res) => {
       if (nextRunTime > ends) {
 
         const eventDetails = 'The next run time for this campaign exceeded the campaign end time, so it was not renewed.'
-        recordEvent ({ apiTesting, event: 2, eventDetails, eventTarget: campaignId, userId })
-        return { setNextRunFailure: failure, setNextRunSuccess: true }
+        recordEvent ({ 
+          apiTesting, 
+          event: 2, 
+          eventDetails, 
+          eventTarget: campaignId, 
+          userId 
+        });
+        return ({ 
+          setNextRunFailure: failure, 
+          setNextRunSuccess: true 
+        });
 
       }
 
       // Set the next scheduled run time
 
       const queryText = `UPDATE campaigns SET next_run = ${nextRunTime} WHERE campaign_id = '${campaignId}'`
-      const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+      const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-      if (!results.rows) {
+      if (!results) {
 
         const failure = `database error when updating the next run time for campaign ${campaignId}`
         console.log(`${nowRunning}: ${failure}\n`)
@@ -679,8 +706,14 @@ router.post("/run", async (req, res) => {
       }
 
       const eventDetails = `The next run time for this campaign was set to ${moment.unix(nextRunTime).format('YYYY.MM.DD HH.mm')}`
-      recordEvent ({ apiTesting, event: 2, eventDetails, eventTarget: campaignId, userId })
-      return { setNextRunSuccess: true }
+      recordEvent ({ 
+        apiTesting, 
+        event: 2, 
+        eventDetails, 
+        eventTarget: campaignId, 
+        userId 
+      });
+      return ({ setNextRunSuccess: true });
 
     }
 
@@ -737,13 +770,19 @@ router.post("/run", async (req, res) => {
         if (!isUrl(unsubUrl)) {
 
           const eventDetails = `campaign: <b>${campaignName}</b>, id: <b>${campaignId}</b>, unsub link: <b>${unsubUrl}</b>`
-          recordEvent ({ apiTesting, event: 9, eventDetails, eventTarget: campaignId, userId })
-          return {
+          recordEvent ({ 
+            apiTesting, 
+            event: 9, 
+            eventDetails, 
+            eventTarget: campaignId, 
+            userId 
+          });
+          return ({
             campaignId,
             messageId: row.message_id,
             campaignsProcessedFailure: 'the campaign does not have a valid unsubscribe link',
             campaignsProcessedSuccess: false
-          }
+          });
 
         }
 
@@ -756,13 +795,19 @@ router.post("/run", async (req, res) => {
         if (!messageContent.includes('[UNSUB_MESSAGE]')) {
 
           const eventDetails = `campaign: <b>${campaignName}</b>, id: <b>${campaignId}</b>, message ID: <b>${messageId}</b>`
-          recordEvent ({ apiTesting, event: 10, eventDetails, eventTarget: campaignId, userId })
-          return {
+          recordEvent ({ 
+            apiTesting, 
+            event: 10, 
+            eventDetails, 
+            eventTarget: campaignId, 
+            userId 
+          });
+          return ({
             campaignId,
             messageId: row.message_id,
             campaignsProcessedFailure: 'the message content does not contain the [UNSUB_MESSAGE] placeholder',
             campaignsProcessedSuccess: false
-          }
+          });
 
         }
 
@@ -773,7 +818,7 @@ router.post("/run", async (req, res) => {
         // Get all contacts on the mailing list that are active.
 
         queryText = `SELECT c.company_name, c.contact_id, c.contact_name, c.email FROM contacts c, list_contacts lc WHERE c.active = true AND c.contact_id = lc.contact_id AND lc.list_id = '${listId}' ORDER BY contact_name`
-        results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+        results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
         if (!results) {
 
@@ -827,7 +872,7 @@ router.post("/run", async (req, res) => {
           // Get all campaign messages ordered by position and message tracking info for this campaign.
 
           queryText = `SELECT message_id FROM campaign_messages WHERE campaign_id = '${campaignId}' ORDER BY position; SELECT contact_id, message_id FROM message_tracking WHERE campaign_id = '${campaignId}'`
-          results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+          results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
           if (!results) {
 
@@ -862,7 +907,7 @@ router.post("/run", async (req, res) => {
           // Get every active message on the campaign and store in available messages (ordered by position).
 
           queryText = `SELECT m.content, m.message_id, m.message_name, m.subject FROM campaign_messages cm, messages m WHERE cm.campaign_id = '${campaignId}' AND cm.message_id = m.message_id AND m.active = true ORDER BY position`
-          results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+          results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
           if (!results) {
 
@@ -930,14 +975,20 @@ router.post("/run", async (req, res) => {
         if (Object.keys(eligibleRecipients).length === 0) {  
 
           const eventDetails = `${nowRunning}: campaign ${campaignId} was skipped, no eligible recipients`
-          recordEvent ({ apiTesting, event: 1, eventDetails, eventTarget: campaignId, userId })
-          return {
+          recordEvent ({ 
+            apiTesting, 
+            event: 1, 
+            eventDetails, 
+            eventTarget: campaignId, 
+            userId 
+          });
+          return ({
             campaignId,
             campaignName,
             messageId,
             noEligibleRecipients: true,
             campaignsProcessedSuccess: true
-          }
+          });
           
         }
 
@@ -959,14 +1010,14 @@ router.post("/run", async (req, res) => {
           nextMessage, // only used when the campaign is not repeating
           unsubUrl,
           userId
-        })
+        });
         
         // If the campaign is repeatable, setting last_sent moves the current message to the end of the eligible messages list.
 
         if (repeatable) { 
 
           queryText = `UPDATE campaign_messages SET last_sent = ${+moment().format('X')} WHERE message_id = '${messageId}' AND campaign_id = '${campaignId}';`
-          results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+          results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
           if (!results) {
 
@@ -997,16 +1048,22 @@ router.post("/run", async (req, res) => {
         // Log or handle the successful campaign processing
 
         const eventDetails = `${nowRunning}: campaign ${campaignId} processed successfully`
-        recordEvent ({ apiTesting, event: 3, eventDetails, eventTarget: campaignId, userId })
+        recordEvent ({ 
+          apiTesting, 
+          event: 3, 
+          eventDetails, 
+          eventTarget: campaignId, 
+          userId 
+        });
     
-        return {
+        return ({
           campaignId,
           campaignName,
           campaignsProcessedFailure,
           campaignsProcessedSuccess,
           dryRunInformation,
           messageId: row.message_id
-        }
+        });
 
       } catch (error) {
 
@@ -1043,7 +1100,7 @@ router.post("/run", async (req, res) => {
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e) 
     res.status(500).send(newException)
 
@@ -1073,8 +1130,14 @@ router.post("/upcoming", async (req, res) => {
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -1083,13 +1146,27 @@ router.post("/upcoming", async (req, res) => {
 
     }
 
-    let { userId } = req.body
-    const { level: userLevel } = await getUserLevel(userId)
+    const { userId } = req.body
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(`${nowRunning}: , invalid user ID\n`)
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -1110,9 +1187,9 @@ router.post("/upcoming", async (req, res) => {
     
     const upcoming = {}
     let queryText = `SELECT c.campaign_id, c.campaign_name, c.campaign_repeats, c.ends, c.interval, c.list_id, c.next_run, c.starts, m.message_id, m.message_name FROM campaigns c, campaign_messages cm, lists l, messages m WHERE c.active = true AND c.ends > ${moment().format('X')} AND c.list_id = l.list_id AND l.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = m.message_id ORDER BY next_run, campaign_name`
-    let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting all upcoming campaigns'
       console.log(`${nowRunning}: ${failure}\n`)
@@ -1204,7 +1281,7 @@ router.post("/upcoming", async (req, res) => {
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e) 
     res.status(500).send(newException)
 

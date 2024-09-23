@@ -39,8 +39,14 @@ router.post("/all", async (req, res) => {
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -54,12 +60,26 @@ router.post("/all", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -68,14 +88,14 @@ router.post("/all", async (req, res) => {
     if (typeof active === 'boolean') queryText += " AND m.active = " + active
 
     queryText += " ORDER BY active DESC, message_name"
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting all messages'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -127,19 +147,19 @@ router.post("/all", async (req, res) => {
 
     })
     
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished`)
     return res.status(200).send({ messages, messagesSelector, success: true })
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 
@@ -170,8 +190,14 @@ router.post("/delete", async (req, res) => {
       messageId: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -186,26 +212,40 @@ router.post("/delete", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
 
-    } 
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    }  
 
     // delete the message only if it's not involved in ANY active campaigns
 
     let queryText = " DELETE FROM messages WHERE message_id = '" + messageId + "' AND locked <= " + userLevel + " AND message_id NOT IN (SELECT cm.message_id FROM campaigns c, campaign_messages cm WHERE c.active = true AND c.campaign_id = cm.campaign_id AND cm.message_id = '" + messageId + "'); "
-    let results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+    let results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when deleting the message record'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -224,14 +264,14 @@ router.post("/delete", async (req, res) => {
     // delete the message ID from campaign links ONLY if the first part succeeded
 
     queryText = " DELETE FROM campaign_messages WHERE message_id = '" + messageId + "'; "
-    results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when deleting the message from all linked campaigns'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -241,19 +281,19 @@ router.post("/delete", async (req, res) => {
       
     }
 
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished`)
     return res.status(200).send({ success: true })
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 
@@ -263,82 +303,107 @@ router.post("/delete", async (req, res) => {
 
 router.post("/dynamic/all", async (req, res) => { 
 
-  const nowRunning = "/messages/dynamic/all"
-  console.log(`${nowRunning}: running`)
+  const nowRunning = "/messages/dynamic/all";
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 43
-  const success = false
+  const errorNumber = 43;
+  const success = false;
 
   try {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
     const schema = Joi.object({
+      campaignId: Joi.string().required().uuid(),
       masterKey: Joi.any(),
-      messageId: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
-    })
+    });
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });;
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
     let { 
-      messageId,
+      campaignId,
       userId 
-    } = req.body
+    } = req.body;
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     const {
       dynamicValues,
-      failure: getDynamicValuesFailure,
-      success: getDynamicValuesSuccess
-    } = await getDynamicMessageReplacements({ errorNumber, messageId, userId })
+      failure: getDynamicValuesFailure
+    } = await getDynamicMessageReplacements({ 
+      campaignId,
+      errorNumber, 
+      userId 
+    });
 
-    if (!getDynamicValuesSuccess) {
+    if (getDynamicValuesFailure) {
 
-      console.log(nowRunning + ": exited due to error on function getDynamicMessageReplacements\n")
-      return res.status(200).send({ failure: getDynamicValuesFailure, success })
+      console.log(`${nowRunning}: exited due to error on function getDynamicMessageReplacements`);
+      return res.status(200).send({ 
+        failure: getDynamicValuesFailure, 
+        success 
+      });
 
     }
 
-    console.log(nowRunning + ": finished\n")
-    return res.status(200).send({ dynamicValues, success: true })
+    console.log(`${nowRunning}: finished`);
+    return res.status(200).send({ dynamicValues, success: true });
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
-    })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    });
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
-    res.status(500).send(newException)
+    res.status(500).send(newException);
 
  }
 
-})
+});
 
 router.post("/dynamic/new", async (req, res) => { 
 
@@ -369,8 +434,14 @@ router.post("/dynamic/new", async (req, res) => {
       target: Joi.string().required(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -388,12 +459,26 @@ router.post("/dynamic/new", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -403,14 +488,14 @@ router.post("/dynamic/new", async (req, res) => {
 
     const now = moment().format('X')
     const queryText = " INSERT INTO dynamic_values(created, created_by, dynamic_id, last_used, locked, message_id, new_value, target_name, updated, updated_by) VALUES(" + now + ", '" + userId + "', '" + uuidv4() + "', 0, " + locked + ", '" + messageId + "', '" + stringCleaner(newValue, true) + "', '" + stringCleaner(target, true) + "', " + now + ", '" + userId + "') RETURNING created; "
-    const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results?.rowCount) {
 
       const failure = 'database error when creating the dynamic values record'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -420,19 +505,19 @@ router.post("/dynamic/new", async (req, res) => {
       
     }
 
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished`)
     return res.status(200).send({ success: true })
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 
@@ -465,8 +550,14 @@ router.post("/duplicate", async (req, res) => {
       sourceId: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -483,26 +574,40 @@ router.post("/duplicate", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     // get the source message
 
     let queryText = " SELECT * FROM messages WHERE message_id = '" + sourceId + "'; "
-    let results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when creating a new message record'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -529,14 +634,14 @@ router.post("/duplicate", async (req, res) => {
     !messageName ? messageName = 'copy of ' + originalName: messageName = stringCleaner(messageName, true)
     const now = moment().format('X')
     queryText = " INSERT INTO messages (content, created, locked, message_id, message_name, notes, owner, repeatable, subject, updated, updated_by) VALUES('" + content + "', " + now + ", " + locked + ", '" + uuidv4() + "', '" + messageName + "', '" + notes + "', '" + userId + "', " + repeatable + ", '" + subject + "', " + now + ", '" + userId + "') ON CONFLICT DO NOTHING RETURNING message_id; "
-    results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when duplicating the message record'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -553,19 +658,19 @@ router.post("/duplicate", async (req, res) => {
     }
 
     const messageId = results.rows[0].message_id;    
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished`)
     return res.status(200).send({ messageId, success: true })
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 
@@ -595,8 +700,14 @@ router.post("/load", async (req, res) => {
       messageId: Joi.string().required().uuid(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -610,24 +721,38 @@ router.post("/load", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     const queryText = " SELECT m.*, u.user_name  FROM messages m, users u WHERE m.updated_by = u.user_id AND m.message_id = '" + messageId + "'; "
-    const results = await db.noTransaction(queryText, errorNumber, nowRunning, userId)
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting the message'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -657,7 +782,7 @@ router.post("/load", async (req, res) => {
       user_name: updatedBy2
     } = results.rows[0]
     
-    console.log(nowRunning + ": finished\n"); const a = results.rows
+    console.log(`${nowRunning}: finished`); const a = results.rows
     return res.status(200).send({ 
       active,
       content: stringCleaner(content),
@@ -676,13 +801,13 @@ router.post("/load", async (req, res) => {
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 
@@ -719,8 +844,14 @@ router.post("/new", async (req, res) => {
       repeatable: Joi.boolean().required(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -741,12 +872,26 @@ router.post("/new", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -757,14 +902,14 @@ router.post("/new", async (req, res) => {
     // create the message
 
     const queryText = " INSERT INTO messages(active, created, content, locked, message_id, message_name, notes, owner, repeatable, subject, updated, updated_by) VALUES (" + active + ", " + now + ", '" + stringCleaner(messageContent, true) + "', " + locked + ", '" + uuidv4() + "', '" + stringCleaner(messageName, true) + "', '" + messageNotes + "', '" + userId + "', " + repeatable + ", '" + stringCleaner(messageSubject, true) + "', " + now + ", '" + userId + "') RETURNING message_id; "
-    const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when creating a new message record'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -776,19 +921,19 @@ router.post("/new", async (req, res) => {
 
     const messageId = results.rows[0].message_id
     
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished`)
     return res.status(200).send({ messageId, success: true })
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 
@@ -826,8 +971,14 @@ router.post("/update", async (req, res) => {
       repeatable: Joi.boolean().required(),
       userId: Joi.string().required().uuid()
     })
+;
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
@@ -849,12 +1000,26 @@ router.post("/update", async (req, res) => {
       userId 
     } = req.body
 
-    const { level: userLevel } = await getUserLevel(userId)
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if (userLevel < 1) {
+    if (getUserLevelFailure) {
 
-      console.log(nowRunning + ": aborted, invalid user ID\n")
-      return res.status(404).send({ failure: 'invalid user ID', success })
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -865,14 +1030,14 @@ router.post("/update", async (req, res) => {
     // update the message
 
     const queryText = `UPDATE messages SET active = ${active}, content = '${stringCleaner(messageContent, true)}', locked = ${locked}, message_name = '${stringCleaner(messageName, true)}', notes = '${stringCleaner(messageNotes, true)}', repeatable = ${repeatable}, subject = '${stringCleaner(messageSubject, true)}', updated = ${+moment().format('X')}, updated_by = '${userId}' WHERE message_id = '${messageId}' AND locked <= ${userLevel}; `
-    const results = await db.transactionRequired(queryText, errorNumber, nowRunning, userId, apiTesting)
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when updating the message record'
       console.log(nowRunning + ": " + failure + "\n")
       recordError ({
-        context: 'api: ' + nowRunning,
+        context: `api:  ${nowRunning}`,
         details: queryText,
         errorMessage: failure,
         errorNumber,
@@ -882,19 +1047,19 @@ router.post("/update", async (req, res) => {
       
     }
     
-    console.log(nowRunning + ": finished\n")
+    console.log(`${nowRunning}: finished`)
     return res.status(200).send({ success: true })
 
   } catch (e) {
 
     recordError ({
-      context: 'api: ' + nowRunning,
+      context: `api:  ${nowRunning}`,
       details: stringCleaner(JSON.stringify(e.message), true),
       errorMessage: 'exception thrown',
       errorNumber,
       userId: req.body.userId
     })
-    const newException = nowRunning + ': failed with an exception: ' + e
+    const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
     res.status(500).send(newException)
 

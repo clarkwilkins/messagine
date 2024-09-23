@@ -60,13 +60,13 @@ async function query( query, apiTesting ) {
 
 }
 
-async function noTransaction( query, errorNumber, nowRunning, userId ) {
+async function noTransaction({ errorNumber, nowRunning, queryText, userId }) {
 
   const client = await pool.connect();
 
   try {
 
-    const result = await client.query( query );
+    const result = await client.query(queryText);
     return result;
 
  } catch ( e ) {
@@ -89,14 +89,14 @@ async function noTransaction( query, errorNumber, nowRunning, userId ) {
 
 }
 
-async function transactionRequired( query, errorNumber, nowRunning, userId, apiTesting ) {
+async function transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId }) {
 
   const client = await pool.connect();
 
   try {
 
     await client.query( "BEGIN " );
-    const result = await client.query( query );
+    const result = await client.query( queryText );
     apiTesting ? await client.query( "ROLLBACK " ) : await client.query( "COMMIT " );
     return result;
 
@@ -118,7 +118,7 @@ async function transactionRequired( query, errorNumber, nowRunning, userId, apiT
 
     if ( !apiTesting ) {
 
-      let statements = split( query, ';' );
+      let statements = split( queryText, ';' );
       let logStatements = '';
       statements.map( theStatement => { 
 

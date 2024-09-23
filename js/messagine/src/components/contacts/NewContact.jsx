@@ -230,7 +230,12 @@ function NewContact() {
     
       }
 
-      await recordEvent ({ eventNumber: 12, eventTarget: contactId })  // Record contact created event.
+      // Record contact created event.
+
+      await recordEvent ({ 
+        eventNumber: 12, 
+        eventTarget: contactId
+      });
 
       // Define the function that actually does the contact:list linking.
 
@@ -267,7 +272,11 @@ function NewContact() {
 
         // Record adding this contact to a mailing list.
 
-        await recordEvent ({ eventNumber: 13, eventDetails: 'contact added to list ' + lists[listId].listName, eventTarget: contactId })
+        await recordEvent ({ 
+          eventNumber: 13, 
+          eventDetails: 'contact added to list ' + lists[listId].listName, 
+          eventTarget: contactId
+        })
 
         return { success: true }
 

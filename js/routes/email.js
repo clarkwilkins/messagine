@@ -47,11 +47,16 @@ router.post( "/signatures/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
@@ -61,12 +66,26 @@ router.post( "/signatures/all", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -76,9 +95,9 @@ router.post( "/signatures/all", async ( req, res ) => {
 
     queryText += " ORDER BY active DESC, signature_name; ";
 
-    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when removing a signature record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -137,7 +156,7 @@ router.post( "/signatures/all", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
    } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -169,11 +188,16 @@ router.post( "/signatures/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
@@ -184,19 +208,33 @@ router.post( "/signatures/delete", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     const queryText = " DELETE FROM email_signatures WHERE signature_id = '" + signatureId + "' AND ( owner = '" + userId + "' OR owner IN ( SELECT user_id FROM users WHERE active = false OR level < " + userLevel + " ) ) RETURNING *; ";
-    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when removing a signature record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -229,7 +267,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
    } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -260,11 +298,16 @@ router.post( "/signatures/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
@@ -274,19 +317,33 @@ router.post( "/signatures/load", async ( req, res ) => {
       userId 
     } = req.body;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     const queryText = " SELECT e.*, u.user_name FROM email_signatures e, users u WHERE e.signature_id = '" + signatureId + "' AND e.owner = u.user_id; ";
-    const results = await db.noTransaction( queryText, errorNumber, nowRunning, userId );
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });;
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when getting a signature record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -336,7 +393,7 @@ router.post( "/signatures/load", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
    } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -370,11 +427,16 @@ router.post( "/signatures/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
@@ -389,20 +451,34 @@ router.post( "/signatures/new", async ( req, res ) => {
 
     if ( !private ) private = true;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
     const signatureId = uuidv4();
     const queryText = " INSERT INTO email_signatures( owner, private, signature_id, signature_name, signature_text ) VALUES( '" + userId + "', " + private + ", '" + signatureId + "', '" + stringCleaner( signatureName, true ) + "', '" + stringCleaner( signatureText, true ) + "' ); ";
-    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when creating a new signature record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -429,7 +505,7 @@ router.post( "/signatures/new", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
    } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
@@ -464,11 +540,16 @@ router.post( "/signatures/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema(nowRunning, recordError, req, schema)
+    const errorMessage = validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
       return res.status( 422 ).send({ failure: errorMessage, success });
 
    }
@@ -484,12 +565,26 @@ router.post( "/signatures/update", async ( req, res ) => {
 
     if ( !private ) private = true;
 
-    const { level: userLevel } = await getUserLevel( userId );
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
 
-    if ( userLevel < 1 ) {
+    if (getUserLevelFailure) {
 
-      console.log( nowRunning + ": aborted, invalid user ID\n" );
-      return res.status( 404 ).send( { failure: 'invalid user ID', success } );
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
 
     } 
 
@@ -501,9 +596,9 @@ router.post( "/signatures/update", async ( req, res ) => {
 
     queryText += " WHERE ( owner = '" + userId + "' OR owner IN ( SELECT user_id FROM users WHERE active = false OR level < " + userLevel + " ) ) RETURNING *; ";
 
-    const results = await db.transactionRequired( queryText, errorNumber, nowRunning, userId, apiTesting );
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results.rows) {
+    if (!results) {
 
       const failure = 'database error when creating a new signature record';
       console.log(`${nowRunning}: ${failure}\n`)
@@ -536,7 +631,7 @@ router.post( "/signatures/update", async ( req, res ) => {
       errorNumber,
       userId: req.body.userId
    } );
-    const newException = nowRunning + ': failed with an exception: ' + e;
+    const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log ( e ); 
     res.status( 500 ).send( newException );
 
