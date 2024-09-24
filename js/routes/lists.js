@@ -41,7 +41,7 @@ router.post( "/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -194,7 +194,7 @@ router.post( "/contact-linking", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -313,7 +313,7 @@ router.post( "/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -454,7 +454,7 @@ router.post( "/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -634,7 +634,7 @@ router.post( "/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -756,7 +756,7 @@ router.post( "/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,

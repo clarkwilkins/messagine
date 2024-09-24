@@ -20,10 +20,10 @@ const {
 router.post("/all", async (req, res) => { 
 
   const nowRunning = "/messages/all"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 37
-  const success = false
+  const errorNumber = 37;
+  const success = false;
 
   try {
 
@@ -41,7 +41,7 @@ router.post("/all", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -170,10 +170,10 @@ router.post("/all", async (req, res) => {
 router.post("/delete", async (req, res) => { 
 
   const nowRunning = "/messages/delete"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 36
-  const success = false
+  const errorNumber = 36;
+  const success = false;
 
   try {
 
@@ -192,7 +192,7 @@ router.post("/delete", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -324,7 +324,7 @@ router.post("/dynamic/all", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -411,10 +411,10 @@ router.post("/dynamic/all", async (req, res) => {
 router.post("/dynamic/new", async (req, res) => { 
 
   const nowRunning = "/messages/dynamic/new"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 42
-  const success = false
+  const errorNumber = 42;
+  const success = false;
 
   try {
 
@@ -439,7 +439,7 @@ router.post("/dynamic/new", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -531,10 +531,10 @@ router.post("/dynamic/new", async (req, res) => {
 router.post("/duplicate", async (req, res) => { 
 
   const nowRunning = "/messages/duplicate"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 35
-  const success = false
+  const errorNumber = 35;
+  const success = false;
 
   try {
 
@@ -555,7 +555,7 @@ router.post("/duplicate", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -684,10 +684,10 @@ router.post("/duplicate", async (req, res) => {
 router.post("/load", async (req, res) => { 
 
   const nowRunning = "/messages/load"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 38
-  const success = false
+  const errorNumber = 38;
+  const success = false;
 
   try {
 
@@ -705,7 +705,7 @@ router.post("/load", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -821,10 +821,10 @@ router.post("/load", async (req, res) => {
 router.post("/new", async (req, res) => { 
 
   const nowRunning = "/messages/new"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 33
-  const success = false
+  const errorNumber = 33;
+  const success = false;
 
   try {
 
@@ -849,7 +849,7 @@ router.post("/new", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -947,10 +947,10 @@ router.post("/new", async (req, res) => {
 router.post("/update", async (req, res) => { 
 
   const nowRunning = "/messages/update"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 34
-  const success = false
+  const errorNumber = 34;
+  const success = false;
 
   try {
 
@@ -976,7 +976,7 @@ router.post("/update", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,

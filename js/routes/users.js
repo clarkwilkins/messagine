@@ -47,7 +47,7 @@ router.post("/all", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -189,7 +189,7 @@ router.post("/load", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -308,7 +308,7 @@ router.post("/login-key", async (req, res) => {
       userId: Joi.any() // this is ignored if present
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -407,7 +407,7 @@ router.post("/login-standard", async (req, res) => {
       userId: Joi.any().optional() // ignored
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -522,7 +522,7 @@ router.post("/new", async (req, res) => {
       userName: Joi.string().required()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -636,7 +636,7 @@ router.post("/reset-password/part-1", async (req, res) => {
       email: Joi.string().required().email(),
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -746,7 +746,7 @@ router.post("/reset-password/part-2", async (req, res) => {
       resetCode: Joi.string().required().min(8).max(8)
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -903,7 +903,7 @@ router.post("/update", async (req, res) => {
       userName: Joi.string().required()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,

@@ -47,7 +47,7 @@ router.post( "/signatures/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -188,7 +188,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -298,7 +298,7 @@ router.post( "/signatures/load", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -427,7 +427,7 @@ router.post( "/signatures/new", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -540,7 +540,7 @@ router.post( "/signatures/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,

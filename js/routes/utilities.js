@@ -36,7 +36,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -169,7 +169,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -268,7 +268,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -369,7 +369,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -474,7 +474,7 @@ router.post( "/record-event", async ( req, res ) => {
       userId: Joi.string().required().uuid()
     } );
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,

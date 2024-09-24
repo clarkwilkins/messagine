@@ -1,5 +1,6 @@
 console.log("loading campaign services now...");
 const db = require('../db');
+const handleError = require('../handleError');
 const express = require('express');
 const Joi = require('joi');
 const moment = require('moment');
@@ -42,7 +43,7 @@ router.post("/all", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -106,7 +107,6 @@ router.post("/all", async (req, res) => {
       ON 
         c.updated_by = u.user_id `;
 
-
     if (typeof active === 'boolean') queryText += ` 
       AND 
         c.active = ${active}`
@@ -121,18 +121,14 @@ router.post("/all", async (req, res) => {
 
     if (!results) {
 
-      const failure = 'database error when getting all campaigns'
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
+      const failure = 'database error when getting the campaigns';
+      console.log(`${nowRunning}: ${failure}\n`);
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
+        errorNumber, 
         failure, 
-        success
+        nowRunning, 
+        userId 
       });
       
     } 
@@ -191,20 +187,13 @@ router.post("/all", async (req, res) => {
       success: true
     });
 
-  } catch (e) {
+  } catch (error) {
 
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId: req.body.userId || API_ACCESS_TOKEN 
     });
 
   }
@@ -234,7 +223,7 @@ router.post("/delete", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -294,18 +283,14 @@ router.post("/delete", async (req, res) => {
 
     if (!results) {
 
-      const failure = 'database error when deleting the campaign record'
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
+      const failure = 'database error when deleting the campaign';
+      console.log(`${nowRunning}: ${failure}\n`);
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
+        errorNumber, 
         failure, 
-        success
+        nowRunning, 
+        userId 
       });
       
     }
@@ -325,22 +310,19 @@ router.post("/delete", async (req, res) => {
     }
     
     console.log(`${nowRunning}: finished`)
-    return res.status(200).send({ campaignId, closedCampaigns, success: true })
-
-  } catch (e) {
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
+      campaignId, 
+      closedCampaigns, 
+      success: true 
+    });
+
+  } catch (error) {
+
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId: req.body.userId || API_ACCESS_TOKEN 
     });
 
  }
@@ -369,7 +351,7 @@ router.post("/load", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -440,23 +422,21 @@ router.post("/load", async (req, res) => {
 
     if (!results) {
 
-      const failure = 'database error when getting the campaign'
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      const failure = 'database error when getting the campaign';
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     } else if (!results.rows[0]?.campaign_id) {
 
-      const failure = 'campaignId ' + campaignId + ' was not found'
+      const failure = 'campaignId ' + campaignId + ' was not found';
       return res.status(200).send({ 
         failure, 
         success 
@@ -508,17 +488,15 @@ router.post("/load", async (req, res) => {
 
       const failure = 'database error when getting the campaign message details'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
@@ -582,23 +560,18 @@ router.post("/load", async (req, res) => {
       updatedBy2: stringCleaner(updatedBy2)
     });
 
-  } catch (e) {
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
-
- }
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN 
+      })
+    );
+  
+  }
 
 });
 
@@ -626,7 +599,7 @@ router.post("/messages/add", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -698,17 +671,15 @@ router.post("/messages/add", async (req, res) => {
 
       const failure = 'database error when checking current message position'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
@@ -738,17 +709,15 @@ router.post("/messages/add", async (req, res) => {
 
       const failure = 'database error when adding a message to the campaign'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
@@ -758,21 +727,16 @@ router.post("/messages/add", async (req, res) => {
       success: true 
     });
 
-  } catch (e) {
+  } catch (error) {
 
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
@@ -781,7 +745,7 @@ router.post("/messages/add", async (req, res) => {
 router.post("/messages/remove", async (req, res) => { 
 
   const nowRunning = "/campaigns/messages/remove"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
   const errorNumber = 40;
 
@@ -803,7 +767,7 @@ router.post("/messages/remove", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -869,21 +833,16 @@ router.post("/messages/remove", async (req, res) => {
     console.log(`${nowRunning}: finished`);
     return res.status(200).send({ success: true });
 
-  } catch (e) {
+  } catch (error) {
 
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
@@ -892,10 +851,10 @@ router.post("/messages/remove", async (req, res) => {
 router.post("/messages/update", async (req, res) => { 
 
   const nowRunning = "/campaigns/messages/update"
-  console.log(`${nowRunning}: running`)
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 55
-  const success = false
+  const errorNumber = 55;
+  const success = false;
 
   try {
 
@@ -922,7 +881,7 @@ router.post("/messages/update", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -974,13 +933,39 @@ router.post("/messages/update", async (req, res) => {
 
     } 
 
-    const now = +moment().format('X')
-    locked ? locked = userLevel : locked = 1
-    let queryText = `UPDATE messages SET active = ${active}, content = '${stringCleaner(content, true)}', message_name='${stringCleaner(messageName, true)}', notes = '${stringCleaner(notes, true)}', repeatable = ${repeatable}, subject = '${stringCleaner(subject, true)}', updated = ${now}, updated_by = '${userId}' WHERE message_id = '${messageId}';`
+    const now = +moment().format('X');
+    locked ? locked = userLevel : locked = 1;
+    let queryText = `
+      UPDATE 
+        messages 
+      SET 
+        active = ${active}, 
+        content = '${stringCleaner(content, true)}', 
+        message_name = '${stringCleaner(messageName, true)}', 
+        notes = '${stringCleaner(notes, true)}', 
+        repeatable = ${repeatable}, 
+        subject = '${stringCleaner(subject, true)}', 
+        updated = ${now}, 
+        updated_by = '${userId}'
+      WHERE 
+        message_id = '${messageId}'
+      ;
+    `;
+
     
     // move the message to the front of the rotation?
     
-    if (front) queryText += ` UPDATE campaign_messages SET last_sent = -1 WHERE campaign_id = '${campaignId}' AND message_id = '${messageId}';`
+    if (front) queryText += ` 
+      UPDATE 
+        campaign_messages 
+      SET 
+        last_sent = -1 
+      WHERE 
+        campaign_id = '${campaignId}' 
+      AND 
+        message_id = '${messageId}'
+      ;
+    `;
 
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
@@ -988,21 +973,19 @@ router.post("/messages/update", async (req, res) => {
 
       const failure = 'database error when updating the campaign message'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
-    let eventDetails = 'The message was updated from the scheduler.'
+    let eventDetails = 'The message was updated from the scheduler.';
 
     if (front) eventDetails += ` It was moved to the front of the rotation on campaign ID <b>${campaignId}</b>.`
 
@@ -1013,24 +996,19 @@ router.post("/messages/update", async (req, res) => {
       eventTarget: messageId, 
       userId 
     });
-    console.log(`${nowRunning}: finished`)
-    return res.status(200).send({ success: true })
+    console.log(`${nowRunning}: finished`);
+    return res.status(200).send({ success: true });
 
-  } catch (e) {
+  } catch (error) {
 
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
@@ -1038,11 +1016,11 @@ router.post("/messages/update", async (req, res) => {
 
 router.post("/new", async (req, res) => { 
 
-  const nowRunning = "/campaigns/new"
-  console.log(`${nowRunning}: running`)
+  const nowRunning = "/campaigns/new";
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 28
-  const success = false
+  const errorNumber = 28;
+  const success = false;
 
   try {
 
@@ -1074,7 +1052,7 @@ router.post("/new", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -1129,45 +1107,83 @@ router.post("/new", async (req, res) => {
 
     // safety checks + setup
 
-    !campaignEnds ? campaignEnds = 0 : null
-    !campaignNotes ? campaignNotes = '' : null
-    !campaignRepeats ? campaignRepeats = false : null
-    !campaignStarts ? campaignStarts = 0 : null
-    locked ? locked = userLevel : locked = 0
+    !campaignEnds ? campaignEnds = 0 : null;
+    !campaignNotes ? campaignNotes = '' : null;
+    !campaignRepeats ? campaignRepeats = false : null;
+    !campaignStarts ? campaignStarts = 0 : null;
+    locked ? locked = userLevel : locked = 0;
     !campaignStarts || !listId ? active = false : null; // this list is not ready
-    const now = moment().format('X')
+    const now = moment().format('X');
 
     // create the campaign
 
-    const queryText = `INSERT INTO campaigns(active, campaign_id, campaign_name, campaign_notes, campaign_repeats, created, ends, list_id, interval, locked, message_series, starts, unsub_url, updated, updated_by) VALUES (${active}, '${uuidv4()}', '${stringCleaner(campaignName, true)}', '${stringCleaner(campaignNotes, true)}', ${campaignRepeats}, ${now}, ${campaignEnds}, '${listId}', ${campaignInterval}, ${locked}, ${messageSeries}, ${campaignStarts}, '${unsubUrl}', ${now}, '${userId}') RETURNING campaign_id;`;    
+    const queryText = `
+      INSERT INTO 
+        campaigns (
+          active, 
+          campaign_id, 
+          campaign_name, 
+          campaign_notes, 
+          campaign_repeats, 
+          created, 
+          ends, 
+          list_id, 
+          interval, 
+          locked, 
+          message_series, 
+          starts, 
+          unsub_url, 
+          updated, 
+          updated_by
+        ) 
+      VALUES (
+        ${active}, 
+        '${uuidv4()}', 
+        '${stringCleaner(campaignName, true)}', 
+        '${stringCleaner(campaignNotes, true)}', 
+        ${campaignRepeats}, 
+        ${now}, 
+        ${campaignEnds}, 
+        '${listId}', 
+        ${campaignInterval}, 
+        ${locked}, 
+        ${messageSeries}, 
+        ${campaignStarts}, 
+        '${unsubUrl}', 
+        ${now}, 
+        '${userId}'
+      ) 
+      RETURNING 
+        campaign_id
+      ;
+    `; 
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when creating a new campaign record'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
     const campaignId = results.rows[0].campaign_id
 
-    // normally what we're doing here is making sure campaign.active is not true if the list ID that was selected is now  // Check/adjust campaign list.
+    // Check/adjust campaign list.
 
     const { 
       closedCampaigns,
       failure: checkCampaignsFailure
     } = await checkCampaigns({ userId });
+
     
     if (checkCampaignsFailure) {
       
@@ -1177,35 +1193,32 @@ router.post("/new", async (req, res) => {
     }
     
     console.log(`${nowRunning}: finished`)
-    return res.status(200).send({ campaignId, closedCampaigns, success: true })
-
-  } catch (e) {
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+      campaignId, 
+      closedCampaigns, 
+      success: true 
+    })
 
+  } catch (error) {
+    
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId: req.body.userId || API_ACCESS_TOKEN
+    });
+  
   }
 
-})
+});
 
 router.post("/unsubscribe", async (req, res) => { 
 
-  const nowRunning = "/campaigns/unsubscribe"
-  console.log(`${nowRunning}: running`)
+  const nowRunning = "/campaigns/unsubscribe";
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 46
-  const success = false
+  const errorNumber = 46;
+  const success = false;
 
   try {
 
@@ -1224,7 +1237,7 @@ router.post("/unsubscribe", async (req, res) => {
       preference: Joi.number().required().integer().min(1).max(2)
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -1246,18 +1259,75 @@ router.post("/unsubscribe", async (req, res) => {
       preference
     } = req.body;
 
-    const now = +moment().format('X')
-    const userId = apiKey
+    const now = +moment().format('X');
+    const userId = apiKey;
 
     // default mode is to just unsubscribe from this campaign (hopefully). 2nd query is just padding so there are the same query positions.
 
-    let queryText = `INSERT INTO unsubs(campaign_id, contact_id, created) VALUES('${campaignId}', '${contactId}', ${now}) ON CONFLICT DO NOTHING; SELECT contact_id FROM contacts LIMIT 1`
+    let queryText = `
+      INSERT INTO 
+        unsubs (
+          campaign_id, 
+          contact_id, 
+          created
+        ) 
+      VALUES (
+        '${campaignId}', 
+        '${contactId}', 
+        ${now}
+      ) 
+      ON CONFLICT DO NOTHING
+      ;      
+      SELECT 
+        contact_id 
+      FROM 
+        contacts 
+      LIMIT 1
+      ;
+    `;
   
     // however, the contact might ask for a total block :-(
 
-    if (preference === 2) queryText = `UPDATE contacts SET active = false, block_all = true, updated = ${now}, updated_by = '${contactId}' WHERE contact_id = '${contactId}'; DELETE FROM list_contacts WHERE contact_id = '${contactId}'`
+    if (preference === 2) {
+      
+      queryText = `
+        UPDATE 
+          contacts 
+        SET 
+          active = false, 
+          block_all = true, 
+          updated = ${now}, 
+          updated_by = '${contactId}' 
+        WHERE 
+          contact_id = '${contactId}'
+        ;        
+        DELETE FROM 
+          list_contacts 
+        WHERE 
+          contact_id = '${contactId}'
+        ;
+      `;
 
-    queryText += `; SELECT company_name, contact_name, email FROM contacts WHERE contact_id = '${contactId}'; SELECT campaign_name FROM campaigns WHERE campaign_id = '${campaignId}'; `
+    }
+
+    queryText += `
+      SELECT 
+        company_name, 
+        contact_name, 
+        email 
+      FROM 
+        contacts 
+      WHERE 
+        contact_id = '${contactId}'
+      ;
+      SELECT 
+        campaign_name 
+      FROM 
+        campaigns 
+      WHERE 
+        campaign_id = '${campaignId}'
+      ;
+    `;
 
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
@@ -1265,17 +1335,15 @@ router.post("/unsubscribe", async (req, res) => {
 
       const failure = ' an error occurred when trying to set a full block for this contact ID'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
 
     }
 
@@ -1283,17 +1351,17 @@ router.post("/unsubscribe", async (req, res) => {
       company_name: companyName, 
       contact_name: contactName,
       email
-    } = results[2].rows[0]
+    } = results[2].rows[0];
 
-    if (companyName) contactName += ': ' + companyName
+    if (companyName) contactName += ': ' + companyName;
 
-    contactName += `, using email: ${email}`
+    contactName += `, using email: ${email}`;
 
-    const { campaign_name: campaignName } = results[3].rows[0]
+    const { campaign_name: campaignName } = results[3].rows[0];
 
     if (preference === 1) {
 
-      const eventDetails = `This contact unsubcribed from the campaign <b>${stringCleaner(campaignName)}</b>.`
+      const eventDetails = `This contact unsubcribed from the campaign <b>${stringCleaner(campaignName)}</b>.`;
       recordEvent ({ 
         apiTesting, 
         event: 7, 
@@ -1304,7 +1372,7 @@ router.post("/unsubscribe", async (req, res) => {
 
     } else {
 
-      const eventDetails = 'This contact asked for a complete block.'
+      const eventDetails = 'This contact asked for a complete block.';
       recordEvent ({ 
         apiTesting, 
         event: 8, 
@@ -1315,33 +1383,31 @@ router.post("/unsubscribe", async (req, res) => {
 
     }
     
-    console.log(`${nowRunning}: finished`)
-    return res.status(200).send({ success: true })
+    console.log(`${nowRunning}: finished`);
+    return res.status(200).send({ success: true });
 
-  } catch (e) {
-
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner(JSON.stringify(e.message), true),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    })
-    const newException = `${nowRunning }: failed with an exception: ${e}`
-    console.log (e)
-    res.status(500).send(newException)
-
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+  
   }
 
 })
 
 router.post("/update", async (req, res) => { 
 
-  const nowRunning = "/campaigns/update"
-  console.log(`${nowRunning}: running`)
+  const nowRunning = "/campaigns/update";
+  console.log(`${nowRunning}: running`);
 
-  const errorNumber = 29
-  const success = false
+  const errorNumber = 29;
+  const success = false;
 
   try {
 
@@ -1374,7 +1440,7 @@ router.post("/update", async (req, res) => {
       userId: Joi.string().required().uuid()
     });
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -1401,7 +1467,6 @@ router.post("/update", async (req, res) => {
       listId,
       locked,
       messageSeries,
-      unsubUrl,
       userId 
     } = req.body;
 
@@ -1430,41 +1495,65 @@ router.post("/update", async (req, res) => {
 
     // safety checks + setup
 
-    !campaignEnds ? campaignEnds = 0 : null
-    !campaignNotes ? campaignNotes = '' : null
-    !campaignRepeats ? campaignRepeats = false : null
-    !campaignStarts ? campaignStarts = 0 : null
-    locked ? locked = userLevel : locked = 0
-    !messageSeries ? messageSeries = false : null
+    !campaignEnds ? campaignEnds = 0 : null;
+    !campaignNotes ? campaignNotes = '' : null;
+    !campaignRepeats ? campaignRepeats = false : null;
+    !campaignStarts ? campaignStarts = 0 : null;
+    locked ? locked = userLevel : locked = 0;
+    !messageSeries ? messageSeries = false : null;
     !campaignStarts || !listId ? active = false : null; // this list is not ready
-    const now = moment().format('X')
+    const now = moment().format('X');
 
     // update the campaign
 
-    const queryText = `UPDATE campaigns SET active = ${active}, campaign_name = '${stringCleaner(campaignName, true)}', campaign_notes = '${stringCleaner(campaignNotes, true)}', campaign_repeats = ${campaignRepeats}, ends = ${campaignEnds}, interval = ${campaignInterval}, list_id = '${listId}', locked = ${locked}, message_series = ${messageSeries}, starts = ${campaignStarts}, updated = ${now}, updated_by = '${userId}' WHERE campaign_id = '${campaignId}' AND locked <= ${userLevel} RETURNING campaign_id;`
+    const queryText = `
+      UPDATE 
+        campaigns 
+      SET 
+        active = ${active}, 
+        campaign_name = '${stringCleaner(campaignName, true)}', 
+        campaign_notes = '${stringCleaner(campaignNotes, true)}', 
+        campaign_repeats = ${campaignRepeats}, 
+        ends = ${campaignEnds}, 
+        interval = ${campaignInterval}, 
+        list_id = '${listId}', 
+        locked = ${locked}, 
+        message_series = ${messageSeries}, 
+        starts = ${campaignStarts}, 
+        updated = ${now}, 
+        updated_by = '${userId}' 
+      WHERE 
+        campaign_id = '${campaignId}' 
+      AND 
+        locked <= ${userLevel} 
+      RETURNING 
+        campaign_id
+      ;
+    `;  
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when updating a  campaign record'
       console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ 
-        failure, 
-        success
-      });
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
     // normally what we're doing here is making sure campaign.active is not true if the list ID that was selected is now inactive
 
-    const { failure: checkCampaignsFailure } = await checkCampaigns(userId);
+    const { 
+      closedCampaigns,
+      failure: checkCampaignsFailure 
+    } = await checkCampaigns(userId);
 
     if (checkCampaignsFailure) {
       
@@ -1479,22 +1568,17 @@ router.post("/update", async (req, res) => {
       success: true 
     });
 
-  } catch (e) {
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
-
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+  
   }
 
 })

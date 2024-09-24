@@ -514,8 +514,8 @@ router.post("/run", async (req, res) => {
 
   const nowRunning = "/campaigns/run"
   console.log(`${nowRunning}: running ${moment().format('YYYY.MM.DD HH.mm.ss')}`)
-  const errorNumber = 41
-  const success = false
+  const errorNumber = 41;
+  const success = false;
 
   try {
 
@@ -534,7 +534,7 @@ router.post("/run", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
@@ -1116,8 +1116,8 @@ router.post("/upcoming", async (req, res) => {
   const nowRunning = "/scheduler/upcoming"
   console.log(`${nowRunning}: running ${moment().format('YYYY.MM.DD HH.mm.ss')}`)
 
-  const errorNumber = 45
-  const success = false
+  const errorNumber = 45;
+  const success = false;
   const { intervals } = require('../assets/static.json')
 
   try {
@@ -1135,7 +1135,7 @@ router.post("/upcoming", async (req, res) => {
     })
 ;
 
-    const errorMessage = validateSchema({ 
+    const errorMessage = await validateSchema({ 
       errorNumber, 
       nowRunning, 
       req,
