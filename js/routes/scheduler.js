@@ -405,7 +405,7 @@ const processCampaigns = async ({
           if (!results) { 
 
             const failure = 'database error when recording the send event'
-            console.log(`${nowRunning}: ${failure}\n`)
+            console.log(`${nowRunning}: ${failure}\n`);
             await recordError ({
               context: `api:  ${nowRunning}`,
               details: queryText,
@@ -475,7 +475,7 @@ const processCampaigns = async ({
       if (!results) { 
 
         const failure = 'database error when updating the last_run parameter on dynamic values used on this campaign run'
-        console.log(`${nowRunning}: ${failure}\n`)
+        console.log(`${nowRunning}: ${failure}\n`);
         await recordError ({
           context: `api:  ${nowRunning}`,
           details: queryText,
@@ -569,7 +569,7 @@ router.post("/run", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting all campaigns'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       await recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -696,7 +696,7 @@ router.post("/run", async (req, res) => {
       if (!results) {
 
         const failure = `database error when updating the next run time for campaign ${campaignId}`
-        console.log(`${nowRunning}: ${failure}\n`)
+        console.log(`${nowRunning}: ${failure}\n`);
         await recordError ({
           context: `api: ${nowRunning}`,
           details: queryText,
@@ -826,7 +826,7 @@ router.post("/run", async (req, res) => {
         if (!results) {
 
           const failure = `database error when list contacts for list ${listId}`
-          console.log(`${nowRunning}: ${failure}\n`)
+          console.log(`${nowRunning}: ${failure}\n`);
           await recordError ({
             context: `api: ${nowRunning}`,
             details: queryText,
@@ -880,7 +880,7 @@ router.post("/run", async (req, res) => {
           if (!results) {
 
             const failure = `database error when getting messages and tracking info for campaign ${campaignId}`
-            console.log(`${nowRunning}: ${failure}\n`)
+            console.log(`${nowRunning}: ${failure}\n`);
             await recordError ({
               context: `api: ${nowRunning}`,
               details: queryText,
@@ -915,7 +915,7 @@ router.post("/run", async (req, res) => {
           if (!results) {
 
             const failure = `database error when getting messages and tracking info for campaign ${campaignId}`
-            console.log(`${nowRunning}: ${failure}\n`)
+            console.log(`${nowRunning}: ${failure}\n`);
             await recordError ({
               context: `api: ${nowRunning}`,
               details: queryText,
@@ -1025,7 +1025,7 @@ router.post("/run", async (req, res) => {
           if (!results) {
 
             const failure = `database error when moving the just sent message to the end of the list for this campaign`
-            console.log(`${nowRunning}: ${failure}\n`)
+            console.log(`${nowRunning}: ${failure}\n`);
             await recordError ({
               context: `api: ${nowRunning}`,
               details: queryText,
@@ -1195,7 +1195,7 @@ router.post("/upcoming", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting all upcoming campaigns'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       await recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,

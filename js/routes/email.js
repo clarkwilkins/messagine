@@ -24,7 +24,7 @@ const {
   validateSchema
 } = require( '../functions.js' );
 
-router.post( "/signatures/all", async ( req, res ) => { 
+router.post("/signatures/all", async (req, res) => { 
 
   const nowRunning = "/email/signatures/all";
   console.log(`${nowRunning}: running`);
@@ -100,7 +100,7 @@ router.post( "/signatures/all", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when removing a signature record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -108,7 +108,10 @@ router.post( "/signatures/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
     
@@ -164,7 +167,7 @@ router.post( "/signatures/all", async ( req, res ) => {
 
 } );
 
-router.post( "/signatures/delete", async ( req, res ) => { 
+router.post("/signatures/delete", async (req, res) => { 
 
   const nowRunning = "/email/signatures/delete";
   console.log(`${nowRunning}: running`);
@@ -237,7 +240,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when removing a signature record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -245,13 +248,19 @@ router.post( "/signatures/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( !results.rowCount ) { // this is not a messagine error
 
       const failure = 'update denied due to bad signature ID or ownership level conflict';
-      console.log(`${nowRunning}: ${failure}\n`)
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
     
@@ -275,7 +284,7 @@ router.post( "/signatures/delete", async ( req, res ) => {
 
 } );
 
-router.post( "/signatures/load", async ( req, res ) => { 
+router.post("/signatures/load", async (req, res) => { 
 
   const nowRunning = "/email/signatures/load";
   console.log(`${nowRunning}: running`);
@@ -341,12 +350,12 @@ router.post( "/signatures/load", async ( req, res ) => {
     } 
 
     const queryText = " SELECT e.*, u.user_name FROM email_signatures e, users u WHERE e.signature_id = '" + signatureId + "' AND e.owner = u.user_id; ";
-    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });;
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting a signature record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -354,13 +363,19 @@ router.post( "/signatures/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( !results.rowCount ) { // this is not an API failure
 
       const failure = 'signature record not found';
-      console.log(`${nowRunning}: ${failure}\n`)
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
     
@@ -401,7 +416,7 @@ router.post( "/signatures/load", async ( req, res ) => {
 
 } );
 
-router.post( "/signatures/new", async ( req, res ) => { 
+router.post("/signatures/new", async (req, res) => { 
 
   const nowRunning = "/email/signatures/new";
   console.log(`${nowRunning}: running`);
@@ -481,7 +496,7 @@ router.post( "/signatures/new", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when creating a new signature record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -489,7 +504,10 @@ router.post( "/signatures/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
     
@@ -513,7 +531,7 @@ router.post( "/signatures/new", async ( req, res ) => {
 
 } );
 
-router.post( "/signatures/update", async ( req, res ) => { 
+router.post("/signatures/update", async (req, res) => { 
 
   const nowRunning = "/email/signatures/update";
   console.log(`${nowRunning}: running`);
@@ -601,7 +619,7 @@ router.post( "/signatures/update", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when creating a new signature record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -609,13 +627,19 @@ router.post( "/signatures/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( !results.rowCount ) { // this is not a messagine error
 
       const failure = 'update denied due to bad signature ID or ownership level conflict';
-      console.log(`${nowRunning}: ${failure}\n`)
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
     

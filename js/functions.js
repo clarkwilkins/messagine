@@ -2,6 +2,7 @@ const { replace } = require('lodash');
 const moment = require('moment-timezone');
 const request = require('request');
 const {
+  API_ACCESS_TOKEN,
   SENDGRID_API_KEY,
   SENDGRID_OFF,
   SENDGRID_SENDER
@@ -694,7 +695,7 @@ const validateSchema = async ({
         errorNumber, 
         failure: 'error when validating inputs', 
         nowRunning, 
-        userId 
+        userId: req.body.userId || API_ACCESS_TOKEN 
       });
       return errorMessage
       
@@ -707,7 +708,7 @@ const validateSchema = async ({
       errorNumber, 
       failure: 'error when validating inputs', 
       nowRunning, 
-      userId 
+      userId: req.body.userId || API_ACCESS_TOKEN
     });
   
   }

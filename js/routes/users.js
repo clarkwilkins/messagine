@@ -101,15 +101,16 @@ router.post("/all", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting users';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
@@ -239,15 +240,16 @@ router.post("/load", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting the user record';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     } else if (results.rowCount !== 1) {
 
@@ -329,15 +331,16 @@ router.post("/login-key", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when checking for an active user with this login key';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
   
     }
 
@@ -433,15 +436,16 @@ router.post("/login-standard", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when checking for an active user with this email address';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
   
     } else if (results.rowCount < 1) {
 
@@ -585,15 +589,16 @@ router.post("/new", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when creating a new user record';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
     
@@ -661,15 +666,16 @@ router.post("/reset-password/part-1", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
   
     } else if (results.rowCount < 1) {
 
@@ -687,7 +693,7 @@ router.post("/reset-password/part-1", async (req, res) => {
     if (!results || !results[1].rowCount) {
 
       const failure = 'database error when setting up a new reset record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -695,7 +701,10 @@ router.post("/reset-password/part-1", async (req, res) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       });
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
   
     }
     
@@ -773,7 +782,7 @@ router.post("/reset-password/part-2", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -781,7 +790,10 @@ router.post("/reset-password/part-2", async (req, res) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       });
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
   
     } else if (results.rowCount < 1) {
 
@@ -799,7 +811,7 @@ router.post("/reset-password/part-2", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting the user\'s email address';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -807,7 +819,10 @@ router.post("/reset-password/part-2", async (req, res) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       });
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
   
     }
     
@@ -816,7 +831,7 @@ router.post("/reset-password/part-2", async (req, res) => {
     if (!email) {
 
       const failure = 'the email address was not properly retrieved';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -824,7 +839,10 @@ router.post("/reset-password/part-2", async (req, res) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       });
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
   
     }
 
@@ -837,7 +855,7 @@ router.post("/reset-password/part-2", async (req, res) => {
     if (!results || results[0].rowCount != 1) {
 
       const failure = 'database error when resetting the user\'s passphrase';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ({
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -845,7 +863,10 @@ router.post("/reset-password/part-2", async (req, res) => {
         errorNumber,
         userId: API_ACCESS_TOKEN
       });
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
   
     }
 
@@ -969,15 +990,16 @@ router.post("/update", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when updating the user record';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 

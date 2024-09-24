@@ -101,7 +101,10 @@ router.post("/all", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } 
 
@@ -251,7 +254,10 @@ router.post("/delete", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if (results.rowCount < 1) {
 
@@ -277,7 +283,10 @@ router.post("/delete", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -504,7 +513,10 @@ router.post("/dynamic/new", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -616,12 +628,18 @@ router.post("/duplicate", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if (results.rowCount < 1) {
 
       const failure = 'source message not found'
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
 
@@ -650,7 +668,10 @@ router.post("/duplicate", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if (results.rowCount < 1) {
 
@@ -761,12 +782,18 @@ router.post("/load", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if (!results.rows[0]?.message_id) {
 
       const failure = 'messageId ' + messageId + ' was not found'
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
       
@@ -918,7 +945,10 @@ router.post("/new", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -1046,7 +1076,10 @@ router.post("/update", async (req, res) => {
         errorNumber,
         userId
       })
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
     

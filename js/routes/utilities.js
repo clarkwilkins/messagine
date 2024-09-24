@@ -20,7 +20,7 @@ const {
   validateSchema
 } = require( '../functions.js' );
 
-router.post( "/hashtags/all", async ( req, res ) => {
+router.post("/hashtags/all", async (req, res) => {
 
   const nowRunning = "utilities/hashtags/all";
   console.log(`${nowRunning}: running`);
@@ -83,12 +83,12 @@ router.post( "/hashtags/all", async ( req, res ) => {
     if ( typeof active === 'boolean' ) queryText += "WHERE active = " + active;
 
     queryText += " ORDER BY active DESC, tag_text; ";
-    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });;
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting tags';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -96,7 +96,10 @@ router.post( "/hashtags/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -151,7 +154,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
 
 } );
 
-router.post( "/hashtags/create", async ( req, res ) => {
+router.post("/hashtags/create", async (req, res) => {
 
   const nowRunning = "utilities/hashtags/create";
   console.log(`${nowRunning}: running`);
@@ -219,7 +222,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when creating a new tag record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -227,7 +230,10 @@ router.post( "/hashtags/create", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -251,7 +257,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
 
 } );
 
-router.post( "/hashtags/delete", async ( req, res ) => {
+router.post("/hashtags/delete", async (req, res) => {
 
   const nowRunning = "utilities/hashtags/delete";
   console.log(`${nowRunning}: running`);
@@ -317,7 +323,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when creating a new tag record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -325,7 +331,10 @@ router.post( "/hashtags/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -349,7 +358,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
 
 } );
 
-router.post( "/hashtags/update", async ( req, res ) => {
+router.post("/hashtags/update", async (req, res) => {
 
   const nowRunning = "utilities/hashtags/update";
   console.log(`${nowRunning}: running`);
@@ -423,7 +432,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when updating the tag record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -431,7 +440,10 @@ router.post( "/hashtags/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -455,7 +467,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
 
 } );
 
-router.post( "/record-event", async ( req, res ) => {
+router.post("/record-event", async (req, res) => {
 
   const nowRunning = "utilities/record-event";
   console.log(`${nowRunning}: running`);

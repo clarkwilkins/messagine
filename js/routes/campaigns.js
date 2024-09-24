@@ -487,7 +487,7 @@ router.post("/load", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting the campaign message details'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -670,7 +670,7 @@ router.post("/messages/add", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when checking current message position'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -708,7 +708,7 @@ router.post("/messages/add", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when adding a message to the campaign'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -972,7 +972,7 @@ router.post("/messages/update", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when updating the campaign message'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1162,7 +1162,7 @@ router.post("/new", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when creating a new campaign record'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1334,7 +1334,7 @@ router.post("/unsubscribe", async (req, res) => {
     if (!results) {
 
       const failure = ' an error occurred when trying to set a full block for this contact ID'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1535,7 +1535,7 @@ router.post("/update", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when updating a  campaign record'
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,

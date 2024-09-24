@@ -17,7 +17,7 @@ const {
   validateSchema
 } = require( '../functions.js' );
 
-router.post( "/all", async ( req, res ) => { 
+router.post("/all", async (req, res) => { 
 
   const nowRunning = "/lists/all";
   console.log(`${nowRunning}: running`);
@@ -100,7 +100,7 @@ router.post( "/all", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when getting list records';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -108,7 +108,10 @@ router.post( "/all", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -168,7 +171,7 @@ router.post( "/all", async ( req, res ) => {
 
 } );
 
-router.post( "/contact-linking", async ( req, res ) => { 
+router.post("/contact-linking", async (req, res) => { 
 
   const nowRunning = "/lists/contact-linking";
   console.log(`${nowRunning}: running`);
@@ -257,7 +260,7 @@ router.post( "/contact-linking", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when getting list records';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -265,7 +268,10 @@ router.post( "/contact-linking", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
     
@@ -289,7 +295,7 @@ router.post( "/contact-linking", async ( req, res ) => {
 
 } );
 
-router.post( "/delete", async ( req, res ) => { 
+router.post("/delete", async (req, res) => { 
 
   const nowRunning = "/lists/delete";
   console.log(`${nowRunning}: running`);
@@ -362,7 +368,7 @@ router.post( "/delete", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when deleting list record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -370,13 +376,19 @@ router.post( "/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to delete a mailing list was blocked';
-      console.log(`${nowRunning}: ${failure}\n`)
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
 
@@ -390,7 +402,7 @@ router.post( "/delete", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when cleaning up after list deletion';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -398,7 +410,10 @@ router.post( "/delete", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -431,7 +446,7 @@ router.post( "/delete", async ( req, res ) => {
 
 } );
 
-router.post( "/load", async ( req, res ) => { 
+router.post("/load", async (req, res) => { 
 
   const nowRunning = "/lists/load";
   console.log(`${nowRunning}: running`);
@@ -502,7 +517,7 @@ router.post( "/load", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when getting the list metadata';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -510,12 +525,18 @@ router.post( "/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( !results.rowCount ) {
 
       const failure = 'list ID was not found';
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
 
@@ -541,7 +562,7 @@ router.post( "/load", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when getting the linked contacts';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -549,7 +570,10 @@ router.post( "/load", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     }
 
@@ -609,7 +633,7 @@ router.post( "/load", async ( req, res ) => {
 
 } );
 
-router.post( "/new", async ( req, res ) => { 
+router.post("/new", async (req, res) => { 
 
   const nowRunning = "/lists/new";
   console.log(`${nowRunning}: running`);
@@ -689,7 +713,7 @@ router.post( "/new", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when creating a new list record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -697,13 +721,19 @@ router.post( "/new", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate list was blocked';
-      console.log(`${nowRunning}: ${failure}\n`)
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
     
@@ -727,7 +757,7 @@ router.post( "/new", async ( req, res ) => {
 
 } );
 
-router.post( "/update", async ( req, res ) => { 
+router.post("/update", async (req, res) => { 
 
   const nowRunning = "/lists/update";
   console.log(`${nowRunning}: running`);
@@ -833,7 +863,7 @@ router.post( "/update", async ( req, res ) => {
     if (!results) {
 
       const failure = 'database error when updating contact record';
-      console.log(`${nowRunning}: ${failure}\n`)
+      console.log(`${nowRunning}: ${failure}\n`);
       recordError ( {
         context: `api: ${nowRunning}`,
         details: queryText,
@@ -841,13 +871,19 @@ router.post( "/update", async ( req, res ) => {
         errorNumber,
         userId
       } );
-      return res.status(200).send({ failure, success })
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
       
     } else if ( results.rowCount === 0 ) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log(`${nowRunning}: ${failure}\n`)
-      return res.status(200).send({ failure, success })
+      console.log(`${nowRunning}: ${failure}\n`);
+      return res.status(200).send({ 
+        failure, 
+        success 
+      });
 
     }
     
