@@ -676,14 +676,12 @@ const updateDynamicText = async ({
 
 }
 
-const validateSchema = ({ 
+const validateSchema = async ({ 
   errorNumber, 
   nowRunning, 
   req,
   schema 
 }) => {
-
-  const { recordError } = require("./functions");
 
   try {
 
@@ -714,8 +712,6 @@ const validateSchema = ({
     });
   
   }
-
-}
 
 }
 
