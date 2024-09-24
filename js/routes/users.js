@@ -157,7 +157,10 @@ router.post("/all", async (req, res) => {
    });
     const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
  }
 
@@ -279,7 +282,10 @@ router.post("/load", async (req, res) => {
    });
     const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
  }
 
@@ -363,7 +369,10 @@ router.post("/login-key", async (req, res) => {
     });
     const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
   }
 
@@ -438,8 +447,10 @@ router.post("/login-standard", async (req, res) => {
 
       const failure = 'invalid email'
       console.log (`nowRunning : ${failure}`);
-      return res.status(200).send({ failure, success });
-
+      return res.status(200).send({ 
+        failure, 
+        success
+      });
     }
 
     const userRecord = results.rows[0];
@@ -449,8 +460,10 @@ router.post("/login-standard", async (req, res) => {
 
       const failure = 'invalid password'
       console.log (`nowRunning : ${failure}`);
-      return res.status(200).send({ failure, success });
-
+      return res.status(200).send({ 
+        failure, 
+        success
+      });
     }
 
     token = jwt.sign ({ userRecord }, JWT_KEY, { expiresIn: "1h" });
@@ -469,7 +482,10 @@ router.post("/login-standard", async (req, res) => {
    });
     const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
  }
 
@@ -595,7 +611,10 @@ router.post("/new", async (req, res) => {
    });
     const newException = `${nowRunning }: failed with an exception: ${e}`;
     console.log (e); 
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
  }
 
@@ -702,7 +721,10 @@ router.post("/reset-password/part-1", async (req, res) => {
     });
     const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
   }
 
@@ -844,7 +866,10 @@ router.post("/reset-password/part-2", async (req, res) => {
     });
     const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
   }
 
@@ -973,7 +998,10 @@ router.post("/update", async (req, res) => {
     });
     const newException = `${nowRunning }: failed with an exception: ${e}`.message;
     console.log (e);
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
   }
 

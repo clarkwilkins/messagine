@@ -53,7 +53,7 @@ router.post( "/hashtags/all", async ( req, res ) => {
     const {
       active,
       userId
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -188,7 +188,7 @@ router.post( "/hashtags/create", async ( req, res ) => {
       notes,
       tagText,
       userId
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -286,7 +286,7 @@ router.post( "/hashtags/delete", async ( req, res ) => {
       apiTesting,
       tagId,
       userId
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -390,7 +390,7 @@ router.post( "/hashtags/update", async ( req, res ) => {
       tagId,
       tagText,
       userId
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -494,7 +494,7 @@ router.post( "/record-event", async ( req, res ) => {
       eventNumber,
       eventTarget,
       userId
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,

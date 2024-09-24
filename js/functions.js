@@ -1,12 +1,14 @@
 const { replace } = require('lodash');
-const db = require('./db');
 const moment = require('moment-timezone');
 const request = require('request');
 const {
+  API_ACCESS_TOKEN,
   SENDGRID_API_KEY,
   SENDGRID_OFF,
   SENDGRID_SENDER
 } = process.env
+const db = require('./db');
+const handleError = require('./handleError');
 const now = moment().format('X');
 
 // Deactive all currently disqualified campaigns.
@@ -16,6 +18,7 @@ const checkCampaigns = async (userId) => {
   const nowRunning = 'functions.js:checkCampaigns';
   console.log(`${nowRunning}: running`);
   const errorNumber = 61;
+
   try {
 
     const queryText = `
@@ -39,18 +42,17 @@ const checkCampaigns = async (userId) => {
       ;
     `;
 
-    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
+    const results = await db.transactionRequired({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
       
-      recordError ({
-        context: `api:  ${nowRunning}`,
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
+        errorNumber, 
+        failure: 'database error when deactivating disqualified campaigns', 
+        nowRunning, 
+        userId 
       });
-      return ({ failure: 'campaign testing failed due to a database error' });
 
     }
 
@@ -58,6 +60,7 @@ const checkCampaigns = async (userId) => {
 
     Object.values(results.rows).forEach(row => { closedCampaigns.push(row.campaign_id) });
 
+    console.log(`${nowRunning}: finished`);
     return ({ 
       closedCampaigns, 
       success: true 
@@ -65,16 +68,7 @@ const checkCampaigns = async (userId) => {
 
   } catch (e) { 
 
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
+    return await handleError({ error, errorNumber, nowRunning, userId });
 
   }
 
@@ -97,6 +91,7 @@ const dateToTimestamp = date => {
 }
 
 const deleteCampaignMessage = async({ 
+  apiTesting,
   campaignId, 
   messageId, 
   position, 
@@ -110,7 +105,6 @@ const deleteCampaignMessage = async({
   try {
 
     const { 
-      recordError,
       recordEvent,
       stringCleaner
     } = require ('./functions')
@@ -158,15 +152,13 @@ const deleteCampaignMessage = async({
     if (!results) {
 
       const failure = 'database error when deleting a campaign message link'
-      console.log(`${nowRunning}: ${failure}\n`)
-      await recordError ({
-        context: `api:  ${nowRunning}`,
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
+        errorNumber, 
+        failure, 
+        nowRunning, 
+        userId 
       });
-      return ({ failure });
 
     }
 
@@ -191,7 +183,7 @@ const deleteCampaignMessage = async({
         ;
       `;
 
-      Object.values(results.rows).forEach((row, key) => {
+      Object.values(results[2].rows).forEach((row, key) => {
 
         const {
           campaign_id: campaignId,
@@ -222,16 +214,14 @@ const deleteCampaignMessage = async({
 
       if (!results) {
 
-        const failure = 'database error when repositiong remaining messages in the campaign';
-        console.log(`${nowRunning}: ${failure}\n`)
-        recordError ({
-          context: `api: ${nowRunning}`,
+        const failure = 'database error when repositioning remaining messages in the campaign';
+        return await handleError({ 
           details: queryText,
-          errorMessage: failure,
-          errorNumber,
-          userId
-        })
-        return ({ failure })
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        });
         
       }
 
@@ -239,18 +229,9 @@ const deleteCampaignMessage = async({
 
     return({ success: true });
 
-  } catch (e) {
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
+  } catch (error) {
+    
+    return await handleError({ error, errorNumber, nowRunning, userId });
 
   }
 
@@ -265,10 +246,8 @@ const getDynamicMessageReplacements = async ({
   try {
 
     const nowRunning = 'functions.js:getDynamicMessageReplacements';
-    const success = false;
     const { 
       containsHTML,
-      recordError,
       stringCleaner
     } = require ('./functions');
 
@@ -290,18 +269,12 @@ const getDynamicMessageReplacements = async ({
 
     if (!results) {
 
-      const failure = 'database error when getting dynamic values records'
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api:  ${nowRunning}`,
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-      return ({ 
-        failure, 
-        success 
+        errorNumber, 
+        failure: 'database error when getting dynamic values records', 
+        nowRunning, 
+        userId 
       });
       
     }
@@ -328,26 +301,23 @@ const getDynamicMessageReplacements = async ({
 
     });
 
-    return ({ dynamicValues, success: true });
-
-  } catch (e) { 
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
+    return ({ 
+      dynamicValues, 
+      success: true 
     });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
 
+  } catch (error) {
+    
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId 
+    });
+  
   }
 
 }
-
-// getUserLevel was rewritten by ChatGPT 3.5 to throttle it and add better error handling.
 
 const getUserLevel = (() => {
 
@@ -355,6 +325,7 @@ const getUserLevel = (() => {
 
   return async (userId) => {
 
+    const db = require('./db');
     const nowRunning = "functions/getUserLevel";
     const currentTime = Date.now();
     const errorNumber = 63;
@@ -384,23 +355,20 @@ const getUserLevel = (() => {
 
       if (!results) {
 
-        const failure = 'database error when deleting a campaign message link'
-        console.log(`${nowRunning}: ${failure}\n`)
-        await recordError ({
-          context: `api:  ${nowRunning}`,
+        return await handleError({ 
           details: queryText,
-          errorMessage: failure,
-          errorNumber,
-          userId
+          errorNumber, 
+          failure: 'database error when checking the user record', 
+          nowRunning, 
+          userId 
         });
-        return ({ failure });
-
+      
       }
 
       const {
         rowCount,
         rows
-       } = results.rows;
+       } = results;
 
       if (rowCount === 0) {
 
@@ -420,10 +388,14 @@ const getUserLevel = (() => {
       return { level }
 
     } catch (error) {
-
-      console.error(`${nowRunning}: error`, error);
-      return ({ failure });
-
+    
+      return await handleError({ 
+        error, 
+        errorNumber, 
+        nowRunning, 
+        userId 
+      });
+    
     }
 
   }
@@ -433,7 +405,7 @@ const getUserLevel = (() => {
 const getUsers = async () => {
 
   const nowRunning = "functions/getUsers";
-  console.log(nowRunning + ": started");
+  console.log(`${nowRunning}: started`);
   const errorNumber = 64;
 
   try {
@@ -451,39 +423,32 @@ const getUsers = async () => {
 
     if (!results) {
 
-      const failure = 'database error when repositiong remaining messages in the campaign';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      })
-      return ({ failure })
-      
+        errorNumber, 
+        failure: 'database error when getting all users', 
+        nowRunning, 
+        userId 
+      });
+    
     }
 
     let userList = {};
 
     Object.values(rows).forEach(theRow => { userList[theRow.user_id] = stringCleaner(theRow.user_name); })
 
-    console.log(nowRunning + ": finished");  
+    console.log(nowRunning + ": finished"); 
     return ({ userList });
 
-  } catch (e) { 
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
+  } catch (error) {
+    
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId 
     });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
-
+  
   }
 
 }
@@ -572,10 +537,7 @@ const recordEvent = async({
 
   const errorNumber = 44;
   const nowRunning = 'functions.js:recordEvent';
-  const { 
-    recordError,
-    stringCleaner
-  } = require ('./functions');
+  const { stringCleaner } = require ('./functions');
 
   try { 
 
@@ -601,32 +563,25 @@ const recordEvent = async({
 
     if (!results) {
 
-      const failure = 'database error when repositiong remaining messages in the campaign';
-      console.log(`${nowRunning}: ${failure}\n`)
-      recordError ({
-        context: `api: ${nowRunning}`,
+      return await handleError({ 
         details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      })
-      return ({ failure })
-      
+        errorNumber, 
+        failure: 'database error when recording an event', 
+        nowRunning, 
+        userId 
+      });
+    
     }
 
-  } catch (e) { 
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
+  } catch (error) {
+    
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId 
     });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
-
+  
   }
 
 }
@@ -681,7 +636,7 @@ const stringCleaner = (string, toDb, nl2br) => {
 
 }
 
-const updateDynamicText = ({ 
+const updateDynamicText = async ({ 
   dynamicValues, 
   messageContent 
 }) => {
@@ -708,19 +663,15 @@ const updateDynamicText = ({
 
     return ({ messageContent });  
 
-  } catch (e) { 
-
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
+  } catch (error) {
+    
+    return await handleError({ 
+      error, 
+      errorNumber, 
+      nowRunning, 
+      userId 
     });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
-
+  
   }
 
 }
@@ -741,30 +692,30 @@ const validateSchema = ({
     if (error) {
 
       const errorMessage = `validation error: ${error.details[0].message}`
-      recordError ({
-        context: `api: ${nowRunning}`,
-        errorMessage,
-        errorNumber,
-        userId: req.body.userId || API_ACCESS_TOKEN
+      await handleError({ 
+        details: errorMessage,
+        errorNumber, 
+        failure: 'error when validating inputs', 
+        nowRunning, 
+        userId 
       });
       return errorMessage
       
     }
 
-  } catch (e) { 
+  } catch (error) {
 
-    const stackLines = e.stack.split('\n') || ['no message found'];
-    recordError ({
-      context: `${nowRunning}.e`,
-      details: `This error occurred at <b>${stackLines[1].trim()}</b>.`,
-      errorMessage: stackLines[0],
-      errorNumber,
-      userId: API_ACCESS_TOKEN
+    return await handleError({ 
+      details: null,
+      errorNumber, 
+      failure: 'error when validating inputs', 
+      nowRunning, 
+      userId 
     });
-    console.log(`${nowRunning}: failed, message:${stackLines[0]}`);
-    return ({ failure: stackLines[0] });
-
+  
   }
+
+}
 
 }
 
@@ -786,6 +737,7 @@ module.exports = {
   getUsers,
   isUrl,
   randomString,
+  recordError,
   recordEvent,
   sendMail,
   stringCleaner,

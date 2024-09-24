@@ -521,8 +521,8 @@ router.post("/run", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -551,7 +551,7 @@ router.post("/run", async (req, res) => {
     let { 
       apiTesting,
       dryRun
-    } = req.body
+    } = req.body;
 
     if (dryRun) apiTesting = true // If this is a dry run, we don't want to commit any changes.
 
@@ -576,8 +576,11 @@ router.post("/run", async (req, res) => {
         errorMessage: failure,
         errorNumber,
         userId
-      })
-      return res.status(200).send({ failure, success })
+      });
+      return res.status(200).send({ 
+        failure, 
+        success
+      });
       
     }
 
@@ -1121,8 +1124,8 @@ router.post("/upcoming", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -1146,7 +1149,7 @@ router.post("/upcoming", async (req, res) => {
 
     }
 
-    const { userId } = req.body
+    const { userId } = req.body;
     const { 
       failure: getUserLevelFailure,
       level: userLevel 
@@ -1199,8 +1202,11 @@ router.post("/upcoming", async (req, res) => {
         errorMessage: failure,
         errorNumber,
         userId
-      })
-      return res.status(200).send({ failure, success })
+      });
+      return res.status(200).send({ 
+        failure, 
+        success
+      });
       
     }
 

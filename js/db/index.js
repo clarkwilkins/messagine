@@ -1,64 +1,9 @@
 const { Pool } = require( 'pg' );
-const { recordError } = require( '../functions.js' );
 const fs = require ( 'fs' );
 const moment = require ( 'moment' );
 const { split, startsWith } = require ( 'lodash' );
 
-const pool = new Pool(); // initializing a connection pool for the route that calls this
-
-async function query( query, apiTesting ) {
-
-  const client = await pool.connect();
-
-  try {
-
-    await client.query( "BEGIN " );
-    const result = await client.query( query );
-    apiTesting ? await client.query( "ROLLBACK " ) : await client.query( "COMMIT " );
-    return result;
-
- } catch ( e ) {
-
-    await client.query( "ROLLBACK " ); // rollback before throwing exception
-    recordError( query, 3 )
-
- } finally {
-
-    client.release();
-
-    if ( !apiTesting ) {
-
-      let statements = split( query, ';' );
-      let logStatements = '';
-      statements.map( theStatement => { 
-
-        theStatement = theStatement.trim();
-        startsWith( theStatement, 'DELETE' ) ? logStatements += theStatement + ";\n" : null;
-        startsWith( theStatement, 'INSERT' ) ? logStatements += theStatement + ";\n" : null;
-        startsWith( theStatement, 'UPDATE' ) ? logStatements += theStatement + ";\n" : null;
-
-     } );
-
-      let logfile = process.env.UNITI_LOGS + moment().format( "YYYY.MM.DD" );
-
-      if ( logStatements ) {
-
-        logStatements = "\n/* " + moment().format( "HH.mm.ss" ) + " */\n" + logStatements;
-
-        (async () => {
-
-          const fsp = require( 'fs' ).promises;
-          await fsp.appendFile( logfile, logStatements );
-          
-       })();
-
-     }
-      
-   }
-
- }
-
-}
+const pool = new Pool(); // initializing a connection pool for the route that calls this module
 
 async function noTransaction({ errorNumber, nowRunning, queryText, userId }) {
 
@@ -69,23 +14,15 @@ async function noTransaction({ errorNumber, nowRunning, queryText, userId }) {
     const result = await client.query(queryText);
     return result;
 
- } catch ( e ) {
+  } catch ( e ) {
 
-    console.log( 'database error: ' + e.message )
-    recordError( {
-      context: `api: ${nowRunning}`,
-      details: query,
-      errorMessage: `error: ${e.message}`,      
-      errorNumber,
-      userId
-    } );
-    return {}
+    console.error( e );
 
- } finally {
+  } finally {
 
-    client.release();
+      client.release();
 
- }
+  }
 
 }
 
@@ -100,19 +37,11 @@ async function transactionRequired({ apiTesting, errorNumber, nowRunning, queryT
     apiTesting ? await client.query( "ROLLBACK " ) : await client.query( "COMMIT " );
     return result;
 
- } catch ( e ) {
+  } catch ( e ) {
 
-    await client.query( "ROLLBACK " ); // rollback before throwing exception
-    recordError( {
-      context: `api: ${nowRunning}`,
-      details: query,
-      errorMessage: `error: ${e.message}`,      
-      errorNumber,
-      userId
-   } );
-    return {};
+    console.error( e );
 
- } finally {
+  } finally {
 
     client.release();
 
@@ -123,11 +52,14 @@ async function transactionRequired({ apiTesting, errorNumber, nowRunning, queryT
       statements.map( theStatement => { 
 
         theStatement = theStatement.trim();
-        startsWith( theStatement, 'DELETE' ) ? logStatements += theStatement + ";\n" : null;
-        startsWith( theStatement, 'INSERT' ) ? logStatements += theStatement + ";\n" : null;
-        startsWith( theStatement, 'UPDATE' ) ? logStatements += theStatement + ";\n" : null;
 
-     } );
+        if (['DELETE', 'INSERT', 'UPDATE'].some(cmd => startsWith(theStatement, cmd))) {
+
+          logStatements += theStatement + ";\n";
+
+        }
+
+      });
 
       let logfile = process.env.MESSAGINE_LOGS + moment().format( "YYYY.MM.DD" );
 
@@ -137,21 +69,28 @@ async function transactionRequired({ apiTesting, errorNumber, nowRunning, queryT
 
         (async () => {
 
-          const fsp = require( 'fs' ).promises;
-          await fsp.appendFile( logfile, logStatements );
-          
-       })();
+          try {
 
-     }
+            const fsp = require( 'fs' ).promises;
+            await fsp.appendFile( logfile, logStatements );
+
+          } catch (err) {
+
+            console.error('Logging failed: ', err);
+
+          }
+
+        })();
+
+      }
       
-   }
+    }
 
- }
+  }
 
 }
 
 module.exports = {
-  query,
   noTransaction,
   transactionRequired
 }

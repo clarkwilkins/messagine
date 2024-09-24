@@ -29,8 +29,8 @@ router.post("/all", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -50,15 +50,15 @@ router.post("/all", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
     let { 
       active,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -179,8 +179,8 @@ router.post("/delete", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -201,8 +201,8 @@ router.post("/delete", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
@@ -210,7 +210,7 @@ router.post("/delete", async (req, res) => {
       apiTesting,
       messageId,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -399,7 +399,10 @@ router.post("/dynamic/all", async (req, res) => {
     });
     const newException = `${nowRunning }: failed with an exception: ${e}`
     console.log (e); 
-    res.status(500).send(newException);
+     return res.status(200).send({ 
+      failure: stackLines[0], 
+      success 
+    });
 
  }
 
@@ -417,8 +420,8 @@ router.post("/dynamic/new", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -445,8 +448,8 @@ router.post("/dynamic/new", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
@@ -457,7 +460,7 @@ router.post("/dynamic/new", async (req, res) => {
       newValue,
       target,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -537,8 +540,8 @@ router.post("/duplicate", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -561,8 +564,8 @@ router.post("/duplicate", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
@@ -572,7 +575,7 @@ router.post("/duplicate", async (req, res) => {
       messageName,
       sourceId,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -690,8 +693,8 @@ router.post("/load", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -711,15 +714,15 @@ router.post("/load", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
     let { 
       messageId,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -827,8 +830,8 @@ router.post("/new", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -855,8 +858,8 @@ router.post("/new", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
@@ -870,7 +873,7 @@ router.post("/new", async (req, res) => {
       messageSubject,
       repeatable,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
@@ -953,8 +956,8 @@ router.post("/update", async (req, res) => {
 
     if (req.body.masterKey != API_ACCESS_TOKEN) {
 
-      console.log(`${nowRunning}: bad token\n`)
-      return res.status(403).send('unauthorized')
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
 
     }
 
@@ -982,8 +985,8 @@ router.post("/update", async (req, res) => {
   
     if (errorMessage) {
 
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`)
-      return res.status(422).send({ failure: errorMessage, success })
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ failure: errorMessage, success });
 
     }
 
@@ -998,7 +1001,7 @@ router.post("/update", async (req, res) => {
       messageSubject,
       repeatable,
       userId 
-    } = req.body
+    } = req.body;
 
     const { 
       failure: getUserLevelFailure,
