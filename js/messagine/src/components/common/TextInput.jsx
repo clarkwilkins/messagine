@@ -38,7 +38,7 @@ function TextInput ( props ) {
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         type={type}
-        { ...register( inputName, { onBlur, onChange } ) }
+        { ...register( inputName, { onBlur, onChange }) }
       />
 
     </Form.Group>

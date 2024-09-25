@@ -329,7 +329,7 @@ function NewContact() {
 
     if (listTargets.includes(listId)) {
 
-      let filteredArray = listTargets.filter(function(element) { return element !== listId } )
+      let filteredArray = listTargets.filter(function(element) { return element !== listId })
       setListTargets(filteredArray)
 
 

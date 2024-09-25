@@ -488,45 +488,6 @@ const randomString = () => { // c/o ChatGPT3.5
 
 }
 
-const recordError = async data => { // data should be { context, details, errorMessage, errorNumber, userId }
-
-  const nowRunning = 'functions/recordError';
-  console.log (`${nowRunning}: started`);
-
-  try {
-
-    const {
-      SIMPLEXABLE_API: host,
-      SIMPLEXABLE_API_TOKEN: masterKey,
-      SIMPLEXABLE_PLATFORM: platform
-    } = process.env;
-
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // avoids having node crash when we make the request
-
-    request.post(
-      {
-        url: host + '/errors/record',
-        json: {
-          ...data,
-          masterKey,
-          platform,
-        },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    console.log (`${nowRunning}: finished`);
-
-  } catch(e) {
-
-    console.log (`${nowRunning}: failed with an exception: `, e)
-
-  }
-
-}
-
 const recordEvent = async({ 
   apiTesting, 
   event, 
@@ -733,7 +694,6 @@ module.exports = {
   getUsers,
   isUrl,
   randomString,
-  recordError,
   recordEvent,
   sendMail,
   stringCleaner,

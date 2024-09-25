@@ -3,7 +3,7 @@ import {
   Modal 
 } from 'react-bootstrap';
 
-const ConfirmationModal = ( { showModal, hideModal, confirmModal, payload, message } ) => {
+const ConfirmationModal = ({ showModal, hideModal, confirmModal, payload, message }) => {
 
   return (
 

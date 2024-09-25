@@ -14,7 +14,6 @@ const {
   containsHTML,
   deleteCampaignMessage,
   getUserLevel,
-  recordError,
   recordEvent,
   stringCleaner,
   validateSchema
@@ -53,7 +52,10 @@ router.post("/all", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -122,7 +124,7 @@ router.post("/all", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting the campaigns';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return await handleError({ 
         details: queryText,
         errorNumber, 
@@ -233,7 +235,10 @@ router.post("/delete", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -284,7 +289,7 @@ router.post("/delete", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when deleting the campaign';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return await handleError({ 
         details: queryText,
         errorNumber, 
@@ -361,7 +366,10 @@ router.post("/load", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -423,7 +431,7 @@ router.post("/load", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting the campaign';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -487,7 +495,7 @@ router.post("/load", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting the campaign message details'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -609,7 +617,10 @@ router.post("/messages/add", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -670,7 +681,7 @@ router.post("/messages/add", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when checking current message position'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -708,7 +719,7 @@ router.post("/messages/add", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when adding a message to the campaign'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -744,7 +755,7 @@ router.post("/messages/add", async (req, res) => {
 
 router.post("/messages/remove", async (req, res) => { 
 
-  const nowRunning = "/campaigns/messages/remove"
+  const nowRunning = "/campaigns/messages/remove";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 40;
@@ -777,7 +788,10 @@ router.post("/messages/remove", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -850,7 +864,7 @@ router.post("/messages/remove", async (req, res) => {
 
 router.post("/messages/update", async (req, res) => { 
 
-  const nowRunning = "/campaigns/messages/update"
+  const nowRunning = "/campaigns/messages/update";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 55;
@@ -891,7 +905,10 @@ router.post("/messages/update", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -972,7 +989,7 @@ router.post("/messages/update", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when updating the campaign message'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1012,7 +1029,7 @@ router.post("/messages/update", async (req, res) => {
 
   }
 
-})
+});
 
 router.post("/new", async (req, res) => { 
 
@@ -1062,7 +1079,10 @@ router.post("/new", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -1162,7 +1182,7 @@ router.post("/new", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when creating a new campaign record'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1247,7 +1267,10 @@ router.post("/unsubscribe", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -1334,7 +1357,7 @@ router.post("/unsubscribe", async (req, res) => {
     if (!results) {
 
       const failure = ' an error occurred when trying to set a full block for this contact ID'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1399,7 +1422,7 @@ router.post("/unsubscribe", async (req, res) => {
   
   }
 
-})
+});
 
 router.post("/update", async (req, res) => { 
 
@@ -1450,7 +1473,10 @@ router.post("/update", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -1535,7 +1561,7 @@ router.post("/update", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when updating a  campaign record'
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,

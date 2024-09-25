@@ -2,7 +2,7 @@ const express = require( 'express' );
 const app = express();
 const fs = require('fs');
 const https = require('https');
-require( "dotenv" ).config( { path: __dirname + "/.env" } );
+require( "dotenv" ).config({ path: __dirname + "/.env" });
 
 const {
   SSL_API_PORT: port,

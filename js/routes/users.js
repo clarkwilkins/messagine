@@ -1,6 +1,7 @@
 console.log("loading user services now...");
 const bcrypt = require('bcrypt');
 const db = require('../db');
+const handleError = require('../handleError');
 const express = require('express');
 const fs = require('fs');
 const Joi = require('joi');
@@ -18,11 +19,12 @@ const {
 const { 
   getUserLevel,
   randomString,
-  recordError,
   sendMail,
   stringCleaner,
   validateSchema
 } = require('../functions.js');
+
+const success = false;
 
 router.post("/all", async (req, res) => { 
 
@@ -30,7 +32,6 @@ router.post("/all", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 1;
-  const success = false;
 
   try {
 
@@ -57,7 +58,10 @@ router.post("/all", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
    }
 
@@ -91,17 +95,23 @@ router.post("/all", async (req, res) => {
 
     } 
 
-    let queryText = " SELECT * FROM users ";
-
-    if (typeof active === 'boolean') queryText += "WHERE active = " + active;
-
-    queryText += " ORDER BY active DESC, user_name; ";
+    const queryText = `
+      SELECT 
+        * 
+      FROM 
+        users 
+      ${typeof active === 'boolean' ? `WHERE active = ${active}` : ''} 
+      ORDER BY 
+        active DESC, 
+        user_name
+      ;
+    `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting users';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -116,7 +126,8 @@ router.post("/all", async (req, res) => {
 
     const users = {};
     const usersSelector = [];
-    Object.values(results.rows).map(row => {
+
+    Object.values(results.rows).forEach(row => {
 
       let {
         active,
@@ -133,37 +144,36 @@ router.post("/all", async (req, res) => {
         email,
         level: +level,
         userName
-      }
+      };
 
       if (!active) userName += '*';
 
       usersSelector.push({
         label: userName,
         value: userId
-      })
+      });
 
     })
 
     console.log(`${nowRunning}: finished`);
-    return res.status(200).send({ success: true, users, usersSelector })
+    return res.status(200).send({ 
+      success: true, 
+      users, 
+      usersSelector 
+    })
 
- } catch (e) {
+ } catch (error) {
 
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner(JSON.stringify(e.message), true),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-   });
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log (e); 
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
- }
+  }
 
 });
 
@@ -173,7 +183,6 @@ router.post("/load", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 12;
-  const success = false;
 
   try {
 
@@ -200,7 +209,10 @@ router.post("/load", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
    }
 
@@ -209,7 +221,7 @@ router.post("/load", async (req, res) => {
       userId 
     } = req.body;
 
-    // comment out level check if creating the first user and do not supply userId in the JSON
+    // Comment out level check if creating the first user and do not supply userId in the JSON!!
 
     const { 
       failure: getUserLevelFailure,
@@ -234,13 +246,22 @@ router.post("/load", async (req, res) => {
 
     } 
 
-    const queryText = " SELECT * FROM users WHERE user_id = '" + thisUser + "' AND level <= " + userLevel + "; ";
+    const queryText = `
+      SELECT 
+        * 
+      FROM 
+        users 
+      WHERE 
+        user_id = '${thisUser}' 
+        AND level <= ${userLevel}
+      ;
+    `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting the user record';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -253,7 +274,11 @@ router.post("/load", async (req, res) => {
       
     } else if (results.rowCount !== 1) {
 
-      return res.status(200).send({ failure: 'user info restricted', success });
+      return res.status(200).send({ 
+        failure: 'user info restricted or not found', 
+        success: true 
+      });
+
     }
 
     const {
@@ -273,23 +298,18 @@ router.post("/load", async (req, res) => {
       userName: stringCleaner(userName)
     });
 
- } catch (e) {
+  } catch (error) {
 
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner(JSON.stringify(e.message), true),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-   });
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log (e); 
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
- }
+  }
 
 });
 
@@ -299,7 +319,6 @@ router.post("/login-key", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 3;
-  const success = false;
   const userId = API_ACCESS_TOKEN;
   
   try {
@@ -320,18 +339,31 @@ router.post("/login-key", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
     const { key } = req.body;
-    const queryText = `SELECT * FROM users WHERE active = true AND token = '${key}';`;
+    const queryText = `
+      SELECT 
+        * 
+      FROM 
+        users 
+      WHERE 
+        active = true 
+      AND 
+        token = '${key}'
+      ;
+    `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText });
 
     if (!results) {
 
       const failure = 'database error when checking for an active user with this login key';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -359,23 +391,21 @@ router.post("/login-key", async (req, res) => {
     }
 
     console.log(`${nowRunning}: finished`);
-    return res.status(200).send({ userRecord, success: true })
+    return res.status(200).send({
+      success: true,
+      userRecord,
+    })
 
-  } catch (e) {
+  } catch (error) {
 
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( e.message),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId
-    });
-    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
-    console.log (e);
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
@@ -387,7 +417,6 @@ router.post("/login-standard", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 2;
-  const success = false;
   const userId = API_ACCESS_TOKEN;
 
   try {
@@ -420,23 +449,34 @@ router.post("/login-standard", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
-   }
+    }
 
     const { 
       email,
-      masterKey,
       passphrase
     } = req.body; 
 
-    const queryText = " SELECT * FROM users WHERE active = true AND email ILIKE '" + email + "' ";
+    const queryText = `
+      SELECT 
+        * 
+      FROM 
+        users 
+      WHERE 
+        active = true 
+        AND email ILIKE '${stringCleaner(email, true)}'
+      ;
+    `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when checking for an active user with this email address';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -468,30 +508,29 @@ router.post("/login-standard", async (req, res) => {
         failure, 
         success
       });
+
     }
 
     token = jwt.sign ({ userRecord }, JWT_KEY, { expiresIn: "1h" });
     
     console.log(`${nowRunning}: finished`);
-    return res.status(200).send({ token, success: true });
-
- } catch (e) {
-
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner(JSON.stringify(e.message), true),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId
-   });
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log (e); 
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
+    return res.status(200).send({ 
+      success: true,
+      token
     });
 
- }
+  } catch (error) {
+
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+
+  }
 
 });
 
@@ -501,7 +540,6 @@ router.post("/new", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 1;
-  const success = false;
 
   try {
 
@@ -536,7 +574,10 @@ router.post("/new", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
    }
 
@@ -549,7 +590,7 @@ router.post("/new", async (req, res) => {
       userName 
     } = req.body;
 
-    // comment out level check if creating the first user and do not supply userId in the JSON
+    // Comment out level check if creating the first user and do not supply userId in the JSON!!
 
     const { 
       failure: getUserLevelFailure,
@@ -574,22 +615,43 @@ router.post("/new", async (req, res) => {
 
     } 
 
-    // don't allow current user to add a new one at a higher level
+    // Don't allow current user to add a new one at a higher level.
     
     if (level > userLevel) level = userLevel;
 
-    // create the user
+    // Create the user.
 
     const loginHash = await bcrypt.hash(email + passphrase, 10);
-    const newId = uuidv4();
-    const token = uuidv4();
-    const queryText = " INSERT INTO users (active, email, level, login_hash, token, user_id, user_name) VALUES (true, '" + email + "', " + level + ", '" + loginHash + "', '" + newId + "', '" + token + "', '" + stringCleaner(userName, true) + "') RETURNING *; ";
+    const queryText = `
+      INSERT INTO 
+        users (
+          active, 
+          email, 
+          level, 
+          login_hash, 
+          token, 
+          user_id, 
+          user_name
+        ) 
+      VALUES (
+        true, 
+        '${stringCleaner(email, true)}', 
+        ${level}, 
+        '${loginHash}', 
+        '${uuidv4()}', 
+        '${uuidv4()}', 
+        '${stringCleaner(userName, true)}'
+      ) 
+      RETURNING 
+        *
+      ;
+    `;
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when creating a new user record';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -603,25 +665,24 @@ router.post("/new", async (req, res) => {
     }
     
     console.log(`${nowRunning}: finished`);
-    return res.status(200).send({ newId, success: true, token });
-
- } catch (e) {
-
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner(JSON.stringify(e.message), true),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-   });
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log (e); 
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
+    return res.status(200).send({ 
+      newId: results?.rows[0]?.user_id,
+      success: true, 
+      token: results?.rows[0]?.token 
     });
 
- }
+  } catch (error) {
+
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+
+  }
 
 });
 
@@ -631,8 +692,6 @@ router.post("/reset-password/part-1", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 4;
-  const success = false;
-  const userId = API_ACCESS_TOKEN;
     
   try {
 
@@ -651,7 +710,10 @@ router.post("/reset-password/part-1", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -660,20 +722,30 @@ router.post("/reset-password/part-1", async (req, res) => {
       email 
     } = req.body;
 
-    let queryText = " SELECT user_id FROM users WHERE active = true AND email ILIKE '" + email + "'; ";
-    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
+    let queryText = `
+      SELECT 
+        user_id 
+      FROM 
+        users 
+      WHERE 
+        active = true 
+        AND email ILIKE '${stringCleaner(email, true)}'
+      ;
+    `;
+
+    let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId: API_ACCESS_TOKEN });
 
     if (!results) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
           errorNumber, 
           failure, 
           nowRunning, 
-          userId 
+          userId: API_ACCESS_TOKEN
         })
       );
   
@@ -687,28 +759,43 @@ router.post("/reset-password/part-1", async (req, res) => {
     const { user_id: userId } = results.rows[0];
 
     const resetCode = randomString();
-    queryText = " DELETE FROM resets WHERE target = (SELECT user_id FROM users WHERE email = '" + stringCleaner(email, true) + "') OR  expires < " + moment().format('X') + "; INSERT INTO resets (code, expires, target) VALUES ('" + resetCode + "', " + moment().add(1, 'hours').format('X') + ", '" + userId + "') RETURNING *; ";
+    queryText = `
+      DELETE FROM 
+        resets 
+      WHERE 
+        target = (SELECT user_id FROM users WHERE email = '${stringCleaner(email, true)}') 
+        OR expires < ${moment().format('X')}
+      ;
+      
+      INSERT INTO 
+        resets (code, expires, target) 
+      VALUES (
+        '${resetCode}', 
+        ${moment().add(1, 'hours').format('X')}, 
+        '${userId}'
+      ) 
+      RETURNING *;
+    `;
+
     results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
-    if (!results || !results[1].rowCount) {
+    if (!results) {
 
       const failure = 'database error when setting up a new reset record';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId: API_ACCESS_TOKEN
-      });
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
   
     }
     
-    let html = fs.readFileSync("./html/password-reset.html", 'utf-8');
+    let html = fs.readFileSync("./assets/files/html/password-reset.html", 'utf-8');
     html = replace(html, '[RESET-CODE]', resetCode);
     html = replace(html, '[YEAR]', moment().format('YYYY'));
 
@@ -719,21 +806,16 @@ router.post("/reset-password/part-1", async (req, res) => {
     console.log(`${nowRunning}: finished`);
     return res.status(200).send({ success: true });
 
-  } catch (e) {
+  } catch (error) {
 
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( e.message),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
-    console.log (e);
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
@@ -745,7 +827,6 @@ router.post("/reset-password/part-2", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 5;
-  const success = false;
   const userId = API_ACCESS_TOKEN;
   
   try {
@@ -765,7 +846,10 @@ router.post("/reset-password/part-2", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -776,53 +860,69 @@ router.post("/reset-password/part-2", async (req, res) => {
 
     // verify this is a valid reset code
 
-    let queryText = " SELECT * FROM resets WHERE code = '" + resetCode + "' AND expires >= " + moment().format('X') + "; ";
+    const queryText = `
+      SELECT 
+        * 
+      FROM 
+        resets 
+      WHERE 
+        code = '${resetCode}' 
+        AND expires >= ${moment().format('X')} -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
+      ;
+    `;
+
     let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
     
     if (!results) {
 
       const failure = 'database error when checking if the email address belongs to an active user';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId: API_ACCESS_TOKEN
-      });
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId
+        })
+      );
   
     } else if (results.rowCount < 1) {
 
       console.log (nowRunning + ": failed");
-      return res.status(200).send({ codeOk: false, success: true});
+      return res.status(200).send({ 
+        codeOk: false, 
+        success: true
+      });
 
     }
 
     // get the user's registered email from the reset code record
 
-    const { target: userId } = results.rows[0];
-    queryText = " SELECT email FROM users WHERE user_id = '" + userId + "'; ";
+    queryText = `
+      SELECT 
+        email 
+      FROM 
+        users 
+      WHERE 
+        user_id = '${results.rows[0].target}'
+      ;
+    `;
     results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting the user\'s email address';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId: API_ACCESS_TOKEN
-      });
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
   
     }
     
@@ -831,42 +931,53 @@ router.post("/reset-password/part-2", async (req, res) => {
     if (!email) {
 
       const failure = 'the email address was not properly retrieved';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId: API_ACCESS_TOKEN
-      });
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId
+        })
+      );
   
     }
 
     // now update the user record so the reset code can be used as a login passphrase until it's further updated.
 
     const loginHash = await bcrypt.hash(email + resetCode, 10);
-    queryText = " UPDATE users SET login_hash = '" + loginHash + "' WHERE user_id = '" + userId + "' RETURNING *; DELETE FROM resets WHERE code = '" + resetCode + "'; ";
+    queryText = `
+      UPDATE 
+        users 
+      SET 
+        login_hash = '${loginHash}' 
+      WHERE 
+        user_id = '${userId}' 
+      RETURNING *
+      ;      
+      DELETE FROM 
+        resets 
+      WHERE 
+        code = '${resetCode}'
+      ;
+    `;
+
     results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results || results[0].rowCount != 1) {
 
       const failure = 'database error when resetting the user\'s passphrase';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ({
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId: API_ACCESS_TOKEN
-      });
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId
+        })
+      );
   
     }
 
@@ -876,21 +987,16 @@ router.post("/reset-password/part-2", async (req, res) => {
     console.log(`${nowRunning}: finished`);
     return res.status(200).send({ token, success: true });
 
-  } catch (e) {
+  } catch (error) {
 
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( e.message),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: API_ACCESS_TOKEN
-    });
-    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
-    console.log (e);
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
@@ -902,7 +1008,6 @@ router.post("/update", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 6;
-  const success = false;
   
   try {
 
@@ -934,7 +1039,10 @@ router.post("/update", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -971,26 +1079,25 @@ router.post("/update", async (req, res) => {
 
     } 
 
-    let queryText = " UPDATE users SET "
-
-    if (typeof active === 'boolean') queryText += "active = " + active + ", ";
-
-    // if there is a new passphrase, we will need a new login hash
-
-    if (email && passphrase) {
-      
-      const loginHash = await bcrypt.hash(email + passphrase, 10);
-      queryText += " email = '" + email + "', login_hash = '" + loginHash + "', ";
-
-    }
-    
-    queryText += "user_name = '" + stringCleaner(userName, true) + "' WHERE user_id = '" + thisUser + "' RETURNING *; ";
+    let queryText = `
+      UPDATE 
+        users 
+      SET 
+        ${typeof active === 'boolean' ? `active = ${active}, ` : ''} 
+        ${email && passphrase ? `email = '${email}', login_hash = '${await bcrypt.hash(email + passphrase, 10)}', ` : ''} 
+        user_name = '${stringCleaner(userName, true)}' 
+      WHERE 
+        user_id = '${thisUser}' 
+      RETURNING 
+        *
+      ;
+    `;
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when updating the user record';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -1007,23 +1114,21 @@ router.post("/update", async (req, res) => {
     token = jwt.sign ({ userRecord }, JWT_KEY, { expiresIn: "1h" });
     
     console.log(`${nowRunning}: finished`);
-    return res.status(200).send({ token, success: true });
+    return res.status(200).send({ 
+      success: true,
+      token}
+    );
 
-  } catch (e) {
+  } catch (error) {
 
-    recordError ({
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( e.message),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId
-    });
-    const newException = `${nowRunning }: failed with an exception: ${e}`.message;
-    console.log (e);
-     return res.status(200).send({ 
-      failure: stackLines[0], 
-      success 
-    });
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 

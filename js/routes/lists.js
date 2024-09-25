@@ -1,21 +1,22 @@
-console.log( "loading lists services now..." );
-const db = require( '../db' );
-const express = require( 'express' );
-const Joi = require( 'joi' );
-const moment = require( 'moment' );
+console.log("loading lists services now...");
+const db = require('../db');
+const handleError = require('../handleError');
+const express = require('express');
+const Joi = require('joi');
+const moment = require('moment');
 const router = express.Router();
-const { v4: uuidv4 } = require( 'uuid' );
-router.use( express.json() );
+const { v4: uuidv4 } = require('uuid');
+router.use(express.json());
 
 const { API_ACCESS_TOKEN } = process.env;
 const { 
   containsHTML,
   getUserLevel,
-  recordError,
   recordEvent,
   stringCleaner,
   validateSchema
-} = require( '../functions.js' );
+} = require('../functions.js');
+const success = false;
 
 router.post("/all", async (req, res) => { 
 
@@ -23,7 +24,6 @@ router.post("/all", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 25;
-  const success = false;
 
   try {
 
@@ -34,12 +34,12 @@ router.post("/all", async (req, res) => {
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
       active: Joi.boolean().optional(),
       masterKey: Joi.any(),
-      stringFilter: Joi.string().optional().allow( '', null ),
+      stringFilter: Joi.string().optional().allow('', null),
       userId: Joi.string().required().uuid()
-    } );
+    });
 
     const errorMessage = await validateSchema({ 
       errorNumber, 
@@ -51,7 +51,10 @@ router.post("/all", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status( 422 ).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -84,41 +87,49 @@ router.post("/all", async (req, res) => {
 
     } 
     
-    if ( !stringFilter ) stringFilter = '';
+    if (!stringFilter) stringFilter = '';
 
-    if ( stringFilter.length > 2 ) stringFilter = stringCleaner( stringFilter, true );
+    if (stringFilter.length > 2) stringFilter = stringCleaner(stringFilter, true);
 
-    let queryText = " SELECT l.*, u.user_name FROM lists l, users u WHERE l.updated_by = u.user_id ";
-
-    if ( typeof active === 'boolean' ) queryText += " AND l.active = " + active;
-
-    if ( stringFilter.length > 2 ) queryText += " AND l.list_name ILIKE '%" + stringFilter + "%' ";
-
-    queryText += " ORDER BY active DESC, list_name; ";
+    const queryText = `
+      SELECT 
+        l.*, 
+        u.user_name 
+      FROM 
+        lists l
+      JOIN 
+        users u 
+      ON 
+        l.updated_by = u.user_id 
+      ${typeof active === 'boolean' ? `WHERE l.active = ${active}` : ''}
+      ${stringFilter.length > 2 ? `AND l.list_name ILIKE '%${stringCleaner(stringFilter, true)}%'` : ''}
+      ORDER BY 
+        active DESC, 
+        list_name
+      ;
+    `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting list records';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
     const lists = {};
     const listsSelector = [];
 
-    Object.values( results.rows ).map( row => {
+    Object.values(results.rows).forEach(row => {
 
       let {
         accept_contacts: acceptContacts,
@@ -137,39 +148,41 @@ router.post("/all", async (req, res) => {
         acceptContacts,
         active,
         created: +created,
-        listName: stringCleaner( listName ),
-        listNotes: stringCleaner( listNotes, false, !containsHTML( listNotes ) ),
+        listName: stringCleaner(listName),
+        listNotes: stringCleaner(listNotes, false, !containsHTML(listNotes)),
         locked: +locked,
         updated: +updated,
         updatedBy,
-        updatedBy2: stringCleaner( updatedBy2 )
-      }
+        updatedBy2: stringCleaner(updatedBy2)
+      };
       listsSelector.push({
         label: listName,
         value: listId
-      })
+      });
 
     });
     
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { lists, listsSelector, success: true } );
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ 
+      lists, 
+      listsSelector, 
+      success: true 
+    });
 
-  } catch ( e ) {
+  } catch (e) {
 
-    recordError ( {
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    } );
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
-} );
+});
 
 router.post("/contact-linking", async (req, res) => { 
 
@@ -177,7 +190,6 @@ router.post("/contact-linking", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 27;
-  const success = false;
 
   try {
 
@@ -188,14 +200,14 @@ router.post("/contact-linking", async (req, res) => {
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
       apiTesting: Joi.boolean().optional(),
       contactId: Joi.string().required().uuid(),
       link: Joi.boolean().required(),
       listId: Joi.string().required().uuid(),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    });
 
     const errorMessage = await validateSchema({ 
       errorNumber, 
@@ -207,7 +219,10 @@ router.post("/contact-linking", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status( 422 ).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -244,14 +259,39 @@ router.post("/contact-linking", async (req, res) => {
     
     let queryText;
 
-    if ( link === false ) {
+    if (link === false) {
 
-      queryText = " DELETE FROM list_contacts WHERE contact_id = '" + contactId + "' AND list_id = '" + listId + "'; ";
+      queryText = `
+        DELETE FROM 
+          list_contacts 
+        WHERE 
+          contact_id = '${contactId}' 
+        AND 
+          list_id = '${listId}'
+        ;
+      `;
 
     } else {
 
-      const now = moment().format( 'X' );
-      queryText = " INSERT INTO list_contacts ( contact_id, created, list_id, updated, updated_by ) VALUES ( '" + contactId + "', " + now + ", '" + listId + "', " + now + ", '" + userId + "' ); "
+      queryText = `
+        INSERT INTO 
+          list_contacts (
+            contact_id, 
+            created, 
+            list_id, 
+            updated, 
+            updated_by
+          ) 
+        VALUES (
+          '${contactId}', 
+          ${moment().format('X')}, -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
+          '${listId}',
+          ${moment().format('X')}, -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
+          '${userId}'
+        )
+        ON CONFLICT DO NOTHING
+        ;
+      `;
 
     }
 
@@ -260,40 +300,36 @@ router.post("/contact-linking", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting list records';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
     
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { success: true } );
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ success: true });
 
-  } catch ( e ) {
-
-    recordError ( {
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    } );
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
-} );
+});
 
 router.post("/delete", async (req, res) => { 
 
@@ -301,7 +337,6 @@ router.post("/delete", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 51;
-  const success = false;
 
   try {
 
@@ -312,12 +347,12 @@ router.post("/delete", async (req, res) => {
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
       apiTesting: Joi.boolean().optional(),
       listId: Joi.string().required().uuid(),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    });
 
     const errorMessage = await validateSchema({ 
       errorNumber, 
@@ -329,7 +364,10 @@ router.post("/delete", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status( 422 ).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -362,29 +400,37 @@ router.post("/delete", async (req, res) => {
 
     } 
 
-    let queryText = `DELETE FROM lists WHERE list_id = '${listId}' AND locked <= ${userLevel} RETURNING *`
+    let queryText = `
+      DELETE FROM 
+        lists 
+      WHERE 
+        list_id = '${listId}' 
+      AND 
+        locked <= ${userLevel} 
+      RETURNING 
+        *
+      ;
+    `;
     let results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when deleting list record';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
-    } else if ( results.rowCount === 0 ) {
+    } else if (results.rowCount === 0) {
 
       const failure = 'attempt to delete a mailing list was blocked';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send({ 
         failure, 
         success 
@@ -392,28 +438,37 @@ router.post("/delete", async (req, res) => {
 
     }
 
-    const listName = stringCleaner(results.rows[0].list_name)
+    const listName = stringCleaner(results.rows[0].list_name);
 
     // cleanup
 
-    queryText = `DELETE FROM list_contacts WHERE list_id = '${listId}'; DELETE FROM events WHERE event_target = '${listId}'`
+    queryText = `
+      DELETE FROM 
+        list_contacts 
+      WHERE 
+        list_id = '${listId}'
+      ; 
+      DELETE FROM 
+        events 
+      WHERE 
+        event_target = '${listId}'
+      ;
+    `;
     results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when cleaning up after list deletion';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
@@ -426,25 +481,23 @@ router.post("/delete", async (req, res) => {
       userId 
     });
 
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { success: true } );
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ success: true });
 
-  } catch ( e ) {
-
-    recordError ( {
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    } );
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
-} );
+});
 
 router.post("/load", async (req, res) => { 
 
@@ -452,7 +505,6 @@ router.post("/load", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 26;
-  const success = false;
 
   try {
 
@@ -463,11 +515,11 @@ router.post("/load", async (req, res) => {
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
       listId: Joi.string().required().uuid(),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    });
 
     const errorMessage = await validateSchema({ 
       errorNumber, 
@@ -479,7 +531,10 @@ router.post("/load", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status( 422 ).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -511,26 +566,37 @@ router.post("/load", async (req, res) => {
 
     } 
 
-    let queryText = " SELECT l.*, u.user_name FROM lists l, users u WHERE l.list_id = '" + listId + "' AND l.updated_by = u.user_id; ";
+    let queryText = `
+      SELECT 
+        l.*, 
+        u.user_name 
+      FROM 
+        lists l
+      JOIN 
+        users u 
+      ON 
+        l.updated_by = u.user_id 
+      WHERE 
+        l.list_id = '${listId}'
+      ;
+    `;
     let results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting the list metadata';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
-    } else if ( !results.rowCount ) {
+    } else if (!results.rowCount) {
 
       const failure = 'list ID was not found';
       return res.status(200).send({ 
@@ -556,28 +622,44 @@ router.post("/load", async (req, res) => {
 
     const linkedContacts = {};
 
-    queryText = " SELECT c.* FROM contacts c, list_contacts lc WHERE c.contact_id = lc.contact_id AND lc.list_id = '" + listId + "' AND c.active = true AND c.block_all = false ORDER BY c.contact_name, c.company_name, c.email; "
+    queryText = `
+      SELECT 
+        c.* 
+      FROM 
+        contacts c
+      JOIN 
+        list_contacts lc 
+      ON 
+        c.contact_id = lc.contact_id 
+      WHERE 
+        lc.list_id = '${listId}' 
+        AND c.active = true 
+        AND c.block_all = false 
+      ORDER BY 
+        c.contact_name, 
+        c.company_name, 
+        c.email
+      ;
+    `;
     results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when getting the linked contacts';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
     }
 
-    Object.values( results.rows ).map( row=> {
+    Object.values(results.rows).forEach(row=> {
 
       const {
         company_name: companyName,
@@ -590,48 +672,46 @@ router.post("/load", async (req, res) => {
 
       fullName = contactName;
 
-      if ( companyName ) fullName += ',' + companyName;
+      if (companyName) fullName += ',' + companyName;
 
       linkedContacts[contactId] = {
-        contactNotes: stringCleaner( contactNotes, false, !containsHTML( contactNotes ) ),
+        contactNotes: stringCleaner(contactNotes, false, !containsHTML(contactNotes)),
         email,
-        fullName: stringCleaner( fullName ),
-        updated: moment.unix( updated ).format( 'YYYY.MM.DD' )
-      }
+        fullName: stringCleaner(fullName),
+        updated: moment.unix(updated).format('YYYY.MM.DD')
+      };
 
     })
 
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { 
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ 
       acceptContacts,
       active,
       created: +created,
       linkedContacts,
-      listName: stringCleaner( listName ),
-      listNotes: stringCleaner( listNotes, false, !containsHTML( listNotes ) ),
+      listName: stringCleaner(listName),
+      listNotes: stringCleaner(listNotes, false, !containsHTML(listNotes)),
       locked: +locked,
       success: true,
       updated: +updated,
       updatedBy,
-      updatedBy2: stringCleaner( updatedBy2 )
-    } );
+      updatedBy2: stringCleaner(updatedBy2)
+    });
 
-  } catch ( e ) {
-
-    recordError ( {
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    } );
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
-} );
+});
 
 router.post("/new", async (req, res) => { 
 
@@ -639,7 +719,6 @@ router.post("/new", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 23;
-  const success = false;
 
   try {
 
@@ -650,13 +729,13 @@ router.post("/new", async (req, res) => {
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
       apiTesting: Joi.boolean().optional(),
       listName: Joi.string().required(),
-      listNotes: Joi.string().optional().allow( '', null ),
+      listNotes: Joi.string().optional().allow('', null),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    });
 
     const errorMessage = await validateSchema({ 
       errorNumber, 
@@ -668,7 +747,10 @@ router.post("/new", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status( 422 ).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -703,59 +785,74 @@ router.post("/new", async (req, res) => {
     } 
 
     const listId = uuidv4();
-    listName = stringCleaner( listName, true );
-    listNotes ? listNotes = stringCleaner( listNotes, true ) : listNotes = '';
-    const now = moment().format( 'X' );
+    listName = stringCleaner(listName, true);
+    listNotes ? listNotes = stringCleaner(listNotes, true) : listNotes = '';
+    const now = moment().format('X');
 
-    const queryText = `INSERT INTO lists( created, list_id, list_name, list_notes, locked, updated, updated_by ) VALUES( ${now}, '${listId}', '${listName}', '${listNotes}', 0, ${now}, '${userId}' ) ON CONFLICT DO NOTHING RETURNING list_id;`;
+    const queryText = `
+      INSERT INTO 
+        lists(
+          created, 
+          list_id, 
+          list_name, 
+          list_notes, 
+          locked, 
+          updated, 
+          updated_by
+        ) 
+      VALUES (
+        ${now}, -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
+        '${listId}', 
+        '${stringCleaner(listName, true)}', 
+        '${stringCleaner(listNotes, true)}', 
+        0, 
+        ${now}, -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
+        '${userId}'
+      ) 
+      ON CONFLICT DO NOTHING 
+      RETURNING 
+        list_id
+      ;
+    `;
+
     const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when creating a new list record';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
-    } else if ( results.rowCount === 0 ) {
-
-      const failure = 'attempt to create a duplicate list was blocked';
-      console.log(`${nowRunning}: ${failure}\n`);
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
-
     }
     
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { listId, success: true } );
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ 
+      listId, 
+      success: true 
+    });
 
-  } catch ( e ) {
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
-    recordError ( {
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    } );
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
+  }
 
- }
-
-} );
+});
 
 router.post("/update", async (req, res) => { 
 
@@ -763,7 +860,6 @@ router.post("/update", async (req, res) => {
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 24;
-  const success = false;
 
   try {
 
@@ -774,17 +870,17 @@ router.post("/update", async (req, res) => {
 
     }
 
-    const schema = Joi.object( {
+    const schema = Joi.object({
       acceptContacts: Joi.boolean().optional(),
       active: Joi.boolean().optional(),
       apiTesting: Joi.boolean().optional(),
       listId: Joi.string().required().uuid(),
       listName: Joi.string().required(),
-      listNotes: Joi.string().optional().allow( '', null ),
-      locked: Joi.boolean().optional().allow( '', null ),
+      listNotes: Joi.string().optional().allow('', null),
+      locked: Joi.boolean().optional().allow('', null),
       masterKey: Joi.any(),
       userId: Joi.string().required().uuid()
-    } );
+    });
 
     const errorMessage = await validateSchema({ 
       errorNumber, 
@@ -796,7 +892,10 @@ router.post("/update", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status( 422 ).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -834,52 +933,50 @@ router.post("/update", async (req, res) => {
 
     } 
 
-    listName = stringCleaner( listName, true );
-    listNotes ? listNotes = stringCleaner( listNotes, true ) : listNotes = '';
-
-    let queryText = " UPDATE lists SET list_name = '" + listName + "', list_notes = '" + listNotes + "', updated = " + moment().format( 'X' ) + ", updated_by = '" + userId + "'";
-    
-    if ( acceptContacts && typeof acceptContacts === 'boolean' ) queryText += ", accept_contacts = " + acceptContacts ;
-
-    if ( active && typeof active === 'boolean' ) queryText += ", active = " + active ;
-
-    if ( locked && locked === true  ) { 
-      
-      queryText += ", locked = " + userLevel + " "; 
-    
-    } else if ( locked === false ) { 
-
-      queryText += ", locked = 0 ";
-
-    } else {
-      
-      queryText += ", locked = locked "; 
-  
-    }
-    
-    queryText += " WHERE list_id = '" + listId + "' AND locked <= " + userLevel + " RETURNING list_id; ";
-    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
+    const queryText = `
+      UPDATE 
+        lists 
+      SET 
+        list_name = '${stringCleaner(listName, true)}', 
+        list_notes = '${listNotes ? stringCleaner(listNotes, true) : ''}', 
+        updated = ${moment().format('X')}, 
+        updated_by = '${userId}'
+        ${acceptContacts && typeof acceptContacts === 'boolean' ? `, accept_contacts = ${acceptContacts}` : ''} 
+        ${active && typeof active === 'boolean' ? `, active = ${active}` : ''} 
+        ${
+          locked && locked === true 
+            ? `, locked = ${userLevel}` 
+            : locked === false 
+              ? `, locked = 0` 
+              : `, locked = locked`
+        } 
+      WHERE 
+        list_id = '${listId}' 
+        AND locked <= ${userLevel} 
+      RETURNING 
+        list_id
+      ;
+    `;
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
       const failure = 'database error when updating contact record';
-      console.log(`${nowRunning}: ${failure}\n`);
-      recordError ( {
-        context: `api: ${nowRunning}`,
-        details: queryText,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      } );
-      return res.status(200).send({ 
-        failure, 
-        success 
-      });
+      console.log(`${nowRunning}: ${failure}`);
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
       
-    } else if ( results.rowCount === 0 ) {
+    } else if (results.rowCount === 0) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send({ 
         failure, 
         success 
@@ -887,25 +984,23 @@ router.post("/update", async (req, res) => {
 
     }
     
-    console.log( nowRunning + ": finished\n" );
-    return res.status( 200 ).send( { success: true } );
+    console.log(nowRunning + ": finished\n");
+    return res.status(200).send({ success: true });
 
-  } catch ( e ) {
-
-    recordError ( {
-      context: `api: ${nowRunning}`,
-      details: stringCleaner( JSON.stringify( e.message ), true ),
-      errorMessage: 'exception thrown',
-      errorNumber,
-      userId: req.body.userId
-    } );
-    const newException = `${nowRunning }: failed with an exception: ${e}`;
-    console.log ( e ); 
-    res.status( 500 ).send( newException );
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
 
   }
 
-} );
+});
 
 module.exports = router;
-console.log( 'lists services loaded successfully!' );
+console.log('lists services loaded successfully!');

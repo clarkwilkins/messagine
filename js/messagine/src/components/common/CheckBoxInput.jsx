@@ -21,7 +21,7 @@ let {
         disabled={disabled}
         label={label}
         type="checkbox"
-        { ...register( inputName, { onChange } ) }
+        { ...register( inputName, { onChange }) }
       />
 
     </Form.Group>

@@ -28,7 +28,7 @@ function Selector ( props ) {
       <Form.Select 
         className="p-3"
         disabled={disabled}
-        { ...register( inputName, { onChange } ) }
+        { ...register( inputName, { onChange }) }
       >
 
         {placeholder && ( 
@@ -55,7 +55,7 @@ function Selector ( props ) {
                         
           ); 
           
-        } ) }
+        }) }
 
         {values && complex && Object.values( values ).map( ( theRow, key ) => { 
 
@@ -75,7 +75,7 @@ function Selector ( props ) {
                         
           );
 
-        } ) }
+        }) }
 
     
       </Form.Select>

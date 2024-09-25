@@ -33,7 +33,7 @@ function ManageContacts() {
   const [contacts, setContacts] = useState({})
   const defaultError = "The contacts manager isn't working right now"
   const [edit, setEdit] = useState()
-  const [errorState, setErrorState] = useState( {
+  const [errorState, setErrorState] = useState({
     alreadyReported: false,
     context: '',
     details: 'general exception thrown',
@@ -331,7 +331,7 @@ function ManageContacts() {
 
         {errorOccurred && ( 
 
-          errorDisplay( {
+          errorDisplay({
             context,
             details,
             errorMessage,
@@ -418,7 +418,7 @@ function ManageContacts() {
     if ( level === 9) console.log( `exception: ${e.message}`)
 
     toggleDimmer( false)
-    setErrorState( prevState => ( {
+    setErrorState( prevState => ({
       ...prevState,
       context: nowRunning,
       details: e.message,

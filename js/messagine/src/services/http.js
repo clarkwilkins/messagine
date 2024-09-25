@@ -7,7 +7,7 @@ axios.interceptors.response.use( null, ( error ) => {
   if ( error.code === 'ERR_NETWORK' ) {
 
     console.log( 'Network error' ); // don't throw exceptions on network errors
-    return Promise.reject( { networkError: true } );
+    return Promise.reject({ networkError: true });
 
  }
 

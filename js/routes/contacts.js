@@ -50,7 +50,10 @@ router.post("/all", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -128,7 +131,7 @@ router.post("/all", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting contact records';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -243,7 +246,10 @@ router.post("/load", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -294,7 +300,7 @@ router.post("/load", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when getting contact records';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -408,7 +414,10 @@ router.post("/new", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -491,7 +500,7 @@ router.post("/new", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when creating a new contact record';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -505,7 +514,7 @@ router.post("/new", async (req, res) => {
     } else if (results.rowCount === 0) {
 
       const failure = 'attempt to create a duplicate contact name/email pair was blocked';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send({ 
         failure, 
         success 
@@ -571,7 +580,10 @@ router.post("/search", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -700,7 +712,7 @@ router.post("/search", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when searching contact records';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,
@@ -825,7 +837,10 @@ router.post("/update", async (req, res) => {
     if (errorMessage) {
 
       console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ failure: errorMessage, success });
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
 
     }
 
@@ -890,7 +905,7 @@ router.post("/update", async (req, res) => {
     if (!results) {
 
       const failure = 'database error when updating contact record';
-      console.log(`${nowRunning}: ${failure}\n`);
+      console.log(`${nowRunning}: ${failure}`);
       return res.status(200).send(
         await handleError({ 
           details: queryText,

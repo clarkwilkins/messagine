@@ -31,7 +31,7 @@ if ( !className ) className = 'p-3 h-150';
         className={className}
         disabled={disabled}
         placeholder={placeholder}
-        { ...register( inputName, { onChange } ) }
+        { ...register( inputName, { onChange }) }
       />
 
     </Form.Group>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import {  WarningCircle } from '@phosphor-icons/react';
 
-const ErrorModal = ( { errorNumber, errorMessage, noReport } ) => { 
+const ErrorModal = ({ errorNumber, errorMessage, noReport }) => { 
 
   const [showModal, setShowModal] = useState( true );
   const hideModal = () => {

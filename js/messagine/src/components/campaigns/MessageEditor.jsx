@@ -37,7 +37,7 @@ function MessageEditor() {
   changeTitle ( 'messagine: edit campaign message')
 
   const defaultError = "The schedule editor isn't working right now"
-  const [errorState, setErrorState] = useState( {
+  const [errorState, setErrorState] = useState({
     alreadyReported: false,
     context: '',
     details: 'general exception thrown',
@@ -75,7 +75,7 @@ function MessageEditor() {
     register,
     setValue,
     trigger
-  } = useForm( { resolver: joiResolver(schema)})
+  } = useForm({ resolver: joiResolver(schema)})
 
   const hideConfirmationModal = () => { setDisplayConfirmationModal(false); }
 
@@ -265,7 +265,7 @@ function MessageEditor() {
         campaignId,
         messageId
       }
-      const { data: result } = await apiLoader( { api, payload })
+      const { data: result } = await apiLoader({ api, payload })
       const {
         failure,
         success
@@ -276,7 +276,7 @@ function MessageEditor() {
         if ( level === 9) console.log( `failure: ${failure}`)
     
         toggleDimmer( false)
-        setErrorState( prevState => ( {
+        setErrorState( prevState => ({
           ...prevState,
           alreadyReported: true,
           context,
@@ -295,7 +295,7 @@ function MessageEditor() {
       if ( level === 9) console.log( `exception: ${e.message}`)
 
       toggleDimmer( false)
-      setErrorState( prevState => ( {
+      setErrorState( prevState => ({
         ...prevState,
         context,
         details: e.message,
@@ -387,7 +387,7 @@ function MessageEditor() {
 
         {errorOccurred && ( 
 
-          errorDisplay( {
+          errorDisplay({
             context,
             details,
             errorMessage,
@@ -571,7 +571,7 @@ function MessageEditor() {
     if ( level === 9) console.log( `exception: ${e.message}`)
 
     toggleDimmer( false)
-    setErrorState( prevState => ( {
+    setErrorState( prevState => ({
       ...prevState,
       context: nowRunning,
       details: e.message,

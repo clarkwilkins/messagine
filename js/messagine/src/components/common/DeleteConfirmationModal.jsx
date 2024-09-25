@@ -3,7 +3,7 @@ import {
   Modal 
 } from 'react-bootstrap';
 
-const DeleteConfirmationModal = ( { showModal, hideModal, confirmModal, deletePayload, message } ) => {
+const DeleteConfirmationModal = ({ showModal, hideModal, confirmModal, deletePayload, message }) => {
 
   return (
 
