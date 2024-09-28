@@ -2,61 +2,68 @@ import {
   useCallback,
   useEffect,
   useState
-} from 'react'
+} from 'react';
 import { 
+  useNavigate,
   useOutletContext,
   useParams
-} from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import Joi from 'joi'
-import { joiResolver } from '@hookform/resolvers/joi'
-import { toast } from 'react-toastify'
+} from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import Joi from 'joi';
+import { joiResolver } from '@hookform/resolvers/joi';
+import { toast } from 'react-toastify';
 import { 
   Breadcrumb,
   Form,
   OverlayTrigger,
   Tooltip
-} from 'react-bootstrap'
-import { List } from '@phosphor-icons/react'
-import CheckBoxInput from '../common/CheckBoxInput'
-import DeleteConfirmationModal from '../common/DeleteConfirmationModal'
-import FormButtons from '../common/FormButtons'
-import Loading from '../common/Loading'
-import TextArea from '../common/TextArea'
-import TextInput from '../common/TextInput'
-import Warning from '../common/Warning'
-import { 
-  apiLoader, 
-  changeTitle,
-  errorDisplay
-} from '../../services/handler'
+} from 'react-bootstrap';
+import { List } from '@phosphor-icons/react';
+import CheckBoxInput from '../common/CheckBoxInput';
+import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
+import ErrorBoundary from '../common/ErrorBoundary';
+import FormButtons from '../common/FormButtons';
+import Loading from '../common/Loading';
+import TextArea from '../common/TextArea';
+import TextInput from '../common/TextInput';
+import Warning from '../common/Warning';
+import apiLoader from '../../services/apiLoader';
+import useLoadingMessages from '../hooks/useLoadingMessages';
+import { changeTitle } from '../../services/utils';
 
-function MessageEditor() {
+function MessageEditorComponent({ handleError }) {
 
-  const nowRunning = 'campaigns/MessageEditor.jsx'
-  changeTitle ( 'messagine: edit campaign message')
+  const nowRunning = 'campaigns/MessageEditor.jsx';
+  changeTitle('messagine: edit campaign message');
 
-  const defaultError = "The schedule editor isn't working right now"
-  const [errorState, setErrorState] = useState({
-    alreadyReported: false,
-    context: '',
-    details: 'general exception thrown',
-    displayed: 54, // this is only useful when there are child components
-    message: defaultError,
-    number: 54,
-    occurred: false,
-  })
   const {
     campaignId,
     messageId
-  } = useParams()
+  } = useParams();
+  
   const {
     level,
-    toggleDimmer
-  } = useOutletContext()
-  const [loading, setLoading] = useState()
-  const [loaded, setLoaded] = useState()
-  const [message, setMessage] = useState({})
+    setLoadingMessages,
+    userId
+  } = useOutletContext();
+
+  const { 
+    addLoadingMessage, 
+    removeLoadingMessage 
+  } = useLoadingMessages(setLoadingMessages);
+
+  const [state, setState] = useState({
+    loaded: false,
+    message: {},
+    showModal: false
+  });
+
+  const { 
+    loaded, 
+    message, 
+    showModal 
+  } = state;
+
   const schema = Joi.object({
     active: Joi.boolean().required(),
     content: Joi.string().required(),
@@ -66,8 +73,7 @@ function MessageEditor() {
     notes: Joi.string().required().allow('', null),
     repeatable: Joi.boolean().required(),
     subject: Joi.string().required()
-  })
-  const [showModal, setDisplayConfirmationModal] = useState(false)
+  });
 
   const { 
     formState: { errors },
@@ -75,21 +81,30 @@ function MessageEditor() {
     register,
     setValue,
     trigger
-  } = useForm({ resolver: joiResolver(schema)})
+  } = useForm({ resolver: joiResolver(schema) });
 
-  const hideConfirmationModal = () => { setDisplayConfirmationModal(false); }
+  const navigate = useNavigate();
 
-  // the point here is to load this message's campaign specific data as well as the message content data
+  const hideConfirmationModal = () => { 
 
-  const loadCampaignData = useCallback( async () => {
+    setState((prevState) => ({
+      ...prevState,
+      showModal: false
+    })); 
 
-    const context = `${nowRunning}.loadCampaignData`
+  };
+
+  const loadCampaignData = useCallback(async () => {
+
+    const context = `${nowRunning}.loadCampaignData`;
+    const loadingMessage = `loading campaign data for campaignId ${campaignId}`;
 
     try {
 
-      const api = 'campaigns/load'
-      const payload = { campaignId }
-      const { data } = await apiLoader({ api, payload })
+      addLoadingMessage(loadingMessage);
+      const api = 'campaigns/load';
+      const payload = { campaignId };
+      const { data } = await apiLoader({ api, payload });
 
       const {
         campaignName,
@@ -97,53 +112,39 @@ function MessageEditor() {
         messages,
         success
       } = data;
-    
-      // reporting a failure from the API (already logged)
-    
+
       if (!success) {
-    
-        if (+level === 9) console.log(`failure: ${failure}`)
-    
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-          ...prevState,
-          context,
-          details: `failure: ${failure}`,
-          errorAlreadyReported: true,
-          message: `failure: ${failure}`, // show the failure message on the modal
-          occurred: true
-        }))
-        // useEffect only: setLoaded(true)
-        return null
-    
+        handleError({
+          error: failure,
+          nowRunning: context,
+          userId
+        });
+        return null;
       }
 
-      messages[messageId].campaignName = campaignName // this is used as a display element below
-      setMessage(messages[messageId])
-      return messages[messageId] // so useEffect gets this without having to wait for state to update
-
-    } catch(e) { // reporting an exception within the function
-
-      if (+level === 9) console.log(`exception: ${e.message}`)
-    
-      setErrorState(prevState => ({
+      messages[messageId].campaignName = campaignName; // this is used as a display element below
+      setState((prevState) => ({
         ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
+        message: messages[messageId]
+      }));      
+      removeLoadingMessage(loadingMessage);
+      return messages[messageId];
+
+    } catch(error) {
+
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
   
     }
 
-  }, [campaignId, level, messageId, toggleDimmer])
+  }, [addLoadingMessage, campaignId, handleError, messageId, userId, removeLoadingMessage]);
 
-  // (re)load form values
+  const loadForm = useCallback(message => {
 
-  const loadForm = useCallback( message => {
-
-
-    const context = `${nowRunning}.onDelete`
+    const context = `${nowRunning}.loadForm`;
 
     try {
 
@@ -155,248 +156,188 @@ function MessageEditor() {
         notes,
         repeatable,
         subject
-      } = message
+      } = message;
 
       if (+locked >= +level) { locked = true } else { locked = false }
 
-      // load the form with current values
+      setValue('active', active);
+      setValue('content', content);
+      setValue('front', false);
+      setValue('messageName', messageName);
+      setValue('locked', locked);
+      setValue('notes', notes);
+      setValue('repeatable', repeatable);
+      setValue('subject', subject);
 
-      setValue('active', active)
-      setValue('content', content)
-      setValue('front', false)
-      setValue('messageName', messageName)
-      setValue('locked', locked)
-      setValue('notes', notes)
-      setValue('repeatable', repeatable)
-      setValue('subject', subject)
+    } catch(e) {
 
-    } catch(e) { // reporting an exception within the function
-
-      if (+level === 9) console.log(`exception: ${e.message}`)
-    
-      setErrorState(prevState => ({
-        ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
+      handleError({
+        error: e,
+        nowRunning: context,
+        userId
+      });
 
     }
 
-  }, [level, setValue])
+  }, [handleError, level, setValue, userId]);
 
   const onDelete = async () => {
 
-    const context = `${nowRunning}.onDelete`
+    const context = `${nowRunning}.onDelete`;
 
     try {
 
-      hideConfirmationModal()
-      const api = 'campaigns/messages/remove'
+      hideConfirmationModal();
+      const api = 'campaigns/messages/remove';
       const payload = {
         campaignId,
         messageId,
         position: message.position
-      }
-      const { data } = await apiLoader({ api, payload })
+      };
+      const { data } = await apiLoader({ api, payload });
       const {
         failure,
         success
       } = data;
-    
-      // reporting a failure from the API (already logged)
-    
+
       if (!success) {
-    
-        if (+level === 9) console.log(`failure: ${failure}`)
-    
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-          ...prevState,
-          context,
-          details: `failure: ${failure}`,
-          errorAlreadyReported: true,
-          message: `failure: ${failure}`, // show the failure message on the modal
-          occurred: true
-        }))
-        // useEffect only: setLoaded(true)
-        return null
-    
+
+        handleError({
+          error: failure,
+          nowRunning: context,
+          userId
+        });
+        return null;
+
       }
 
-      window.location = '../../manage' // exit on success, as this record no longer exists
+      navigate('/campaigns/manage');
 
-    } catch(e) { // reporting an exception within the function
+    } catch(e) {
 
-      if (+level === 9) console.log(`exception: ${e.message}`)
-    
-      setErrorState(prevState => ({
-        ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
-  
+      handleError({
+        error: e,
+        nowRunning: context,
+        userId
+      });
+
     }
 
-  }
-
-  // reset means reload the form to original condition
+  };
 
   const onReset = () => {
-    
-    loadForm(message)
-    trigger()
 
-  }
+    loadForm(message);
+    trigger();
+
+  };
 
   const onSubmit = async data => {
 
-    const context = `${nowRunning}.onSubmit`
+    const context = `${nowRunning}.onSubmit`;
+    const loadingMessage = 'updating the campaign message...';
 
     try {
 
-      toggleDimmer( true)
-      const api = 'campaigns/messages/update'
+      addLoadingMessage(loadingMessage);
+      const api = 'campaigns/messages/update';
       const payload = { 
         ...data,
         campaignId,
         messageId
-      }
-      const { data: result } = await apiLoader({ api, payload })
+      };
+      const { data: result } = await apiLoader({ api, payload });
       const {
         failure,
         success
-      } = result
-      
-      if ( !success) {
+      } = result;
 
-        if ( level === 9) console.log( `failure: ${failure}`)
-    
-        toggleDimmer( false)
-        setErrorState( prevState => ({
-          ...prevState,
-          alreadyReported: true,
-          context,
-          message: `failure: ${failure}`,
-          occurred: true
-        }))
-        return null
-    
+      if (!success) {
+
+        handleError({
+          error: failure,
+          nowRunning: context,
+          userId
+        });
+        return null;
+
       }
 
-      toast.success( 'The campaign message was updated.')
-      toggleDimmer(false)
+      toast.success('The campaign message was updated.');
+      removeLoadingMessage(loadingMessage);
 
-    } catch( e) {
+    } catch(error) {
 
-      if ( level === 9) console.log( `exception: ${e.message}`)
-
-      toggleDimmer( false)
-      setErrorState( prevState => ({
-        ...prevState,
-        context,
-        details: e.message,
-        alreadyReported: false,
-        occurred: true
-      }))
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
 
     }
 
-  }
+  };
 
-  const showConfirmationModal = () => { setDisplayConfirmationModal(true); }
+  const showConfirmationModal = () => { 
 
-  useEffect( () => {
+    setState((prevState) => ({
+      ...prevState,
+      showModal: true
+    }));
+    
+  };
 
-    const context = `${nowRunning}.useEffect`
+  useEffect(() => {
+
+    const context = `${nowRunning}.useEffect`;
 
     const runThis = async () => {
     
-      if (!loading) {
-
-        setLoading(true) // only do this once! 
+      if (!loaded) {
 
         try {
 
-          toggleDimmer(true)
-          const message = await loadCampaignData()
-          
-          if (message?.messageName) loadForm(message)
+          const message = await loadCampaignData();
 
-          toggleDimmer(false)
-          setLoaded(true)
+          if (message?.messageName) loadForm(message);
 
-        } catch(e) { // reporting an exception within the function
-
-          if (+level === 9) console.log(`exception: ${e.message}`)
-
-          setErrorState(prevState => ({
+          setState((prevState) => ({
             ...prevState,
-            context,
-            details: e.message,
-            errorAlreadyReported: false,
-            occurred: true
-          }))
-          setLoaded(true)
+            loaded: true
+          }));
+
+        } catch(error) {
+
+          handleError({
+            error,
+            nowRunning: context,
+            userId
+          });
 
         }
 
       }
 
-      trigger()
+      trigger();
 
-    }
+    };
 
-    runThis()
+    runThis();
 
-  }, [level, loadCampaignData, loading, loadForm, toggleDimmer, trigger])
+  }, [handleError, loadCampaignData, loadForm, loaded, trigger, userId]);
 
   try {
-    
-    // setup for error display and ( possible) reporting
 
-    let reportError = false // default condition is there is no error
-    const {
-      alreadyReported,
-      context,
-      details,
-      message: errorMessage,
-      errorNumber,
-      occurred: errorOccurred
-    } = errorState
-
-    if ( errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API.
-
-    // Final setup before rendering.
-
-    if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
-
-    const messageNotFound = `messageId ${messageId} was not located - please ensure you did not change the page parameters`
+    const messageNotFound = `messageId ${messageId} was not located - please ensure you did not change the page parameters`;
     const { 
       campaignName,
       locked 
-    } = message
-    const disabled = +locked > +level
+    } = message;
+    const disabled = +locked > +level;
 
     return ( 
     
       <>
-
-        {errorOccurred && ( 
-
-          errorDisplay({
-            context,
-            details,
-            errorMessage,
-            errorNumber,
-            nowRunning,
-            reportError
-          })
-
-        )}
 
         {!loaded && (<Loading className="loading" message="loading the message editor..." />)}
 
@@ -446,7 +387,7 @@ function MessageEditor() {
                   onSubmit={handleSubmit( onSubmit)}
                 >
 
-                  <Form.Label className="size-65 text-muted">campaign</Form.Label>
+                  <div className="size-65 text-muted">campaign</div>
 
                   <div>{campaignName}</div>
 
@@ -486,7 +427,7 @@ function MessageEditor() {
                     register={register}
                   />
 
-                  <Form.Label className="size-65 text-muted">message options</Form.Label>
+                  <div className="size-65 text-muted">message options</div>
 
                   <div className="floats">
 
@@ -564,23 +505,38 @@ function MessageEditor() {
 
       </>
 
-    )
+    );
 
-  } catch( e) {
+  } catch (error) {
 
-    if ( level === 9) console.log( `exception: ${e.message}`)
-
-    toggleDimmer( false)
-    setErrorState( prevState => ({
-      ...prevState,
-      context: nowRunning,
-      details: e.message,
-      errorAlreadyReported: false,
-      occurred: true
-    }))
+    handleError({ 
+      error,
+      nowRunning,
+      userId
+    });
 
   }
 
 }
 
-export default MessageEditor
+export default function MessageEditor(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The message editor isn't working right now.",
+    errorNumber: 54
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="MessageEditor.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <MessageEditorComponent {...defaultProps} />
+    </ErrorBoundary>
+
+  );
+
+}

@@ -19,6 +19,8 @@ const {
 } = require('../functions.js');
 const success = false;
 
+// Add the campaign's interval to the current start time to get the next run time.
+
 const calculateNextRun = ({ 
   interval, 
   starts 
@@ -197,7 +199,7 @@ const checkSchedule = async({
   const messageTargets = {};
   const unseenMessages = {};
 
-  Object.values(results.rows).forEach(row => { 
+  Object.values(results.rows).map(row => { 
     
     messageTargets[row.contact_id] = { eligible: true }; 
   
@@ -267,8 +269,7 @@ const checkSchedule = async({
 
   });
 
-  // However, if the campaign is not repeating, we need to check if there are *any* messages they have not seen and pick up the first one (yes) or make them ineligible (no)
-
+  // However, if the campaign is not repeating, we need to check if there are *any* messages they have not seen and pick up the first one (yes) or make them ineligible (no).
 
   if (!campaignRepeats) {  
 

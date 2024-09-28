@@ -3,8 +3,8 @@ import {
   useEffect,
   useState
 } from 'react';
-import { useOutletContext } from 'react-router-dom'
-import moment from 'moment'
+import { useOutletContext } from 'react-router-dom';
+import moment from 'moment';
 import { 
   Breadcrumb,
   Col,
@@ -12,289 +12,253 @@ import {
   OverlayTrigger,
   Row,
   Tooltip
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 import { 
   List,
   PersonSimpleRun
-} from '@phosphor-icons/react'
-import DryRun from './DryRun'
-import Loading from '../common/Loading'
-import { 
-  apiLoader, 
-  changeTitle,
-  errorDisplay
-} from '../../services/handler'
-const { intervals } = require('../../assets/json/static.json')
+} from '@phosphor-icons/react';
+import DryRun from './DryRun';
+import ErrorBoundary from '../common/ErrorBoundary';
+import Loading from '../common/Loading';
+import apiLoader from '../../services/apiLoader';
+import useLoadingMessages from '../hooks/useLoadingMessages';
+import { changeTitle } from '../../services/utils';;
+const { intervals } = require('../../assets/json/static.json');
 
-function Upcoming() {
+function UpcomingComponent({ handleError }) {
 
-  const nowRunning = 'scheduler/Upcoming.jsx'
-  changeTitle ('messagine: upcoming sends')
+  const nowRunning = 'scheduler/Upcoming.jsx';
+  changeTitle ('messagine: upcoming sends');
 
-  const defaultError = "The upcoming schedule tool isn't working right now"
-  const [errorState, setErrorState] = useState({
-    alreadyReported: false,
-    context: '',
-    details: 'general exception thrown',
-    displayed: 53, // this is only useful when there are child components
-    message: defaultError,
-    number: 53,
-    occurred: false,
-  })
   const {
-    level,
-    toggleDimmer
-  } = useOutletContext()
-  const [loading, setLoading] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-  const [showDryRun, setShowDryRun] = useState()
-  const [upcoming, setUpcoming] = useState({})
+    setLoadingMessages,
+    userId
+  } = useOutletContext();
+  
+  const { 
+    addLoadingMessage, 
+    removeLoadingMessage 
+  } = useLoadingMessages(setLoadingMessages);
+
+  const [state, setState] = useState({
+    loaded: false,
+    showDryRun: false,
+    upcoming: {}
+  });
+
+  const { loaded, showDryRun, upcoming } = state;
 
   const getUpcoming = useCallback(async () => {
 
-    const context = `${nowRunning}.getUpcoming`
+    const context = `${nowRunning}.getUpcoming`;
+    const loadingMessage = 'loading the upcoming schedule...';
 
     try {
 
-      const api = 'scheduler/upcoming'
-      const payload = {}
-      const { data } = await apiLoader({ api, payload })
+      addLoadingMessage(loadingMessage);
+      const api = 'scheduler/upcoming';
+      const payload = {};
+      const { data } = await apiLoader({ api, payload });
       const {
         failure,
         success,
         upcoming
-      } = data
+      } = data;
 
       if (!success) {
 
-        if (+level === 9) console.log(`failure: ${failure}`)
-    
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-          ...prevState,
-          alreadyReported: true,
-          context,
-          message: `failure: ${failure}`,
-          occurred: true
-        }))
-        return null
-    
+        handleError({ 
+          failure, 
+          nowRunning: context, 
+          userId 
+        });
+        return null;
+
       }
 
-      setUpcoming(upcoming)
-      return null
-
-    } catch(e) {
-
-      if (+level === 9) console.log(`exception: ${e.message}`)
-
-      toggleDimmer(false)
-      setErrorState(prevState => ({
+      setState((prevState) => ({
         ...prevState,
-        context,
-        details: e.message,
-        alreadyReported: false,
-        occurred: true
-      }))
+        upcoming
+      }));
+
+      removeLoadingMessage(loadingMessage);
+
+    } catch(error) {
+
+      handleError({ 
+        error, 
+        nowRunning: context, 
+        userId 
+      });
 
     }
 
-  }, [level, toggleDimmer])
+  }, [addLoadingMessage, handleError, removeLoadingMessage, userId]);
 
-  const toggleDryRun = () => setShowDryRun(!showDryRun)
+  const toggleDryRun = () => setState((prevState) => ({
+    ...prevState,
+    showDryRun: !prevState.showDryRun
+  }));
 
   const upcomingList = () => {
 
-    const rows = Object.entries(upcoming).map((row, key) => {
+    const context = `${nowRunning}.upcomingList`;
 
-      const campaignId = row[0]
-      const {
-        campaignName,
-        campaignTargets,
-        ends2,
-        interval,
-        messageId,
-        messageName,
-        nextRun,
-        nextRun2,
-        starts2,
-        targets
-      } = row[1]
-      const campaignLink = `../campaigns/edit/${campaignId}`
-      const messageLink = `../campaigns/edit/${campaignId}/${messageId}`
+    try {
 
-      return (
+      const rows = Object.entries(upcoming).map((row, key) => {
 
-        <Row
-          className="alternate-1 p-3"
-          key={key}
-        >
+        const campaignId = row[0];
+        const {
+          campaignName,
+          campaignTargets,
+          ends2,
+          interval,
+          messageId,
+          messageName,
+          nextRun,
+          nextRun2,
+          starts2
+        } = row[1];
+        const campaignLink = `../campaigns/edit/${campaignId}`;
+        const messageLink = `../campaigns/edit/${campaignId}/${messageId}`;
 
-          <Col xs={12} sm={6}>
+        return (
 
-            <a href={campaignLink}>
-          
-              <div className="size-80">campaign</div>
+          <Row
+            className="alternate-1 p-3"
+            key={key}
+          >
 
-              <div>{campaignName}</div>
+            <Col xs={12} sm={6}>
 
-            </a>
+              <a href={campaignLink}>
             
-          </Col>
+                <div className="size-80">campaign</div>
 
-          <Col xs={12} sm={6}>
-          
-            <div>
+                <div>{campaignName}</div>
+
+              </a>
               
-              <div className="size-80">lifecycle</div>
+            </Col>
 
-              <div>{starts2} &#8212; {ends2}</div>
-
-            </div>
+            <Col xs={12} sm={6}>
             
-          </Col>
+              <div>
+                
+                <div className="size-80">lifecycle</div>
 
-          <Col xs={12} sm={6}>
+                <div>{starts2} &#8212; {ends2}</div>
 
-            <div>
-            
-              <div className="size-80">interval</div>
-
-              <div>{intervals[interval]}</div>
-
-            </div>
-            
-          </Col>
-
-          <Col xs={12} sm={6}>
-          
-            <div>
+              </div>
               
-              <div className="size-80">next run</div>
+            </Col>
 
-              <div>{nextRun2} &#8212; {moment.unix(nextRun).fromNow()}</div>
+            <Col xs={12} sm={6}>
 
-            </div>
-            
-          </Col>
-
-          <Col xs={12} sm={6}>
-
-            <a href={messageLink}>
+              <div>
               
-              <div className="size-80">next message</div>
+                <div className="size-80">interval</div>
 
-              <div>{messageName}</div>
+                <div>{intervals[interval]}</div>
 
-            </a>
+              </div>
+              
+            </Col>
+
+            <Col xs={12} sm={6}>
             
-          </Col>
+              <div>
+                
+                <div className="size-80">next run</div>
 
-          <Col xs={12} sm={6}>
-                          
-            <div className="size-80">targets</div>
+                <div>{nextRun2} &#8212; {moment.unix(nextRun).fromNow()}</div>
 
-            <div>{Object.keys(campaignTargets).length}</div>
-            
-          </Col>
+              </div>
+              
+            </Col>
 
-        </Row>
+            <Col xs={12} sm={6}>
 
-      )
+              <a href={messageLink}>
+                
+                <div className="size-80">next message</div>
 
-    })
+                <div>{messageName}</div>
 
-    return rows
+              </a>
+              
+            </Col>
 
-  }
+            <Col xs={12} sm={6}>
+                            
+              <div className="size-80">targets</div>
 
-  // updateErrorState can be passed to child components to allow them to update the parent when they have an error
+              <div>{Object.keys(campaignTargets).length}</div>
+              
+            </Col>
 
-  const updateErrorState = (newErrorState) => {
+          </Row>
 
-    setErrorState(prevState => ({
-      ...prevState,
-      ...newErrorState
-    }));
+        );
+
+      });
+
+      return rows;
+
+    } catch(error) {
+
+      handleError({ 
+        error, 
+        nowRunning: context, 
+        userId 
+      });
+
+    }
 
   };
 
   useEffect(() => {
 
-    const context = `${nowRunning}.useEffect`
+    const context = `${nowRunning}.useEffect`;
     
     const runThis = async () => {
 
-        try {
+      try {
 
-          if (!loading) {
+        if (!loaded) {
 
-            setLoading(true) // only do this once!          
-            toggleDimmer(true)
-            await getUpcoming()
-            setLoaded(true)
-            toggleDimmer(false)
+          await getUpcoming();
+          setState((prevState) => ({
+            ...prevState,
+            loaded: true
+          }));
 
-          }
-
-        } catch (e) {
-
-          if (+level === 9) console.log(`exception: ${e.message}`)
-      
-          toggleDimmer(false)
-          setErrorState(prevState => ({
-              ...prevState,
-              context,
-              details: e.message,
-              errorAlreadyReported: false,
-              occurred: true
-          }))
-          setLoaded(true)
-        
         }
 
+      } catch (error) {
+
+        handleError({ 
+          error,
+          nowRunning: context,
+          userId
+        });
+      
       }
 
-      runThis()
+    };
 
-  }, [getUpcoming, level, loading, toggleDimmer])
+    runThis();
+
+  }, [getUpcoming, handleError, loaded, userId]);
 
   try {
-    
-    // setup for error display and (possible) reporting
 
-    let reportError = false; // default condition is there is no error
-    const {
-      alreadyReported,
-      context,
-      details,
-      message: errorMessage,
-      errorNumber,
-      occurred: errorOccurred
-    } = errorState
-
-    if (errorOccurred && !alreadyReported) reportError = true; // Persist this error to the Simplexable API.
-
-    // Final setup before rendering.
-
-    const upcomingEvents = Object.keys(upcoming).length
+    const upcomingEvents = Object.keys(upcoming).length;
 
     return (
     
       <>
-
-        {errorOccurred && (
-
-          errorDisplay({
-            context,
-            details,
-            errorMessage,
-            errorNumber,
-            nowRunning,
-            reportError
-          })
-
-       )}
 
         {!loaded && (<Loading className="loading" message="loading the lists manager..." />)}
 
@@ -352,7 +316,7 @@ function Upcoming() {
 
             {upcomingEvents && (<Container className="mt-3 mb-3 border-gray-2 size-80 width-100">{upcomingList()}</Container>)}
 
-            {showDryRun && (<DryRun updateErrorState={updateErrorState} />)}
+            {showDryRun && (<DryRun/>)}
 
           </>
 
@@ -360,23 +324,38 @@ function Upcoming() {
 
       </>
 
-   )
+    );
 
-  } catch(e) {
+  } catch(error) {
 
-    if (+level === 9) console.log(`exception: ${e.message}`)
-
-    toggleDimmer(false)
-    setErrorState(prevState => ({
-      ...prevState,
-      context: nowRunning,
-      details: e.message,
-      errorAlreadyReported: false,
-      occurred: true
-    }))
+    handleError({ 
+      error, 
+      nowRunning, 
+      userId 
+    });
 
   }
 
 }
 
-export default Upcoming;
+export default function Upcoming(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The upcoming campaigns tool isn't working right now.",
+    errorNumber: 53
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="Upcoming.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <UpcomingComponent {...defaultProps} />
+    </ErrorBoundary>
+
+  );
+
+}

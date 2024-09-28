@@ -1,170 +1,153 @@
-import { 
+import {
+  useCallback,
+  useEffect,
   useRef,
   useState 
 } from 'react';
 import { 
-  Link,
   Outlet 
 } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { jwtDecode } from "jwt-decode";
 import moment from 'moment';
-import {
-  Nav,
-  Offcanvas
-} from 'react-bootstrap';
-import { 
-  List
-} from '@phosphor-icons/react';
+import { List } from '@phosphor-icons/react';
 import 'react-toastify/dist/ReactToastify.css';
 import './assets/vendor/bootstrap/css/bootstrap.min.css';
 import './assets/css/style.css';
 import ConfirmationModal from './components/common/ConfirmationModal';
+import LoadingModal from './components/app/loadingModal';
 import Login from './components/users/Login';
-const DOMPurify = require ( 'dompurify' )( window );
+import { 
+  decodeToken, 
+  getToken, 
+  removeToken 
+} from './components/app/tokenService';
+
+import OffCanvasMenu from './components/app/offCanvasMenu'; // Import the new component
+const DOMPurify = require('dompurify')(window);
 
 function App() {
 
-  const [dimScreen, setDimScreen] = useState( false );
-  const footer = '<b>messagine.js</b> is &copy; Simplexable.is, LLC, ' + moment().format( 'YYYY') + ', all rights reserved worldwide';
-  const jwt = localStorage.getItem( "messagine.token" );
-  const [menu, showMenu] = useState( false );
-  const ref = useRef( null );
-  const [showModal, setShowModal] = useState( false );
+  const [state, setState] = useState({
+    isLoading: true, // Is App.js still loading?
+    isLoggedIn: false,
+    level: 0, // The user's access level.
+    loadingMessages: ['standby while the app loads...'], // Messages to show in the loading modal.
+    menu: false,
+    showModal: false,
+    userId: null
+  });
+  const {
+    isLoading,
+    isLoggedIn,
+    level,
+    loadingMessages,
+    menu,
+    showModal,
+    userId
+  } = state;
 
-  const handleClose = () => showMenu( false );
-  const hideConfirmationModal = () => setShowModal();
-  const interceptEnterKey = (event) => {  if (event.key === 'Enter') event.preventDefault(); };
-  
-  const onLogout= () => {
-    
-    localStorage.removeItem( 'messagine.token' );
+  const footer = `<b>messagine.js</b> is &copy; Simplexable.is, LLC, ${moment().format('YYYY')}, all rights reserved worldwide`;
+  const ref = useRef(null);
+
+  const handleClose = useCallback(() => setState(prevState => ({ ...prevState, menu: false })), []);
+  const hideConfirmationModal = useCallback(() => setState(prevState => ({ ...prevState, showModal: false })), []);
+  const interceptEnterKey = (event) => { if (event.key === 'Enter') event.preventDefault(); };
+
+  const onLogout = useCallback(() => {
+
+    removeToken();
     window.location = '/';
 
-  }
+  }, []);
 
-  const toggleDimmer = setting => { setDimScreen( setting ); }
+  const getUserRecord = useCallback(() => {
 
-  if ( !jwt ) return ( <Login /> ); // no user or expired token
+    const token = getToken();
+    const decoded = decodeToken(token);
   
-  const { userRecord } = jwtDecode( jwt );
+    if (decoded?.userRecord?.active) {
 
-  if ( !userRecord?.active ) return ( <Login /> ); // not a valid user record
+      setState(prevState => ({
+        ...prevState,
+        isLoggedIn: true,
+        level: +decoded.userRecord.level,
+        userId: decoded.userRecord.user_id
+      }));
 
-  const {
-    level,
-    user_id: userId
-  } = userRecord;
+    }
+    
+    return decoded?.userRecord || null;
+
+  }, []);
+
+  useEffect(() => {
+
+    const runThis = async () => {
+
+      const userRecord = getUserRecord(); // Call getUserRecord to check if the user is logged in.
+
+      if (!userRecord) return; // If there's no user record, exit early.
+
+      // If user is logged in, update loading state and messages.
+
+      setState(prevState => ({
+        ...prevState,
+        isLoading: false,
+        loadingMessages: prevState.loadingMessages.filter(msg => msg !== 'standby while the app loads...')
+      }));
+
+    };
+
+    runThis();
+
+  }, [getUserRecord]);
+
+  // useEffect(() => {
+    
+  //   console.log('Updated loadingMessages:', state.loadingMessages);
+
+  // }, [state.loadingMessages]);
+
+  if (!isLoggedIn) return <Login />;
 
   return (
 
-    <div className={`${ dimScreen ? "dimmed" : "" }`}>
+    <div>
 
       <div className="header floats">
-
-        <div onClick={ () => showMenu( true ) }><List /></div>        
-
+        <div onClick={ () => setState(prevState => ({ ...prevState, menu: true })) }><List /></div>        
       </div>
 
-      <Offcanvas show={menu} onHide={handleClose}>
-
-        <Offcanvas.Header closeButton>
-
-          <Offcanvas.Title>
-            
-            <div><b>messagine tools</b></div>
-          
-          </Offcanvas.Title>
-
-        </Offcanvas.Header>
-
-        <Offcanvas.Body>          
-
-          <Nav className="flex-column">
-
-            <Nav.Item className="size-80"><b>message scheduler</b></Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link
-                as={Link} 
-                onClick={handleClose}
-                to="/scheduler/upcoming"
-              >
-                upcoming events
-              </Nav.Link>
-            </Nav.Item>
-
-            <Nav.Item className="size-80"><b>contacts</b></Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link
-                as={Link} 
-                onClick={handleClose}
-                to="/contacts/manage"
-              >
-                manage contacts
-              </Nav.Link>
-            </Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link
-                as={Link} 
-                onClick={handleClose}
-                to="/contacts/new"
-              >
-                new contact
-              </Nav.Link>
-            </Nav.Item>
-
-            <Nav.Item className="size-80"><b>mailing lists</b></Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link
-                as={Link} 
-                onClick={handleClose}
-                to="/lists/manage"
-              >
-                manage lists
-              </Nav.Link>
-            </Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link
-                as={Link} 
-                onClick={handleClose}
-                to="/lists/new"
-              >
-                new list
-              </Nav.Link>
-            </Nav.Item>
-
-            <Nav.Item className="size-80"><b>other</b></Nav.Item>
-
-            <Nav.Item>
-              <Nav.Link onClick={ () => { setShowModal( true ); } } >
-                logout
-              </Nav.Link>
-            </Nav.Item>
-
-          </Nav>
-
-        </Offcanvas.Body>
-
-      </Offcanvas>
+      <OffCanvasMenu 
+        menu={menu} 
+        handleClose={handleClose} 
+        setShowModal={(val) => setState(prevState => ({ ...prevState, showModal: val }))} 
+      />
 
       <div 
         className="content"
         ref={ref}
       >
-
-        <Outlet context={ { 
+        <Outlet context={{ 
           level, 
-          interceptEnterKey,      
-          toggleDimmer,
-          userId
-        } } />
-
+          interceptEnterKey, 
+          setLoadingMessages: (updateFunc) => {
+            setState(prevState => {
+              const safePrevMessages = Array.isArray(prevState.loadingMessages) ? prevState.loadingMessages : [];
+              return { 
+                ...prevState, 
+                loadingMessages: updateFunc(safePrevMessages) 
+              };
+            });
+          },   
+          userId: userId
+        }} />
       </div>
+
+      <LoadingModal 
+        loadingMessages={loadingMessages} 
+        show={isLoading}
+      />
 
       <ToastContainer 
         position="bottom-center"
@@ -175,7 +158,8 @@ function App() {
 
       <div 
         className="footer"
-        dangerouslySetInnerHTML={{__html: DOMPurify.sanitize( footer ) }}></div>
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(footer) }}>
+      </div>
 
       <ConfirmationModal 
         confirmModal={onLogout} 
@@ -184,9 +168,10 @@ function App() {
         showModal={showModal} 
       />
 
-    </div>        
+    </div>
 
-  );
+ );
+
 }
 
 export default App;

@@ -1,4 +1,4 @@
-import { changeTitle } from '../../services/handler';
+import { changeTitle } from '../../services/utils';
 
 function Welcome() {
 

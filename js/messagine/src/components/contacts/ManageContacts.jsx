@@ -2,9 +2,9 @@ import {
   useCallback,
   useEffect,
   useState
-} from 'react'
-import { useOutletContext } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+} from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import { 
   Breadcrumb,
   Col,
@@ -13,124 +13,121 @@ import {
   OverlayTrigger,
   Row,
   Tooltip
-} from 'react-bootstrap'
-import { PlusSquare } from '@phosphor-icons/react'
-import EditContact from './EditContact'
-import Loading from '../common/Loading'
-import TextInput from '../common/TextInput'
-import Warning from '../common/Warning'
-import { 
-  apiLoader, 
-  changeTitle,
-  errorDisplay
-} from '../../services/handler'
+} from 'react-bootstrap';
+import { PlusSquare } from '@phosphor-icons/react';
+import EditContact from './EditContact';
+import ErrorBoundary from '../common/ErrorBoundary';
+import Loading from '../common/Loading';
+import TextInput from '../common/TextInput';
+import Warning from '../common/Warning';
+import apiLoader from '../../services/apiLoader';
+import useLoadingMessages from '../hooks/useLoadingMessages';
+import { changeTitle } from '../../services/utils';
 
-function ManageContacts() {
+function ManageContactsComponent({ handleError }) {
 
-  const nowRunning = 'contacts/ManageContacts.jsx'
-  changeTitle ( 'messagine: manage contacts')
+  const nowRunning = 'contacts/ManageContacts.jsx';
+  changeTitle('messagine: manage contacts');
 
-  const [contacts, setContacts] = useState({})
-  const defaultError = "The contacts manager isn't working right now"
-  const [edit, setEdit] = useState()
-  const [errorState, setErrorState] = useState({
-    alreadyReported: false,
-    context: '',
-    details: 'general exception thrown',
-    displayed: 56, // this is only useful when there are child components
-    message: defaultError,
-    number: 56,
-    occurred: false,
-  })
-  const {
-    level,
-    toggleDimmer
-  } = useOutletContext()
-  const [loading, setLoading] = useState()
-  const [loaded, setLoaded] = useState()
-  const [originalContacts, setOriginalContacts] = useState({})
+  const [state, setState] = useState({
+    contacts: {},
+    edit: null,
+    loaded: false,
+    originalContacts: {}
+  });
 
-  const { register } = useForm()
+  const { 
+    contacts, 
+    edit, 
+    loaded, 
+    originalContacts
+  } = state;
+
+  const { 
+    setLoadingMessages,
+    userId // needed for error logging
+  } = useOutletContext();
+    
+  const { 
+    addLoadingMessage, 
+    removeLoadingMessage 
+  } = useLoadingMessages(setLoadingMessages);
+   
+  const { register } = useForm();
 
   // Load all contact records
 
-  const loadContacts = useCallback( async () => {
+  const loadContacts = useCallback(async () => {
 
-    const context = `${nowRunning}.loadContacts`
+    const context = `${nowRunning}.loadContacts`;
+    const loadingMessage = `loading contacts...`;
 
     try {
 
-      toggleDimmer(true)
-      const api = 'contacts/all'
-      const payload = {}
-      const { data } = await apiLoader({ api, payload })
+      addLoadingMessage(loadingMessage);
+      const api = 'contacts/all';
+      const payload = {};
+      const { data } = await apiLoader({ api, payload });
       const {
         contacts,
         failure,
         success
-      } = data
+      } = data;
 
-      // Reporting a failure from the API (already logged).
-    
       if (!success) {
     
-        if (+level === 9) console.log(`failure: ${failure}`)
-    
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-          ...prevState,
-          context,
-          details: `failure: ${failure}`,
-          errorAlreadyReported: true,
-          message: `failure: ${failure}`, // Show the failure message on the modal.
-          occurred: true
-        }))
-        return null
+        await handleError({ 
+          failure,
+          nowRunning: context,
+          userId
+        });
+        return null;
     
       }
 
-      setContacts(contacts) // This can be filtered in onChange.
-      setOriginalContacts(contacts)
-      toggleDimmer(false)
-      return true
-
-    } catch(e) { // Reporting an exception within the function.
-
-      if (+level === 9) console.log(`exception: ${e.message}`)
-    
-      setErrorState(prevState => ({
+      setState((prevState) => ({
         ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
+        contacts: contacts,
+        originalContacts: contacts
+      }));
+
+      removeLoadingMessage(loadingMessage);
+      return true;
+
+    } catch (error) {
+
+      await handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
   
     }
 
-  }, [level, toggleDimmer])
+  }, [addLoadingMessage, handleError, removeLoadingMessage, userId]);
 
   // Filter the contacts shown based on searchTerm.
 
   const onChange = async (e) => {
 
-    const context = `${nowRunning}.onChange`
+    const context = `${nowRunning}.onChange`;
     
     try {
 
-      const searchTerm = e.target.value.toLowerCase()
+      const searchTerm = e.target.value.toLowerCase();
 
       if (!searchTerm) {
-
-        setContacts(originalContacts) // Restore the original contacts before filtering started.
-        return
-
+        setState((prevState) => ({
+          ...prevState,
+          contacts: originalContacts
+        }));
+        return;
       }
 
       const filteredContacts = Object.entries(originalContacts).reduce((acc, [contactId, contactDetails]) => {
 
         const {
-          companyName = '', // Default to empty string if undefined
+          companyName = '', 
           contactName = '',
           contactNotes = '',
           email = '',
@@ -138,59 +135,67 @@ function ManageContacts() {
           url = ''
         } = contactDetails;
 
-        // Keep only those contacts that match the search term in any of these fields.
+        if (contactDetails.contactName && (
+          companyName.toLowerCase().includes(searchTerm) ||
+          contactName.toLowerCase().includes(searchTerm) ||
+          contactNotes.toLowerCase().includes(searchTerm) ||
+          email.toLowerCase().includes(searchTerm) ||
+          sms.toLowerCase().includes(searchTerm) ||
+          url.toLowerCase().includes(searchTerm)
+        )) acc[contactId] = contactDetails;
 
-        if (contactDetails.contactName && (companyName.toLowerCase().includes(searchTerm) || contactName.toLowerCase().includes(searchTerm) || contactNotes.toLowerCase().includes(searchTerm) || email.toLowerCase().includes(searchTerm) || sms.toLowerCase().includes(searchTerm) || url.toLowerCase().includes(searchTerm))) acc[contactId] = contactDetails 
-        return acc
+        return acc;
 
-      }, {})
+      }, {});
 
-      setContacts(filteredContacts)
-
-    } catch(e) { // Reporting an exception within the function.
-
-      if (+level === 9) console.log(`exception: ${e.message}`)
-    
-      setErrorState(prevState => ({
+      setState((prevState) => ({
         ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
+        contacts: filteredContacts
+      }));
+
+    } catch (error) { 
+
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
   
     }
 
-  }
+  };
 
   // Display function for showing (un)filtered results.
 
   const showContacts = () => {
 
-    const context = `${nowRunning}.showContacts`
+    const context = `${nowRunning}.showContacts`;
 
     try {
 
       const rows = Object.entries(contacts).map((contact, key) => {
 
-        const contactId = contact[0]
+        const contactId = contact[0];
         const {
           contactNotes,
           email,
           fullName,
-        } = contact[1]
+        } = contact[1];
 
-        return(
+        return (
 
           <Row
             className="alternate-1 p-3"
-            key={key}          
+            key={key}
           >
 
             <Col 
               xs={12} sm={8}
               className="hover"
-              onClick={ () => setEdit(contactId) }
+              onClick={ () => setState((prevState) => ({
+                ...prevState,
+                edit: contactId
+              }))}
             >
 
               <div className="size-65 text-muted">name</div>
@@ -202,7 +207,10 @@ function ManageContacts() {
             <Col 
               xs={12} sm={4}
               className="hover"
-              onClick={ () => setEdit(contactId) }
+              onClick={ () => setState((prevState) => ({
+                ...prevState,
+                edit: contactId
+              }))}
             >
 
               <div className="size-65 text-muted">email</div>
@@ -213,8 +221,13 @@ function ManageContacts() {
 
             <div 
               className="size-65 hover"
-              onClick={ () => setEdit(contactId) }
-            >{contactNotes}</div>
+              onClick={ () => setState((prevState) => ({
+                ...prevState,
+                edit: contactId
+              }))}
+            >
+              {contactNotes}
+            </div>
 
             {edit === contactId && (
 
@@ -222,188 +235,130 @@ function ManageContacts() {
                 contact={contact[1]}
                 contactId={contactId}
                 loadContacts={loadContacts}
-                setEdit={setEdit}
-                updateErrorState={updateErrorState}
+                setEdit={(edit) => setState((prevState) => ({
+                  ...prevState,
+                  edit
+                }))}
               />
 
             )}
 
-          </Row>          
+          </Row>
 
-        )
+        );
 
-      })
+      });
 
-      return rows
+      return rows;
 
-    } catch(e) { // reporting an exception within the function
+    } catch (error) {
 
-      if (+level === 9) console.log(`exception: ${e.message}`)
-    
-      setErrorState(prevState => ({
-        ...prevState,
-        context,
-        details: e.message,
-        errorAlreadyReported: false,
-        occurred: true
-      }))
+      handleError({ 
+        error,
+        nowRunning: context,
+        userId
+      });
   
     }
 
-  }
-
-  // updateErrorState can be passed to child components to allow them to update the parent when they have an error
-
-  const updateErrorState = (newErrorState) => {
-
-    setErrorState(prevState => ({
-      ...prevState,
-      ...newErrorState
-    }));
-
   };
 
-  useEffect( () => {
+  useEffect(() => {
 
-    const context = `${nowRunning}.useEffect`
+    const context = `${nowRunning}.useEffect`;
 
     const runThis = async () => {
     
-      if (!loading) {
+      if (!loaded) {
 
-        setLoading(true) // only do this once! 
-
-        try {
-
-          await loadContacts()
-          setLoaded(true)
-
-        } catch(e) { // reporting an exception within the function
-
-          if (+level === 9) console.log(`exception: ${e.message}`)
-
-          setErrorState(prevState => ({
-            ...prevState,
-            context,
-            details: e.message,
-            errorAlreadyReported: false,
-            occurred: true
-          }))
-          setLoaded(true)
-
-        }
+        await loadContacts();
+        setState((prevState) => ({
+          ...prevState,
+          loaded: true
+        }));
 
       }
 
-    }
+    };
 
-    runThis()
+    runThis().catch(error => {
 
-  }, [level, loadContacts, loading, toggleDimmer])
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
+
+    });
+
+  }, [handleError, loadContacts, loaded, userId]);
 
   try {
-    
-    // Setup for error display and ( possible) reporting.
 
-    let reportError = false // Default condition is there is no error.
-    const {
-      alreadyReported,
-      context,
-      details,
-      message: errorMessage,
-      errorNumber,
-      occurred: errorOccurred
-    } = errorState
-    
-    if ( errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API..
+    const contactsFound = Object.keys(originalContacts).length;
+    const filteredCount = Object.keys(contacts).length;
+    let counterText = contactsFound;
 
-    // Final setup before rendering..
+    if (+contactsFound > +filteredCount) counterText = `${filteredCount}/${contactsFound}`;
 
-    const contactsFound = Object.keys(originalContacts).length
-    const filteredCount = Object.keys(contacts).length
-    let counterText = contactsFound
-
-    if (+contactsFound > +filteredCount) counterText = filteredCount + '/' + contactsFound
+    if (!loaded) return <Loading className="loading" message="loading the contact manager..." />;
 
     return ( 
     
       <>
 
-        {errorOccurred && ( 
+        <Breadcrumb className="size-50 text-muted mb-3">
 
-          errorDisplay({
-            context,
-            details,
-            errorMessage,
-            errorNumber,
-            nowRunning,
-            reportError
-          })
+          <Breadcrumb.Item>contacts</Breadcrumb.Item>
+          <Breadcrumb.Item>manage</Breadcrumb.Item>
 
-        )}
+        </Breadcrumb>
 
-        {!loaded && (<Loading className="loading" message="loading the contact manager..." />)}
+        <h5 className="floats">
 
-        {loaded && (
+          <div className="float-right ml-05">
+
+            <OverlayTrigger
+              delay={ {  hide: 100, show: 200 } }
+              overlay={ (props) => (
+                <Tooltip { ...props }>
+                  new contact
+                </Tooltip>
+            )}
+              placement="bottom"
+            >
+
+              <a href="./new"><PlusSquare /></a>
+              
+            </OverlayTrigger>
+            
+          </div>
           
+          manage contacts ({counterText})
+
+        </h5>
+
+        {!contactsFound && (<Warning message="You don't have any contacts defined." />)}
+
+        {contactsFound && (
+
           <>
 
-            <Breadcrumb className="size-50 text-muted mb-3">
+            <Form className="bg-light p-3 mt-3 mb-3">
 
-              <Breadcrumb.Item>contacts</Breadcrumb.Item>
-              <Breadcrumb.Item>manage</Breadcrumb.Item>
+              <TextInput
+                inputName="searchTerm"
+                label="search contacts"
+                onChange={(e) => onChange(e)}
+                placeholder="search contacts for this string..."
+                register={register}
+              />
 
-            </Breadcrumb>
+            </Form>
 
-            <h5 className="floats">
+            {filteredCount < 1 && (<Warning message="The current search terms are returning no matches." />)}
 
-              <div className="float-right ml-05">
-
-                <OverlayTrigger
-                  delay={ {  hide: 100, show: 200 } }
-                  overlay={ (props) => (
-                    <Tooltip { ...props }>
-                      new contact
-                    </Tooltip>
-                )}
-                  placement="bottom"
-                >
-
-                  <a href="./new"><PlusSquare /></a>
-                  
-                </OverlayTrigger>
-                
-              </div>
-              
-              manage contacts ({counterText})
-
-            </h5>
-
-            {!contactsFound && (<Warning message="You don't have any contacts defined." />)}
-
-            {contactsFound && (
-
-              <>
-
-                <Form className="bg-light p-3 mt-3 mb-3">
-
-                  <TextInput
-                    inputName="searchTerm"
-                    label="search contacts"
-                    onChange={(e) => onChange(e)}
-                    placeholder="search contacts for this string..."
-                    register={register}
-                  />
-
-                </Form>
-
-                {filteredCount < 1 && (<Warning message="The current search termas are returning no matches." />)}
-
-                {filteredCount > 0 && (<Container className="border-gray-2 mt-3 mb-3 width-100">{showContacts()}</Container>)}
-
-              </>
-
-            )}
+            {filteredCount > 0 && (<Container className="border-gray-2 mt-3 mb-3 width-100">{showContacts()}</Container>)}
 
           </>
 
@@ -411,23 +366,38 @@ function ManageContacts() {
 
       </>
 
-    )
+    );
 
-  } catch( e) {
+  } catch (error) {
 
-    if ( level === 9) console.log( `exception: ${e.message}`)
-
-    toggleDimmer( false)
-    setErrorState( prevState => ({
-      ...prevState,
-      context: nowRunning,
-      details: e.message,
-      errorAlreadyReported: false,
-      occurred: true
-    }))
+    handleError({
+      error,
+      nowRunning,
+      userId
+    });
 
   }
 
 }
 
-export default ManageContacts
+export default function ManageContacts(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The contacts manager isn't working right now.",
+    errorNumber: 56
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="contacts/ManageContacts.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <ManageContactsComponent {...defaultProps} />
+    </ErrorBoundary>
+
+  );
+
+}

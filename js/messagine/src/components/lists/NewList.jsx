@@ -1,51 +1,46 @@
+import { useEffect } from 'react';
 import { 
-  useEffect,
-  useState
-} from 'react'
-import { useOutletContext } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import Joi from 'joi'
-import { joiResolver } from '@hookform/resolvers/joi'
+  useNavigate,
+  useOutletContext 
+} from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import Joi from 'joi';
+import { joiResolver } from '@hookform/resolvers/joi';
 import { 
   Breadcrumb,
   Form,
   OverlayTrigger,
   Tooltip
-} from 'react-bootstrap'
-import { List } from '@phosphor-icons/react'
-import FormButtons from '../common/FormButtons'
-import TextArea from '../common/TextArea'
-import TextInput from '../common/TextInput'
-import { 
-  apiLoader, 
-  changeTitle,
-  errorDisplay
-} from '../../services/handler'
+} from 'react-bootstrap';
+import { List } from '@phosphor-icons/react';
+import ErrorBoundary from '../common/ErrorBoundary';
+import FormButtons from '../common/FormButtons';
+import TextArea from '../common/TextArea';
+import TextInput from '../common/TextInput';
+import apiLoader from '../../services/apiLoader';
+import useLoadingMessages from '../hooks/useLoadingMessages';
+import { changeTitle } from '../../services/utils';
 
-function NewList() {
+function NewListComponent({ handleError }) {
 
-  const nowRunning = 'lists/NewList.jsx'
-  changeTitle ('messagine: new list')
-
-  const defaultError = "The new list tool isn't working right now"
-  const [errorState, setErrorState] = useState({
-    alreadyReported: false,
-    context: '',
-    details: 'general exception thrown',
-    displayed: 52, // this is only useful when there are child components
-    message: defaultError,
-    number: 52,
-    occurred: false,
-  })
+  const nowRunning = 'lists/NewList.jsx';
+  changeTitle ('messagine: new list');
+  
   const {
-    level,
-    toggleDimmer
-  } = useOutletContext()
+    setLoadingMessages,
+    userId
+  } = useOutletContext();
+
+  const { 
+    addLoadingMessage, 
+    removeLoadingMessage 
+  } = useLoadingMessages(setLoadingMessages);
+  
   const schema = Joi.object({
     apiTesting: Joi.boolean().optional(),
     listName: Joi.string().required(),
     listNotes: Joi.string().optional().allow('', null)
-  })
+  });
 
   const { 
     formState: { errors },
@@ -53,60 +48,53 @@ function NewList() {
     register,
     reset,
     trigger
-  } = useForm({ resolver: joiResolver(schema)})
+  } = useForm({ resolver: joiResolver(schema)});
+
+  const navigate = useNavigate();
 
   const onReset = () => {
     
-    reset()
-    trigger()
+    reset();
+    trigger();
 
   }
 
   const onSubmit = async data => {
 
-    const context = `${nowRunning}.onSubmit`
+    const context = `${nowRunning}.onSubmit`;
+    const loadingMessage = 'creating the list...';
 
     try {
 
-      toggleDimmer(true)
-      const api = 'lists/new'
-      const payload = { ...data }
-      const { data: result } = await apiLoader({ api, payload })
+      addLoadingMessage(loadingMessage);
+      const api = 'lists/new';
+      const payload = { ...data };
+      const { data: result } = await apiLoader({ api, payload });
       const {
         failure,
         success
-      } = result
+      } = result;
       
       if (!success) {
 
-        if (+level === 9) console.log(`failure: ${failure}`)
-    
-        toggleDimmer(false)
-        setErrorState(prevState => ({
-          ...prevState,
-          alreadyReported: true,
-          context,
-          message: `failure: ${failure}`,
-          occurred: true
-        }))
-        return null
+        handleError({ 
+          failure,
+          nowRunning: context, 
+          userId
+        });
     
       }
 
-      window.location ='./manage'
+      removeLoadingMessage(loadingMessage);
+      navigate('/lists/manage');
 
-    } catch(e) {
+    } catch(error) {
 
-      if (+level === 9) console.log(`exception: ${e.message}`)
-
-      toggleDimmer(false)
-      setErrorState(prevState => ({
-        ...prevState,
-        context,
-        details: e.message,
-        alreadyReported: false,
-        occurred: true
-      }))
+      handleError({ 
+        error,
+        nowRunning: context, 
+        userId
+      });
 
     }
 
@@ -114,128 +102,108 @@ function NewList() {
 
   // we need form validation at load time
 
-  useEffect(() => { trigger() }, [trigger])
+  useEffect(() => { trigger() }, [trigger]);
 
   try {
-    
-    // setup for error display and (possible) reporting
-
-    let reportError = false // default condition is there is no error
-    const {
-      alreadyReported,
-      context,
-      details,
-      message: errorMessage,
-      errorNumber,
-      occurred: errorOccurred
-    } = errorState
-
-    if (errorOccurred && !alreadyReported) reportError = true // Persist this error to the Simplexable API.
-
-    // Final setup before rendering.
-
-    if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
 
     return (
-    
+              
       <>
 
-        {errorOccurred && (
+        <Breadcrumb className="size-50 text-muted mb-3">
 
-          errorDisplay({
-            context,
-            details,
-            errorMessage,
-            errorNumber,
-            nowRunning,
-            reportError
-          })
+          <Breadcrumb.Item>lists</Breadcrumb.Item>
+          <Breadcrumb.Item>new</Breadcrumb.Item>
 
-      )}
-          
-        <>
+        </Breadcrumb>
 
-          <Breadcrumb className="size-50 text-muted mb-3">
+        <h5 className="floats">
 
-            <Breadcrumb.Item>lists</Breadcrumb.Item>
-            <Breadcrumb.Item>new</Breadcrumb.Item>
+          <div className="float-right ml-05">
 
-          </Breadcrumb>
+            <OverlayTrigger
+              delay={ {  hide: 100, show: 200 } }
+              overlay={ (props) => (
+                <Tooltip { ...props }>
+                  show lists
+                </Tooltip>
+            )}
+              placement="bottom"
+            >
 
-          <h5 className="floats">
-
-            <div className="float-right ml-05">
-
-              <OverlayTrigger
-                delay={ {  hide: 100, show: 200 } }
-                overlay={ (props) => (
-                  <Tooltip { ...props }>
-                    show lists
-                  </Tooltip>
-             )}
-                placement="bottom"
-              >
-
-                <a href="./manage"><List /></a>
-                
-              </OverlayTrigger>
+              <a href="./manage"><List /></a>
               
-            </div>
+            </OverlayTrigger>
             
-            new list
+          </div>
+          
+          new list
 
-          </h5>
+        </h5>
 
-          <Form 
-            className="bg-light p-3 mb-3"
-            onSubmit={handleSubmit(onSubmit)}
-          >
+        <Form 
+          className="bg-light p-3 mb-3"
+          onSubmit={handleSubmit(onSubmit)}
+        >
 
-            <TextInput
-                errors={errors.listName}
-                inputName="listName"
-                label="list name"
-                onChange={ () => trigger() }
-                placeholder="the list name cannot be empty"
-                register={register}
-            />
-
-            <TextArea
-                inputName="listNotes"
-                label="notes"
-                placeholder="use this to add notes about the list..."
-                register={register}
-            />
-
-          <FormButtons
-            errors={errors}
-            onReset={onReset}
-            submitText="create the list"
+          <TextInput
+              errors={errors.listName}
+              inputName="listName"
+              label="list name"
+              onChange={ () => trigger() }
+              placeholder="the list name cannot be empty"
+              register={register}
           />
 
-          </Form>
+          <TextArea
+              inputName="listNotes"
+              label="notes"
+              placeholder="use this to add notes about the list..."
+              register={register}
+          />
 
-        </>
+        <FormButtons
+          errors={errors}
+          onReset={onReset}
+          submitText="create the list"
+        />
+
+        </Form>
 
       </>
 
-)
+    );
 
-  } catch(e) {
+  } catch(error) {
 
-    if (+level === 9) console.log(`exception: ${e.message}`)
+    handleError({ 
+      error,
+      nowRunning, 
+      userId
+    });
 
-    toggleDimmer(false)
-    setErrorState(prevState => ({
-      ...prevState,
-      context: nowRunning,
-      details: e.message,
-      errorAlreadyReported: false,
-      occurred: true
-    }))
-
-  }
+  }  
 
 }
 
-export default NewList
+export default function NewList(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The new list tool isn't working right now.",
+    errorNumber: 52
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="lists/NewList.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <NewListComponent {...defaultProps} />
+    </ErrorBoundary>
+
+  );
+
+}

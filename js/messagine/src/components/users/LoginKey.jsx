@@ -1,151 +1,109 @@
+import { useEffect } from 'react';
 import { 
-  useEffect,
-  useState
-} from 'react';
-import { useParams } from 'react-router-dom';
+  useNavigate,
+  useParams 
+} from 'react-router-dom';
+import ErrorBoundary from '../common/ErrorBoundary';
 import Loading from '../common/Loading';
+import apiLoader from '../../services/apiLoader';
 import { 
-  apiLoader, 
   changeTitle,
-  errorDisplay,
   validateUUID
-} from '../../services/handler'
+} from '../../services/utils';
 
+function LoginWithKeyComponent({ handleError }) {
 
-function LoginWithKey() {
+  const nowRunning = 'users/LoginKey.jsx';
+  changeTitle('messagine: key-based login');
 
-  const nowRunning = 'users/LoginKey.jsx'
-  changeTitle ('messagine: key-based login')
-
-  const defaultError = "The login tool isn't working right now"
-  const [errorAlreadyReported, setErrorAlreadyReported] = useState(false)
-  const [errorContext, setErrorContext] = useState(nowRunning + '.e')
-  const [errorContextReported, setErrorContextReported] = useState()
-  const [errorDetails, setErrorDetails] = useState('general exception thrown')
-  const [errorDisplayed, setErrorDisplayed] = useState() // latch the error unless it changes
-  const [errorMessage, setErrorMessage] = useState(defaultError)
-  const errorNumber = 49
-  const [errorOccurred, setErrorOccurred] = useState(false)
-  let { key } = useParams()
+  const userId = process.env.REACT_APP_API_KEY;
+  
+  let { key } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
 
-    const runThis = async () => {
+    const context = `${nowRunning}.useEffect`;
 
-      const api = 'users/login-key'
-      const payload = { key }
+    const runThis = async () => {
 
       try {
 
-        const { data } = await apiLoader({ api, payload })
+        const api = 'users/login-key';
+        const payload = { key };
+        const { data } = await apiLoader({ api, payload });
         
         const { 
           failure, 
           success,
           userRecord
-        } = data
+        } = data;
 
         if (!success) {
 
-          const context = `${nowRunning}.useEffect`
-          setErrorAlreadyReported(true)
-          setErrorContext(context)
-          setErrorDetails(`failure: ${failure}`)
-          setErrorMessage(defaultError)
-          setErrorOccurred(true)
-          return null
+          handleError({
+            failure,
+            nowRunning: context,
+            userId
+          });
+          return; 
 
         }
 
-        // getting parameters we need to store from the userRecord
+        const { token } = userRecord;
 
-        const {
-          token,
-          user_id: userId
-        } = userRecord
-
-        // the user record is missing data
+        // Validate userId.
 
         if (!validateUUID(userId)) {
 
-          window.alert ('The supplied key failed to login. You are being rerouted to the standard login now.')
-          window.location = '../'
-          return null
-
-        } else if (success !== true) {
-
-          localStorage.removeItem('messagine.token')
-          window.alert('The login failed: ' + failure + '. Support has been notified.')
+          window.alert('The supplied key failed to login. You are being rerouted to the standard login now.');
+          navigate('/login');
+          return;
 
         }
-        
-        // we are ok to proceed with the login
 
-        localStorage.setItem("messagine.token", token)
-        window.location = '../'
+        // Proceed with successful login.
 
-      } catch (e) {
-      
-        const context = `${nowRunning}.useEffect`;      
-        setErrorAlreadyReported(false)
-        setErrorContext(context + ': exception thrown')
-        setErrorDetails(e.message)
-        setErrorMessage(defaultError)
-        setErrorOccurred(true)
-      
+        localStorage.setItem("messagine.token", token);
+        navigate('/');
+
+      } catch (error) {
+
+        handleError({
+          error,
+          nowRunning: context,
+          userId
+        });
+
       }
 
-    }
+    };
 
-    runThis()
-
-  }, [errorNumber, key])
-
-  try {
+    runThis();
     
-    let reportError = false; // default condition is there is no error
+  }, [handleError, key, navigate, userId]);
 
-    if (errorOccurred && errorNumber !== errorDisplayed && errorContext !== errorContextReported && !errorAlreadyReported) { 
-                
-      reportError = true; 
-      setErrorContextReported(errorContext)
-      setErrorDisplayed(errorNumber); 
-
-    }
-    
-    return (
-    
-      <>
-
-        {errorOccurred && (
-
-          errorDisplay({
-            context: errorContext,
-            details: errorDetails,
-            errorMessage,
-            errorNumber,
-            nowRunning,
-            reportError
-          })
-
-       )}
-
-        <Loading className="loading" message="loading the login key tool..." />
-
-      </>
-
-   )
-
-  } catch(e) {
-  
-    setErrorAlreadyReported( false );
-    setErrorContext( nowRunning + '.e' );
-    setErrorDetails( 'general exception thrown' );
-    setErrorMessage( e.message );
-    setErrorOccurred( true );
-
-  }
+  return <Loading className="loading" message="loading the login key tool..." />;
 
 }
 
-export default LoginWithKey;
+export default function LoginWithKey(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The key-based login tool isn't working right now.",
+    errorNumber: 49
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="users/LoginWithKey.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <LoginWithKeyComponent {...defaultProps} />
+    </ErrorBoundary>
+  );
+
+}

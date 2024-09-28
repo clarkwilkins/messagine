@@ -3,169 +3,190 @@ import {
   useEffect,
   useState
 } from 'react';
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext } from 'react-router-dom';
 import { 
   Col,
   Container,
   Row
-} from 'react-bootstrap'
-import InfoAlert from '../common/InfoAlert'
-import Loading from '../common/Loading'
-import { apiLoader } from '../../services/handler'
+} from 'react-bootstrap';
+import ErrorBoundary from '../common/ErrorBoundary';
+import InfoAlert from '../common/InfoAlert';
+import Loading from '../common/Loading';
+import apiLoader from '../../services/apiLoader';
+import useLoadingMessages from '../hooks/useLoadingMessages';
 
-function DryRun(props) {
+function DryRunComponent({ handleError }) {
 
-  const nowRunning = 'scheduler/DryRun.jsx'
+  const nowRunning = 'scheduler/DryRun.jsx';
 
-  const { updateErrorState } = props
-  const defaultError = "The dry-run tool isn't working right now"
-  const errorNumber = 61
   const {
-    level,
-    toggleDimmer
-  } = useOutletContext()
-  const [loading, setLoading] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-  const [dryRunResults, setDryRunResults] = useState({})
+    setLoadingMessages,
+    userId
+  } = useOutletContext();
+
+  
+  const { 
+    addLoadingMessage, 
+    removeLoadingMessage 
+  } = useLoadingMessages(setLoadingMessages);
+
+  const [state, setState] = useState({
+    loaded: false,
+    dryRunResults: {}
+  });
+
+  const {
+    dryRunResults,
+    loaded 
+  } = state;
 
   const dryRun = useCallback(async () => {
 
-    const context = `${nowRunning}.dryRun`
+    const context = `${nowRunning}.dryRun`;
+    const loadingMessage = 'loading the dry run...';
 
     try {
 
-      const api = 'scheduler/run'
-      const payload = { dryRun: true }
-      const { data } = await apiLoader({ api, payload })
+      addLoadingMessage(loadingMessage);
+      const api = 'scheduler/run';
+      const payload = { dryRun: true };
+      const { data } = await apiLoader({ api, payload });
       const {
         allCampaignsProcessedResults,
         failure,
         success
-      } = data
+      } = data;
       
       if (!success) {
 
-        if (+level === 9) console.log(`failure: ${failure}`)
-
-        toggleDimmer(false)
-        updateErrorState({
-          alreadyReported: false,
-          context,
-          errorNumber,
-          message: `failure: ${failure}`,
-          occurred: true
-        })
-        return null
+        await handleError({ 
+          failure,
+          nowRunning: context, 
+          userId
+        });
+        return {};
 
       }
 
-      setDryRunResults(allCampaignsProcessedResults)
+      setState((prevState) => ({
+        ...prevState,
+        dryRunResults: allCampaignsProcessedResults
+      }));
 
+      removeLoadingMessage(loadingMessage);
 
-    } catch(e) {
+    } catch(error) {
 
-      if (+level === 9) console.log(`exception: ${e.message}`)
-
-      toggleDimmer(false)
-      updateErrorState({
-        alreadyReported: false,
-        details: e.message,
-        context,
-        errorNumber,
-        message: defaultError,
-        occurred: true
-      })
+      await handleError({ 
+        error,
+        nowRunning: context,
+        userId
+      });
 
     }
 
-  }, [level, toggleDimmer, updateErrorState])
+  }, [addLoadingMessage, handleError, removeLoadingMessage, userId]);
 
   const showCampaigns = () => {
 
-    const displayData = dryRunResults.map(campaignResult => {
+    const context = `${nowRunning}.showCampaigns`;
 
-      const {
-        campaignName,
-        dryRunInformation,
-        noEligibleRecipients
-      } = campaignResult
+    try {
+
+      const displayData = dryRunResults.map(campaignResult => {
+
+        const {
+          campaignName,
+          dryRunInformation,
+          noEligibleRecipients
+        } = campaignResult
 
 
-      let recipientsCount = 0
+        let recipientsCount = 0
 
-      if (dryRunInformation) recipientsCount = dryRunInformation.length
+        if (dryRunInformation) recipientsCount = dryRunInformation.length
 
-      let recipientsMessage = recipientsCount + ' recipient'
+        let recipientsMessage = recipientsCount + ' recipient'
 
-      if (recipientsCount > 1) recipientsMessage += 's'
-      
-      return(
+        if (recipientsCount > 1) recipientsMessage += 's'
+        
+        return(
 
-        <div className="width-100 size-80 mt-3">
+          <div className="width-100 size-80 mt-3">
 
-          <Row className="mb-2">
+            <Row className="mb-2">
 
-            <Col xs={12} sm={6}>
-            
-              <div className="size-80">campaign</div>
+              <Col xs={12} sm={6}>
               
-              <div>{campaignName}</div>
+                <div className="size-80">campaign</div>
+                
+                <div>{campaignName}</div>
 
-            </Col>
+              </Col>
 
-            <Col xs={12} sm={6}>
-            
-              <div className="size-80">eligible recipients</div>
+              <Col xs={12} sm={6}>
               
-              <div>
-                {noEligibleRecipients === true && (<span>no eligible recipients on this run</span>)}
-                {recipientsCount > 0 && (<span>{recipientsMessage}</span>)}
-              </div>
+                <div className="size-80">eligible recipients</div>
+                
+                <div>
+                  {noEligibleRecipients === true && (<span>no eligible recipients on this run</span>)}
+                  {recipientsCount > 0 && (<span>{recipientsMessage}</span>)}
+                </div>
 
-            </Col>
+              </Col>
 
-          </Row>
+            </Row>
 
-          {recipientsCount > 0 && (
+            {recipientsCount > 0 && (
 
-            <Container className="width-100 border-gray-2 mt-3">
+              <Container className="width-100 border-gray-2 mt-3">
 
-              {dryRunInformation.map(row => {
+                {dryRunInformation.map(row => {
 
-                const {
-                  contactName,
-                  email,
-                  messageContent,
-                  messageId,
-                  messageSubject
-                } = row
+                  const {
+                    contactName,
+                    email,
+                    messageContent,
+                    messageId,
+                    messageSubject
+                  } = row
 
-                return(
-                 
-                  <Row className="alternate-1 p-3">
+                  return(
+                  
+                    <Row className="alternate-1 p-3">
 
-                    <div className="size-65">messageId: {messageId}</div>
-                    <div>to: {contactName} &lt;{email}&gt;</div>
-                    <div>subject: {messageSubject}</div>
-                    <div dangerouslySetInnerHTML={{ __html: messageContent }}></div>
+                      <div className="size-65">messageId: {messageId}</div>
+                      <div>to: {contactName} &lt;{email}&gt;</div>
+                      <div>subject: {messageSubject}</div>
+                      <div dangerouslySetInnerHTML={{ __html: messageContent }}></div>
 
-                  </Row>
+                    </Row>
 
-                )
+                  )
 
-              })}
-            </Container>
+                })}
+              </Container>
 
-          )}
+            )}
 
-        </div>
-      )
+          </div>
+        )
 
-    })
+      })
 
-    return displayData
+      return displayData
 
-  }
+    } catch(error) {
+
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
+
+    }
+
+  };
 
   useEffect(() => {
 
@@ -173,52 +194,40 @@ function DryRun(props) {
     
     const runThis = async () => {
 
-        try {
+      try {
 
-          if (!loading) {
+        if (!loaded) {
 
-              setLoading(true) // only do this once! 
-              toggleDimmer(true)
-              await dryRun() 
-              setLoaded(true)       
-              toggleDimmer(false)
+            await dryRun() 
+            setState((prevState) => ({
+              ...prevState,
+              loaded: true
+            }));      
 
-          }
-
-        } catch (e) {
-
-        if (+level === 9) console.log(`exception: ${e.message}`)
-    
-        toggleDimmer(false)
-        updateErrorState({
-          alreadyReported: false,
-          details: e.message,
-          context,
-          errorNumber,
-          message: defaultError,
-          occurred: true
-        })
-        setLoaded(true)
-        
         }
 
+      } catch (error) {
+
+        await handleError({ 
+          error,
+          nowRunning: context,
+          userId
+        });
+      
       }
 
-      runThis()
+    }
 
-  }, [dryRun, level, loading, toggleDimmer, updateErrorState])
+    runThis()
+
+  }, [dryRun, handleError, loaded, userId]);
 
   try {
     
     // Final setup before rendering.
 
-    console.log('dryRunResults', dryRunResults)
-    const campaignsRun = Object.keys(dryRunResults).length
-    let message = `${campaignsRun} campaign`
-
-    if (campaignsRun !== 1) message += 's'
-
-    message += ' were part of this dry run.'
+    const campaignsRun = Object.keys(dryRunResults).length;
+    const message = `${campaignsRun} campaign ${campaignsRun !== 1 ? 's' : ''} were part of this dry run.`;
 
     return (
     
@@ -240,24 +249,38 @@ function DryRun(props) {
 
       </>
 
-   )
+    );
 
-  } catch(e) {
+  } catch(error) {
 
-    if (+level === 9) console.log(`exception: ${e.message}`)
-
-    toggleDimmer(false)
-    updateErrorState({
-      alreadyReported: false,
-      details: e.message,
-      context: nowRunning,
-      errorNumber,
-      message: defaultError,
-      occurred: true
-    })
+    handleError({ 
+      error,
+      nowRunning,
+      userId
+    });
 
   }
 
 }
 
-export default DryRun;
+export default function DryRun(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The dry run tool isn't working right now.",
+    errorNumber: 61
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="DryRun.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <DryRunComponent {...defaultProps} />
+    </ErrorBoundary>
+
+  )
+
+}

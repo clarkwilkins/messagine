@@ -17,32 +17,42 @@ import {
 } from 'react-bootstrap'
 import { XCircle } from '@phosphor-icons/react'
 import CheckBoxInput from '../common/CheckBoxInput'
+import ErrorBoundary from '../common/ErrorBoundary';
 import FormButtons from '../common/FormButtons'
 import TextArea from '../common/TextArea'
 import TextInput from '../common/TextInput'
-import { 
-  apiLoader,
-  stringCleaner
-} from '../../services/handler'
+import apiLoader from '../../services/apiLoader';
+import useLoadingMessages from '../hooks/useLoadingMessages';
+import { stringCleaner } from '../../services/utils';
 
-function EditContact(props) {
+function EditContactComponent(props) {
 
   const nowRunning = 'contacts/EditContact.jsx'
 
   const {
     contact,
     contactId,
+    handleError,
     loadContacts,
-    setEdit,
-    updateErrorState
+    setEdit
   } = props
-  const defaultError = "The contact editor isn't working right now"
-  const errorNumber = 58
   const {
     level,
-    toggleDimmer
+    setLoadingMessages,
+    userId
   } = useOutletContext()
-  const [loading, setLoading] = useState()
+
+  const [state, setState] = useState({
+    loaded: false
+  });
+
+  const { loaded } = state;
+
+  const { 
+    addLoadingMessage, 
+    removeLoadingMessage 
+  } = useLoadingMessages(setLoadingMessages);
+
   const schema = Joi.object({
     active: Joi.boolean().optional(),
     blockAll: Joi.boolean().optional(),
@@ -93,33 +103,28 @@ function EditContact(props) {
 
       trigger()
 
-    } catch(e) {
+    } catch(error) {
 
-      if (+level === 9) console.log(`exception: ${e.message}`)
-
-      toggleDimmer(false)
-      updateErrorState({
-        alreadyReported: false,
-        details: e.message,
-        context,
-        errorNumber,
-        message: defaultError,
-        occurred: true
-      })
+      handleError({ 
+        error,
+        nowRunning: context,
+        userId
+      });
 
     }
 
-  }, [contact, level, setValue, trigger, toggleDimmer, updateErrorState])
+  }, [contact, handleError, level, trigger, userId, setValue])
 
   // Update the contact data and refresh the parent.
 
   const onSubmit = async data => {
 
     const context = `${nowRunning}.onSubmit`
+    const loadingMessage = 'Updating the contact...'
 
     try {
 
-      toggleDimmer(true)
+      addLoadingMessage(loadingMessage)
       const {
         active,
         blockAll,
@@ -152,37 +157,26 @@ function EditContact(props) {
       
       if (!success) {
 
-        if (+level === 9) console.log(`failure: ${failure}`)
-
-        toggleDimmer(false)
-        updateErrorState({
-          alreadyReported: false,
-          context,
-          errorNumber,
-          message: `failure: ${failure}`,
-          occurred: true
-        })
-        return null
+        handleError({
+          failure,
+          nowRunning: context,
+          userId
+        });
+        return null;
 
       }
 
-      toggleDimmer(false)
       toast.success('The contact was updated.')
-      await loadContacts() // Refresh.
+      await loadContacts();
+      removeLoadingMessage(loadingMessage)
 
-    } catch(e) {
+    } catch(error) {
 
-      if (+level === 9) console.log(`exception: ${e.message}`)
-
-      toggleDimmer(false)
-      updateErrorState({
-        alreadyReported: false,
-        details: e.message,
-        context,
-        errorNumber,
-        message: defaultError,
-        occurred: true
-      })
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
 
     }
 
@@ -195,45 +189,40 @@ function EditContact(props) {
     const context = `${nowRunning}.useEffect`
 
     const runThis = async () => {
-    
-      if (!loading) {
 
-        setLoading(true) // only do this once! 
+      try {
 
-        try {
+        if (!loaded) {
 
-          onReset()
-
-        } catch(e) { // reporting an exception within the function
-
-          if (+level === 9) console.log(`exception: ${e.message}`)
-
-          updateErrorState({
-            alreadyReported: false,
-            details: e.message,
-            context,
-            errorNumber,
-            message: defaultError,
-            occurred: true
-          })
+          onReset();
+          setState((prevState) => ({
+            ...prevState,
+            loaded: true
+          }));
 
         }
 
         trigger()
 
+      } catch(error) {
+          
+        handleError({
+          error,
+          nowRunning: context,
+          userId
+        });
+
       }
 
     }
 
-    runThis()
+    runThis();
 
-  }, [level, loading, onReset, toggleDimmer, trigger, updateErrorState])
+  }, [handleError, loaded, onReset, trigger, userId])
 
   try {
 
     // Final setup before rendering.
-
-    if (+level === 9 && Object.keys(errors).length > 0) console.log('validation errors: ', errors)
 
     let disabled = false
 
@@ -254,7 +243,7 @@ function EditContact(props) {
               delay={ {  hide: 100, show: 200 } }
               overlay={ (props) => (
                 <Tooltip { ...props }>
-                  close editpr
+                  close editor
                 </Tooltip>
             )}
               placement="bottom"
@@ -336,7 +325,7 @@ function EditContact(props) {
           
           <Col xs={12} sm={6}>
 
-            <Form.Label className="size-65 text-muted">contact options</Form.Label>
+            <div className="size-65 text-muted">contact options</div>
 
             <div className="mt-3 floats">
 
@@ -380,11 +369,11 @@ function EditContact(props) {
         </Row>
 
         <TextArea
-            disabled={disabled}
-            inputName="contactNotes"
-            label="notes"
-            placeholder="use this to add notes about the contact..."
-            register={register}
+          disabled={disabled}
+          inputName="contactNotes"
+          label="notes"
+          placeholder="use this to add notes about the contact..."
+          register={register}
         />
 
         
@@ -400,22 +389,36 @@ function EditContact(props) {
 
     )
 
-  } catch(e) {
+  } catch(error) {
 
-    if (+level === 9) console.log(`exception: ${e.message}`)
-
-    toggleDimmer(false)
-    updateErrorState({
-      alreadyReported: false,
-      details: e.message,
-      context: nowRunning,
-      errorNumber,
-      message: defaultError,
-      occurred: true
+    handleError({
+      error,
+      nowRunning,
+      userId
     })
 
   }
 
 }
 
-export default EditContact
+export default function EditContact(props) {
+
+  const defaultProps = {
+    ...props,
+    defaultError: "The contact editor isn't working right now.",
+    errorNumber: 58
+  };
+
+  return (
+
+    <ErrorBoundary
+      context="EditContact.jsx"
+      defaultError={defaultProps.defaultError}
+      errorNumber={defaultProps.errorNumber}
+    >
+      <EditContactComponent {...defaultProps} />
+    </ErrorBoundary>
+
+  )
+
+}
