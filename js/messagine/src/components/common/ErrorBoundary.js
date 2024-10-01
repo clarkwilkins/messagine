@@ -3,12 +3,7 @@ import PropTypes from 'prop-types';
 import ErrorModal from './ErrorModal';
 import axios from 'axios';
 
-const ErrorBoundary = ({ 
-  children, 
-  context, 
-  defaultError, 
-  errorNumber 
-}) => {
+const ErrorBoundary = ({ children, defaultError, errorNumber }) => {
   const [hasError, setHasError] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
 
@@ -20,7 +15,7 @@ const ErrorBoundary = ({
 
   // Internal function to handle exceptions and failures
   const handleCaughtError = async ({ details, error, failure, nowRunning, userId }) => {
-    console.log('Error or failure caught:', error || failure);
+    console.log('Error caught:', { details, error, failure, nowRunning, userId });
 
     const recordError = async (data) => {
       try {
@@ -40,41 +35,65 @@ const ErrorBoundary = ({
       }
     };
 
-    if (error) { // Handling exceptions
-      const stackLines = error.stack ? error.stack.split('\n') : ['No stack trace available'];
-      const errorMessage = stackLines[0];
-      const errorLocation = stackLines.find(line => line.includes('messagine')) || 'Unknown location';
-
+    // Handle network errors separately
+    if (error && error.networkError) {
+      const networkErrorMessage = 'A network error occurred.Either the API server is down, or an invalid route was requested';
+      console.log('Network error:', error);
+      
       await recordError({
-        context: `${nowRunning}.e`,
-        details: details || `Error occurred at ${errorLocation}. Stack trace: ${stackLines.join('\n')}`,
-        errorMessage,
+        context: `${nowRunning}.network`,
+        details: details || networkErrorMessage,
+        errorMessage: networkErrorMessage,
         errorNumber,
         userId
       });
 
       setHasError(true);
       setErrorInfo({
-        errorMessage: `${errorMessage} at ${errorLocation}`,
-        stack: stackLines.join('\n'),
+        errorMessage: networkErrorMessage,
+        stack: '',  // No stack trace for network errors
       });
 
-    } else if (failure) { // Handling area-specific failures
-      await recordError({
-        context: `${nowRunning}.f`,
-        details,
-        errorMessage: failure,
-        errorNumber,
-        userId
-      });
-
-      console.log(`${nowRunning}: failure occurred, message: ${failure}`);
-
-      setHasError(true);
-      setErrorInfo({
-        errorMessage: failure,
-      });
+      return; // Exit early for network errors
     }
+
+    // Handling other exceptions
+    let errorMessage = 'An unexpected error occurred';
+    let errorLocation = '';
+    let stackLines = [];
+
+    if (error) {
+      if (typeof error === 'string') {
+        errorMessage = error; // Use error directly if it's a string
+      } else if (error.stack) {
+        stackLines = error.stack.split('\n');
+        errorMessage = stackLines[0] || 'Error message unavailable';
+        errorLocation = stackLines.find(line => typeof line === 'string' && line.includes('messagine')) || '';
+      }
+    }
+
+    if (failure) {
+      errorMessage = failure;
+    }
+
+    // Conditionally include the error location if available
+    const fullErrorMessage = errorLocation
+      ? `${errorMessage} at ${errorLocation}`
+      : errorMessage; // Only append "at location" if location exists
+
+    await recordError({
+      context: `${nowRunning}.e`,
+      details: details || `Error occurred. Stack trace: ${stackLines.join('\n')}`,
+      errorMessage: fullErrorMessage,
+      errorNumber,
+      userId
+    });
+
+    setHasError(true);
+    setErrorInfo({
+      errorMessage: fullErrorMessage,
+      stack: stackLines.join('\n'),
+    });
   };
 
   // Expose handleError to children via props

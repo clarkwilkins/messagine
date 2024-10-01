@@ -34,7 +34,7 @@ const DeleteConfirmationModal = ({ showModal, hideModal, confirmModal, deletePay
           </Button>
           <Button 
             variant="danger" 
-            onClick={ () => confirmModal( deletePayload ) }
+            onClick={ () => confirmModal(deletePayload) }
           >
             Delete
           </Button>

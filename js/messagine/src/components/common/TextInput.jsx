@@ -27,10 +27,10 @@ function TextInput ( props ) {
 
     <Form.Group className="mb-3">
                           
-      <Form.Label className="size-65 text-muted" >
+      <div className="size-65 text-muted mb-1" >
         <span dangerouslySetInnerHTML={{__html: DOMPurify.sanitize( label ) }}></span>
         {errors && ( <RequiredField validationText={validationText} /> ) }
-      </Form.Label>
+      </div>
                   
       <Form.Control
         className={className}

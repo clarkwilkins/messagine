@@ -75,7 +75,7 @@ function FormButtons( props ) {
 
                 setDeleteMessage( deleteMessage )
                 setDeletePayload( deletePayload )
-                showConfirmationModal( true );
+                showConfirmationModal(true);
 
               }
 

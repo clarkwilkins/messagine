@@ -136,7 +136,6 @@ router.post("/all", async (req, res) => {
     } 
 
     const campaigns = {};
-    const campaignsSelector = [];
 
     Object.values(results.rows).forEach(row => { 
       
@@ -161,7 +160,7 @@ router.post("/all", async (req, res) => {
       } = row;
       campaigns[campaignId] = {
         active,
-        campaignName: stringCleaner(campaignName),
+        campaignName: `${stringCleaner(campaignName)}${active === true ? '' : '*'}`, 
         campaignNotes: stringCleaner(campaignNotes, false, !containsHTML(campaignNotes)),
         campaignRepeats,
         created: +created,
@@ -177,15 +176,12 @@ router.post("/all", async (req, res) => {
         updatedBy,
         updatedBy2: stringCleaner(updatedBy2)
       };
-      const label = `${stringCleaner(campaignName)}${active === true ? '' : '*'}`;
-      campaignsSelector.push({ label, value: campaignId });
 
     })
     
     console.log(`${nowRunning}: finished`);
     return res.status(200).send({ 
       campaigns, 
-      campaignsSelector, 
       success: true
     });
 
@@ -466,6 +462,7 @@ router.post("/load", async (req, res) => {
       next_message: nextMessage,
       next_run: nextRun,
       starts,
+      unsub_url: unsubUrl,
       updated,
       updatedBy,
       user_name: updatedBy2
@@ -563,6 +560,7 @@ router.post("/load", async (req, res) => {
       nextRun: +nextRun,
       starts: +starts,
       success: true,
+      unsubUrl,
       updated: +updated,
       updatedBy,
       updatedBy2: stringCleaner(updatedBy2)
@@ -1075,11 +1073,13 @@ router.post("/new", async (req, res) => {
       req,
       schema 
     });
+
+    console.log(errorMessage)
   
     if (errorMessage) {
 
       console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ 
+      return res.status(200).send({ 
         failure: errorMessage, 
         success 
       });

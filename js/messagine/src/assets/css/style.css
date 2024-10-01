@@ -348,16 +348,16 @@ table.table-bordered > tbody > tr {
 }
 
 .width-80 {
-  width: 80%;
+  width: 80%!important ;
 }
 
 .width-99 {
-  width: 99%;
+  width: 99%!important;
 }
 
 .width-100 {
   max-width: 100%;
-  width: auto;
+  width: 100%!important ;
 }
 
 @media (min-width: 575.99px ) {

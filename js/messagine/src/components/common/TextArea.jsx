@@ -21,10 +21,10 @@ if ( !className ) className = 'p-3 h-150';
 
     <Form.Group className="mb-3">
                           
-      <Form.Label className="size-65 text-muted">
+      <div className="size-65 text-muted mb-1">
         {label}
         {errors && ( <RequiredField validationText={validationText} /> ) }
-      </Form.Label>
+      </div>
                   
       <Form.Control
         as="textarea"

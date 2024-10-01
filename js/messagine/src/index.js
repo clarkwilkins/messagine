@@ -2,10 +2,13 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import App from "./App";
+import EditCampaign from "./components/campaigns/EditCampaign"
 import LoginWithKey from "./components/users/LoginKey"
+import ManageCampaigns from "./components/campaigns/ManageCampaigns"
 import ManageContacts from "./components/contacts/ManageContacts"
 import ManageLists from "./components/lists/ManageLists"
 import MessageEditor from "./components/campaigns/MessageEditor"
+import NewCampaign from "./components/campaigns/NewCampaign"
 import NewContact from "./components/contacts/NewContact"
 import NewList from "./components/lists/NewList"
 import Upcoming from "./components/scheduler/Upcoming"
@@ -32,6 +35,16 @@ root.render(
         >
 
           <Route 
+            element={ <EditCampaign /> }
+            path="campaigns/edit/:campaignId/"
+          />
+
+          <Route 
+            element={ <ManageCampaigns /> }
+            path="campaigns/manage"
+          />
+
+          <Route 
             element={ <ManageContacts /> }
             path="contacts/manage"
           />
@@ -44,6 +57,11 @@ root.render(
           <Route 
             element={ <MessageEditor /> }
             path="campaigns/edit/:campaignId/:messageId"
+          />
+
+          <Route 
+            element={ <NewCampaign /> }
+            path="campaigns/new"
           />
 
           <Route 

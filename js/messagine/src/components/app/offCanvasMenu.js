@@ -26,6 +26,19 @@ function OffCanvasMenu({ menu, handleClose, setShowModal }) {
             </Nav.Link>
           </Nav.Item>
 
+          <Nav.Item className="size-80"><b>campaigns</b></Nav.Item>
+
+          <Nav.Item>
+            <Nav.Link
+              as={Link} 
+              onClick={handleClose}
+              to="/campaigns/new"
+            >
+              new campaign
+            </Nav.Link>
+          </Nav.Item>
+
+
           <Nav.Item className="size-80"><b>contacts</b></Nav.Item>
 
           <Nav.Item>

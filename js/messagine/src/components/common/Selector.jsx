@@ -20,10 +20,10 @@ function Selector ( props ) {
 
     <Form.Group className="mb-3">
           
-      <Form.Label className="size-65 text-muted">
+      <div className="size-65 text-muted mb-1">
         {label}
         {errors && ( <RequiredField validationText={validationText} /> )}
-      </Form.Label>
+      </div>
                   
       <Form.Select 
         className="p-3"

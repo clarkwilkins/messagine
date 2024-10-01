@@ -126,8 +126,9 @@ router.post("/all", async (req, res) => {
       
     }
 
+    const activeLists = {};
+    const allLists = {};
     const lists = {};
-    const listsSelector = [];
 
     Object.values(results.rows).forEach(row => {
 
@@ -155,17 +156,17 @@ router.post("/all", async (req, res) => {
         updatedBy,
         updatedBy2: stringCleaner(updatedBy2)
       };
-      listsSelector.push({
-        label: listName,
-        value: listId
-      });
+      allLists[listId] = stringCleaner(listName);
+
+      if (active) activeLists[listId] = stringCleaner(listName);
 
     });
     
     console.log(nowRunning + ": finished\n");
     return res.status(200).send({ 
-      lists, 
-      listsSelector, 
+      activeLists,
+      allLists,
+      lists,
       success: true 
     });
 
