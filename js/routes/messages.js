@@ -1021,33 +1021,38 @@ router.post("/new", async (req, res) => {
 
     } 
 
+    const messageId = uuidv4();
     const now = moment().format('X')
 
     // Create the message.
 
     const queryText = `
       INSERT INTO messages (
-        ${active !== undefined ? 'active,' : ''} 
-        ${messageContent ? 'content,' : ''} 
-        ${locked !== undefined ? 'locked,' : ''} 
-        ${messageName ? 'message_name,' : ''} 
-        ${messageNotes ? 'notes,' : ''} 
+        active,
+        created,
+        content,
+        locked, 
+        message_id,
+        message_name,
+        notes,
+        owner,
         repeatable, 
         subject, 
         updated, 
-        updated_by, 
-        message_id
+        updated_by
       ) 
       VALUES (
-        ${active !== undefined ? `${active},` : ''} 
-        ${messageContent ? `'${stringCleaner(messageContent, true)}',` : ''} 
-        ${locked ? userLevel : 0}, 
-        '${uuidv4()}', 
-        '${stringCleaner(messageName, true)}', 
-        '${messageNotes ? stringCleaner(messageNotes, true) : ''}', 
-        ${repeatable}, 
-        '${stringCleaner(subject, true)}', 
-        ${now}, 
+        ${active ? 'true' : 'false'},
+        ${now}, -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
+        '${stringCleaner(messageContent, true)}',
+        ${locked ? userLevel : 0},
+        '${messageId}',
+        '${stringCleaner(messageName, true)}',
+        '${stringCleaner(messageNotes, true)}',
+        '${userId}',
+        ${repeatable ? 'true' : 'false'},
+        '${stringCleaner(messageSubject, true)}',
+        ${now}, -- ${moment().format('YYYY-MM-DD HH:mm:ss')}
         '${userId}'
       ) 
       ON CONFLICT DO NOTHING 
@@ -1070,8 +1075,6 @@ router.post("/new", async (req, res) => {
       );
       
     }
-
-    const messageId = results?.rows[0]?.message_id; // This will be undefined if the message wasn't created due to constraints.
     
     console.log(`${nowRunning}: finished`)
     return res.status(200).send({ 

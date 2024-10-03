@@ -46,12 +46,12 @@ function ManageCampaignsComponent({ handleError }) {
 
   const { 
     campaigns,
-    loaded, 
+    loaded,
   } = state;
 
   const loadCampaigns = useCallback(async () => {
 
-    const context =  `${nowRunning}.loadCampaigns`;
+    const context = `${nowRunning}.loadCampaigns`;
     const loadingMessage = 'loading campaigns...';
 
     try {
@@ -111,12 +111,11 @@ function ManageCampaignsComponent({ handleError }) {
 
         try {
 
-          await loadCampaigns();
-
           setState((prevState) => ({
             ...prevState,
             loaded: true
           }));
+          await loadCampaigns();
 
         } catch(error) {
 

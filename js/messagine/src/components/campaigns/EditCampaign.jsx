@@ -4,6 +4,7 @@ import {
   useState
 } from 'react';
 import {
+  Link,
   useNavigate,
   useOutletContext,
   useParams
@@ -19,22 +20,27 @@ import { toast } from 'react-toastify';
 import { 
   Breadcrumb,
   Col,
+  Container,
   Form,
   OverlayTrigger,
   Row,
   Tooltip
 } from 'react-bootstrap';
 import { 
+  CaretDown,
+  CaretUp,
   List,
   PlusSquare
 } from '@phosphor-icons/react';
 import CheckBoxInput from '../common/CheckBoxInput';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import Delete from '../common/Delete';
 import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
 import ErrorBoundary from '../common/ErrorBoundary';
 import FormButtons from '../common/FormButtons';
 import Loading from '../common/Loading';
+import NewMessage from './NewMessage';
 import RequiredField from '../common/RequiredField';
 import Selector from '../common/Selector';
 import TextArea from '../common/TextArea';
@@ -65,19 +71,33 @@ function EditCampaignComponent({ handleError }) {
 
   const [state, setState] = useState({
     campaign: {},
+    deleteCampaignMessage: '',  // For campaign messages deletion.
+    deleteCampaignPayload: null,  // For campaign messages deletion.
+    deleteCampaignModal: false,  // For campaign messages delete modal.
+    deleteMessage: '',  // For main campaign deletion.
+    deletePayload: null,  // For main campaign deletion.
+    deletePrompt: '',  // For main campaign deletion (used by FormButtons).
     lists: {},
     loaded: false,
     renderKey: 0,
-    showModal: false
+    showModal: false,  // For main campaign delete modal.
+    showNewMessage: false
   });
-
-  const { 
+  
+  const {
     campaign,
+    deleteCampaignMessage,
+    deleteCampaignPayload,
+    deleteCampaignModal,
+    deleteMessage,
+    deletePayload,
     lists,
     loaded,
     renderKey,
-    showModal 
+    showModal,
+    showNewMessage
   } = state;
+  
 
   const schema = Joi.object({
     active: Joi.boolean().required(),
@@ -102,21 +122,20 @@ function EditCampaignComponent({ handleError }) {
     formState: { errors },
     handleSubmit,
     register,
-    reset,
     setValue,
     trigger
   } = useForm({ resolver: joiResolver(schema) });
 
   const navigate = useNavigate();
 
-  const hideConfirmationModal = () => { 
+  const hideConfirmationModal = useCallback(() => { 
 
     setState((prevState) => ({
       ...prevState,
       showModal: false
     })); 
 
-  };
+  }, []);
 
   const loadCampaign = useCallback(async () => {
 
@@ -161,6 +180,9 @@ function EditCampaignComponent({ handleError }) {
         starts: campaignStarts,
         unsubUrl
       } = campaign;
+
+      // Preset the form to current values.
+
       setValue('active', active);
       
       if (campaignEnds) { setValue('campaignEnds', moment.unix(campaignEnds).utc().toISOString()); }
@@ -215,15 +237,16 @@ function EditCampaignComponent({ handleError }) {
 
     }
 
-  }, [addLoadingMessage, campaignId, handleError, removeLoadingMessage, setValue, userId]);
+  }, [addLoadingMessage, campaignId, handleError, level, removeLoadingMessage, setValue, userId]);
 
-  const onDelete = async () => {
+  const onDelete = useCallback(async () => {
 
     const context = `${nowRunning}.onDelete`;
     const loadingMessage = 'deleting the campaign...';
 
     try {
 
+      showCampaignDeleteModal(false);
       addLoadingMessage(loadingMessage);
       hideConfirmationModal();
       const api = 'campaigns/delete';
@@ -262,14 +285,16 @@ function EditCampaignComponent({ handleError }) {
 
     }
 
-  };
+  }, [addLoadingMessage, campaignId, handleError, hideConfirmationModal, navigate, removeLoadingMessage, userId]);
 
   const onChange = () => { trigger(); }
 
-  const onReset = () => {
+  const onReset = () => { // Restores the campaign record to its original state.
 
-    reset();
-    trigger();
+    setState((prevState) => ({
+      ...prevState,
+     loaded: false
+    }));
 
   };
 
@@ -286,9 +311,8 @@ function EditCampaignComponent({ handleError }) {
         ...data,
         campaignId,
       };
-      data.campaignEnds = moment(data.campaignEnds).unix() || 0; // API compatibility
-      data.campaignStarts = moment(data.campaignStarts).unix() || 0; // API compatibility
-    
+      payload.campaignEnds = moment(data.campaignEnds).unix() || 0; // API compatibility
+      payload.campaignStarts = moment(data.campaignStarts).unix() || 0; // API compatibility
       const { data: result } = await apiLoader({ api, payload });
       const {
         failure,
@@ -321,13 +345,83 @@ function EditCampaignComponent({ handleError }) {
 
   };
 
-  const showConfirmationModal = () => { 
+  const removeCampaignMessage = async (messageId) => {
+
+    const context = `${nowRunning}.removeCampaignMessage`;
+
+    try {
+
+      addLoadingMessage('removing the message...');
+      showMessageDeleteModal(false)
+      const api = 'campaigns/messages/remove';
+      const payload = { 
+        campaignId, 
+        messageId
+      };
+      const { data } = await apiLoader({ api, payload });
+      const {
+        failure,
+        success
+      } = data;
+
+      if (!success) {
+
+        handleError({
+          error: failure,
+          nowRunning: context,
+          userId
+        });
+
+      } else {
+
+        toast.success('The message was removed.');
+        await loadCampaign();
+
+      }
+
+      removeLoadingMessage('removing the message...');
+
+    } catch(error) {
+
+      handleError({
+        error,
+        nowRunning: context,
+        userId
+      });
+
+    }
+
+  };
+
+  // For campaign deletion.
+
+  const showCampaignDeleteModal = (show) => {
 
     setState((prevState) => ({
       ...prevState,
-      showModal: !showModal
+      showModal: show
     }));
-    
+
+  };
+
+  // For message deletion.
+
+  const showMessageDeleteModal = (show) => {
+
+    setState((prevState) => ({
+      ...prevState,
+      deleteCampaignModal: show
+    }));
+
+  };
+  
+  const toggleNewMessage = () => {
+
+    setState((prevState) => ({
+      ...prevState,
+      showNewMessage: !showNewMessage
+    }));
+
   };
 
   useEffect(() => {
@@ -340,12 +434,11 @@ function EditCampaignComponent({ handleError }) {
 
         try {
 
-          await loadCampaign();
-
           setState((prevState) => ({
             ...prevState,
             loaded: true
           }));
+          await loadCampaign();
 
         } catch(error) {
 
@@ -367,9 +460,8 @@ function EditCampaignComponent({ handleError }) {
 
   }, [handleError, loadCampaign, loaded, trigger, userId]);
 
-  console.log(campaign);
-
-  // if (Object.keys(errors).length > 0) { console.log(errors); }
+  const messages = campaign?.messages || {};
+  const messageCount = Object.keys(messages).length || 0;
 
   try {
 
@@ -433,224 +525,334 @@ function EditCampaignComponent({ handleError }) {
                 
               </div>
               
-              edit campaign
+              campaign setup
 
             </h5>
 
-            <>
+            <Form 
+              className="bg-light p-3 mb-3"
+              onSubmit={handleSubmit( onSubmit)}
+            >
 
-              <Form 
-                className="bg-light p-3 mb-3"
-                onSubmit={handleSubmit( onSubmit)}
-              >
-
-                <TextInput
-                  defaultValue={campaign.campaignName}
-                  disabled={disabled}
-                  errors={errors.campaignName}
-                  inputName="campaignName"
-                  label="name"
-                  onChange={ () => trigger() }
-                  placeholder="new campaign name..."
-                  register={register}
-                />
-
-                <Row>
-
-                  <Col xs={12} sm={6}>
-                    <Selector
-                      disabled={disabled}
-                      inputName="campaignInterval"
-                      label="message interval"
-                      onChange={onChange}
-                      placeholder="please select an interval..."
-                      register={register}
-                      values={intervals}
-                    />
-                  </Col>
-
-                  <Col xs={12} sm={6}>
-                    <Selector
-                      disabled={disabled}
-                      inputName="listId"
-                      label="contact list"
-                      onChange={onChange}
-                      placeholder="please select a set of contacts..."
-                      register={register}
-                      values={lists}
-                    />
-                  </Col>
-
-                </Row>
-
-                <div className="floats">
-
-                  <div className="float-left mr-1">
-
-                    <div className="size-65 text-muted mb-2">
-                      campaign start
-                      { " " }
-                      {errors.date && (<RequiredField />) }
-                    </div>
-                    
-                    <Controller
-                      control={control}
-                      name="campaignStarts"
-                      render={({ field }) => (
-
-                        <DatePicker
-                          className="form-control mb-3 p-3 width-250px"
-                          dateFormat="MMM d, yyyy h:mm aa"
-                          disabled={disabled}
-                          key={renderKey}
-                          onChange={(date) => {
-                            field.onChange(date);
-                            trigger();
-                          }}
-                          placeholderText="select date..."
-                          portalId="root-portal"
-                          selected={field.value ? new Date(field.value) : null}  // Ensure valid Date or null
-                          showTimeSelect
-                          timeFormat="HH:mm"
-                          timeIntervals={60}
-                          timezone="America/Los_Angeles"
-                        />
-                        
-                      )}
-
-                    />
-
-                  </div>
-
-                  <div className="float-left mr-1">
-
-                    <div className="size-65 text-muted mb-2 width-250px">
-                      campaign ends
-                      { " " }
-                      {errors.date && (<RequiredField />) }
-                    </div>
-                    
-                    <Controller
-                      control={control}
-                      name="campaignEnds"
-                      render={({ field }) => (
-
-                        <DatePicker
-                          className="form-control mb-3 p-3 width-250px"
-                          dateFormat="MMM d, yyyy h:mm aa"
-                          disabled={disabled}
-                          key={renderKey}
-                          onChange={(date) => {
-                            field.onChange(date);
-                            trigger();
-                          }}
-                          placeholderText="select date..."
-                          portalId="root-portal"
-                          selected={field.value ? new Date(field.value) : null}  // Ensure valid Date or null
-                          showTimeSelect
-                          timeFormat="HH:mm"
-                          timeIntervals={60}
-                          timezone="America/Los_Angeles"
-                        />
-
-                      )}
-
-                    />
-                    
-                  </div>
-
-                </div>
-
-                <div className="size-65 text-muted mb-3">options</div>
-
-                <div className="floats">
-
-                  <div className="float-left mr-1">
-
-                    <CheckBoxInput
-                      disabled={disabled}
-                      inputName="active"
-                      label="active"
-                      register={register}
-                    />
-
-                  </div>
-
-                  <div className="float-left mr-1">
-
-                    <CheckBoxInput
-                      disabled={disabled}
-                      inputName="campaignRepeats"
-                      label="repeats"
-                      register={register}
-                    />
-
-                  </div>
-
-                  <div className="float-left mr-1">
-
-                    <CheckBoxInput
-                      disabled={disabled}
-                      inputName="messageSeries"
-                      label="message series"
-                      register={register}
-                    />
-
-                  </div>
-
-                  <div className="float-left mr-1">
-
-                    <CheckBoxInput
-                      disabled={disabled}
-                      inputName="locked"
-                      label="locked"
-                      register={register}
-                    />
-
-                  </div>
-
-                </div>
-
-                <TextInput
-                  disabled={disabled}
-                  errors={errors.unsubUrl}
-                  inputName="unsubUrl"
-                  label="unsubscribe link"
-                  onChange={ () => trigger() }
-                  placeholder="unsubscribe link required..."
-                  register={register}
-                />
-                
-                <TextArea
-                  disabled={disabled}
-                  inputName="campaignNotes"
-                  label="notes"
-                  placeholder="optional notes about the campaign..."
-                  register={register}
-                />
-
-                {disabled !== true && (
-                  <FormButtons
-                    deletePrompt="remove this campaign"
-                    errors={errors}
-                    onReset={onReset}
-                    showConfirmationModal={showConfirmationModal}
-                    showDelete={true}
-                    submitText="update campaign"
-                  />
-                )}
-
-              </Form>
-
-              <DeleteConfirmationModal 
-                confirmModal={onDelete}
-                hideModal={hideConfirmationModal}
-                message="Are you sure you want to remove this campaign?"
-                showConfirmationModal={showConfirmationModal} 
-                showModal={showModal}
+              <TextInput
+                defaultValue={campaign.campaignName}
+                disabled={disabled}
+                errors={errors.campaignName}
+                inputName="campaignName"
+                label="name"
+                onChange={onChange}
+                placeholder="new campaign name..."
+                register={register}
               />
 
-            </>
+              <Row>
+
+                <Col xs={12} sm={6}>
+                  <Selector
+                    disabled={disabled}
+                    inputName="campaignInterval"
+                    label="message interval"
+                    onChange={onChange}
+                    placeholder="please select an interval..."
+                    register={register}
+                    values={intervals}
+                  />
+                </Col>
+
+                <Col xs={12} sm={6}>
+                  <Selector
+                    disabled={disabled}
+                    inputName="listId"
+                    label="contact list"
+                    onChange={onChange}
+                    placeholder="please select a set of contacts..."
+                    register={register}
+                    values={lists}
+                  />
+                </Col>
+
+              </Row>
+
+              <div className="floats">
+
+                <div className="float-left mr-1">
+
+                  <div className="size-65 text-muted mb-2">
+                    campaign start
+                    { " " }
+                    {errors.date && (<RequiredField />) }
+                  </div>
+                  
+                  <Controller
+                    control={control}
+                    name="campaignStarts"
+                    render={({ field }) => (
+
+                      <DatePicker
+                        className="form-control mb-3 p-3 width-250px"
+                        dateFormat="MMM d, yyyy h:mm aa"
+                        disabled={disabled}
+                        key={renderKey}
+                        onChange={(date) => {
+                          field.onChange(date);
+                          trigger();
+                        }}
+                        placeholderText="select date..."
+                        portalId="root-portal"
+                        selected={field.value ? new Date(field.value) : null}  // Ensure valid Date or null
+                        showTimeSelect
+                        timeFormat="HH:mm"
+                        timeIntervals={60}
+                        timezone="America/Los_Angeles"
+                      />
+                      
+                    )}
+
+                  />
+
+                </div>
+
+                <div className="float-left mr-1">
+
+                  <div className="size-65 text-muted mb-2 width-250px">
+                    campaign ends
+                    { " " }
+                    {errors.date && (<RequiredField />) }
+                  </div>
+                  
+                  <Controller
+                    control={control}
+                    name="campaignEnds"
+                    render={({ field }) => (
+
+                      <DatePicker
+                        className="form-control mb-3 p-3 width-250px"
+                        dateFormat="MMM d, yyyy h:mm aa"
+                        disabled={disabled}
+                        key={renderKey}
+                        onChange={(date) => {
+                          field.onChange(date);
+                          trigger();
+                        }}
+                        placeholderText="select date..."
+                        portalId="root-portal"
+                        selected={field.value ? new Date(field.value) : null}  // Ensure valid Date or null
+                        showTimeSelect
+                        timeFormat="HH:mm"
+                        timeIntervals={60}
+                        timezone="America/Los_Angeles"
+                      />
+
+                    )}
+
+                  />
+                  
+                </div>
+
+              </div>
+
+              <div className="size-65 text-muted mb-3">options</div>
+
+              <div className="floats">
+
+                <div className="float-left mr-1">
+
+                  <CheckBoxInput
+                    disabled={disabled}
+                    inputName="active"
+                    label="active"
+                    register={register}
+                  />
+
+                </div>
+
+                <div className="float-left mr-1">
+
+                  <CheckBoxInput
+                    disabled={disabled}
+                    inputName="campaignRepeats"
+                    label="repeats"
+                    register={register}
+                  />
+
+                </div>
+
+                <div className="float-left mr-1">
+
+                  <CheckBoxInput
+                    disabled={disabled}
+                    inputName="messageSeries"
+                    label="message series"
+                    register={register}
+                  />
+
+                </div>
+
+                <div className="float-left mr-1">
+
+                  <CheckBoxInput
+                    disabled={disabled}
+                    inputName="locked"
+                    label="locked"
+                    register={register}
+                  />
+
+                </div>
+
+              </div>
+
+              <TextInput
+                disabled={disabled}
+                errors={errors.unsubUrl}
+                inputName="unsubUrl"
+                label="unsubscribe link"
+                onChange={onChange}
+                placeholder="unsubscribe link required..."
+                register={register}
+              />
+              
+              <TextArea
+                disabled={disabled}
+                inputName="campaignNotes"
+                label="notes"
+                placeholder="optional notes about the campaign..."
+                register={register}
+              />
+
+              {disabled !== true && (
+
+                <FormButtons
+                  deleteMessage="Are you sure you want to remove this campaign?"
+                  deletePayload={deletePayload} // Campaign delete payload
+                  deletePrompt="remove this campaign"
+                  errors={errors}
+                  onReset={onReset}
+                  setDeleteMessage={(msg) => setState((prevState) => ({ ...prevState, deleteMessage: msg }))}
+                  setDeletePayload={(payload) => setState((prevState) => ({ ...prevState, deletePayload: payload }))}
+                  showConfirmationModal={showCampaignDeleteModal}
+                  showDelete={true}
+                  submitText="update campaign"
+                />              
+              
+              )}
+
+            </Form>
+
+            <DeleteConfirmationModal // Main campaign deletion
+              confirmModal={onDelete}
+              hideModal={() => showCampaignDeleteModal(false)}
+              message={deleteMessage}
+              showConfirmationModal={showCampaignDeleteModal}
+              showModal={showModal}
+            />
+
+            <DeleteConfirmationModal // Message deletion
+              confirmModal={() => removeCampaignMessage(deleteCampaignPayload)}
+              hideModal={() => showMessageDeleteModal(false)}
+              message={deleteCampaignMessage}
+              showConfirmationModal={showMessageDeleteModal}
+              showModal={deleteCampaignModal}
+            />
+
+
+            <h5 className="floats">
+
+              <div className="float-right ml-05">
+
+                <OverlayTrigger
+                  delay={ {  hide: 100, show: 200 } }
+                  overlay={ (props) => (
+                    <Tooltip { ...props }>
+                      {showNewMessage ? 'hide' : 'show'} new message tool
+                    </Tooltip>
+                )}
+                  placement="bottom"
+                >
+
+                  <div onClick={() => toggleNewMessage()}>
+                    {showNewMessage ? (<CaretUp />) : (<CaretDown />)}
+                  </div>
+                  
+                </OverlayTrigger>
+                
+              </div>
+              
+              campaign messages ({messageCount})</h5>
+
+            {messageCount === 0 && (<Warning message="There are no messages in this campaign." />)}
+
+            {messageCount > 0 && (
+
+              <div className="bg-light mt-3 mb-3 p-3">
+
+                <Container className="size-80 border-gray-2 mt-3 mb-3">
+
+                  {Object.entries(messages).map(([messageId, message]) => {
+
+                    const {
+                      messageName,
+                      notes,
+                      subject
+                    } = message;
+                    
+                    const editLink = `/campaigns/edit/${campaignId}/${messageId}`;
+
+                    return (
+
+                      <Row 
+                        className="alternate-1 p-3"
+                        key={messageId}
+                      >
+
+                        <div className="floats">
+
+                          <div className="float-right ml-1">
+
+                            <Delete
+                              deleteMessage={`Are you sure you want to remove the message "${messageName}"?`}
+                              deletePayload={messageId}
+                              deletePrompt="remove this message"
+                              setDeleteMessage={(msg) => setState((prevState) => ({ ...prevState, deleteCampaignMessage: msg }))}
+                              setDeletePayload={(payload) => setState((prevState) => ({ ...prevState, deleteCampaignPayload: payload }))}
+                              showConfirmationModal={showMessageDeleteModal}
+                            />
+
+                          </div>
+                          
+                          <Link to={editLink}>{messageName}</Link>
+                          
+                        </div>
+
+                        <Link to={editLink}>
+
+                          <div className="size-80">subject: {subject}</div>                       
+
+                          {notes && (<div className="size-65">notes: {notes}</div>)}
+
+                        </Link>
+
+                      </Row>
+
+                    );
+
+                  })}
+
+
+                </Container>
+
+              </div>
+
+            )}
+
+            {showNewMessage && (
+              
+              <NewMessage 
+                campaignId={campaignId} 
+                existingMessages={messages}
+                loadCampaign={loadCampaign}
+              />
+          
+            )}
 
           </>
 

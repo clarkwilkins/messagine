@@ -56,7 +56,7 @@ root.render(
 
           <Route 
             element={ <MessageEditor /> }
-            path="campaigns/edit/:campaignId/:messageId"
+            path="campaigns/edit/:campaignId/:messageId/"
           />
 
           <Route 
