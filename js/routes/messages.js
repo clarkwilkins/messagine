@@ -121,7 +121,7 @@ router.post("/all", async (req, res) => {
     } 
 
     const messages = {};
-    const messagesSelector = [];
+    const messageList = {};
 
     Object.values(results.rows).forEach(row => { 
       
@@ -154,18 +154,14 @@ router.post("/all", async (req, res) => {
         updatedBy,
         updatedBy2: stringCleaner(updatedBy2)
       };
-      let label = stringCleaner(messageName);
-
-      if (active !== true) label += '*';
-
-      messagesSelector.push({ label, value: messageId });
+      messageList[messageId] = `${messageName}${active ? '' : '*'}`;
 
     })
     
     console.log(`${nowRunning}: finished`)
     return res.status(200).send({ 
+      messageList,
       messages, 
-      messagesSelector, 
       success: true 
     })
 
@@ -302,33 +298,6 @@ router.post("/delete", async (req, res) => {
         success: false 
       })
 
-    }
-
-    // delete the message ID from campaign links ONLY if the first part succeeded
-
-    queryText = `
-      DELETE FROM 
-        campaign_messages 
-      WHERE 
-        message_id = '${messageId }'
-      ;
-    `
-    results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
-
-    if (!results) {
-
-      const failure = 'database error when deleting the message from all linked campaigns'
-      console.log(`${nowRunning} : ${failure}`)
-      return res.status(200).send(
-        await handleError({ 
-          details: queryText,
-          errorNumber, 
-          failure, 
-          nowRunning, 
-          userId 
-        })
-      );
-      
     }
 
     console.log(`${nowRunning}: finished`)

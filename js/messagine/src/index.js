@@ -7,6 +7,7 @@ import LoginWithKey from "./components/users/LoginKey"
 import ManageCampaigns from "./components/campaigns/ManageCampaigns"
 import ManageContacts from "./components/contacts/ManageContacts"
 import ManageLists from "./components/lists/ManageLists"
+import ManageTemplates from "./components/templates/ManageTemplates"
 import MessageEditor from "./components/campaigns/MessageEditor"
 import NewCampaign from "./components/campaigns/NewCampaign"
 import NewContact from "./components/contacts/NewContact"
@@ -52,6 +53,11 @@ root.render(
           <Route 
             element={ <ManageLists /> }
             path="lists/manage"
+          />
+
+          <Route 
+            element={ <ManageTemplates /> }
+            path="templates/manage"
           />
 
           <Route 

@@ -120,7 +120,8 @@ const calculateNextRun = ({
   
     default:
 
-      throw new Error('Invalid interval');
+      return null;
+      
   }
   
   return +nextRunTime.format('X');
