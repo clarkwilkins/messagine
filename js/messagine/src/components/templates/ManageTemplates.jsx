@@ -278,7 +278,7 @@ function ManageTemplatesComponent({ handleError }) {
         try {
 
           await loadTemplates();
-          onReset();
+          onReset(); // Preset the new template form
           setState((prevState) => ({
             ...prevState,
             loaded: true
@@ -302,10 +302,9 @@ function ManageTemplatesComponent({ handleError }) {
 
     runThis();
 
-  }, [handleError, loaded, loadTemplates, trigger, userId]);
+  }, [handleError, loaded, loadTemplates, onReset, trigger, userId]);
 
   const templateCount = Object.keys(messages).length;
-  console.log('errors', errors);
 
   try {
 
