@@ -189,7 +189,7 @@ function ManageTemplatesComponent({ handleError }) {
 
   const onChange = () => { trigger(); }
 
-  const onReset = () => {
+  const onReset = useCallback(() => {
 
     reset();
     setValue('active', true);
@@ -197,7 +197,7 @@ function ManageTemplatesComponent({ handleError }) {
     setValue('repeatable', false);
     trigger();
 
-  };
+  }, [reset, setValue, trigger]);
 
   // Adding a new message template.
 
@@ -546,8 +546,8 @@ export default function ManageTemplates(props) {
 
   const defaultProps = {
     ...props,
-    defaultError: "The THING isn't working right now.",
-    errorNumber: 999
+    defaultError: "The template manager isn't working right now.",
+    errorNumber: 69
   };
 
   return (
