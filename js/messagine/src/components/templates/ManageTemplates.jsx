@@ -44,7 +44,6 @@ function ManageTemplatesComponent({ handleError }) {
   
   
   const {
-    level,
     setLoadingMessages,
     userId
   } = useOutletContext();
@@ -71,7 +70,13 @@ function ManageTemplatesComponent({ handleError }) {
   } = state;
 
   const schema = Joi.object({
-    active: Joi.boolean().required()
+    active: Joi.boolean().required(),
+    locked: Joi.boolean().required(),
+    messageContent: Joi.string().required(),
+    messageName: Joi.string().required(),
+    messageNotes: Joi.string().optional().allow('', null),
+    messageSubject: Joi.string().required(),
+    repeatable: Joi.boolean().required(),
   });
 
   const { 
@@ -187,19 +192,24 @@ function ManageTemplatesComponent({ handleError }) {
   const onReset = () => {
 
     reset();
+    setValue('active', true);
+    setValue('locked', false);
+    setValue('repeatable', false);
     trigger();
 
   };
 
+  // Adding a new message template.
+
   const onSubmit = async data => {
 
     const context = `${nowRunning}.onSubmit`;
-    const loadingMessage = 'updating the message template...';
+    const loadingMessage = 'adding the message template...';
 
     try {
 
       addLoadingMessage(loadingMessage);
-      const api = 'message/update';
+      const api = 'messages/new';
       const payload = { 
         ...data
       };
@@ -220,7 +230,10 @@ function ManageTemplatesComponent({ handleError }) {
 
       }
 
-      toast.success('The template was updated.');
+      toast.success('The template was added.');
+      await loadTemplates(); // Refresh the list of templates
+      onReset(); // Clear the form.
+      toggleNewTemplate(); // Hide the form.
       removeLoadingMessage(loadingMessage);
 
     } catch(error) {
@@ -265,7 +278,7 @@ function ManageTemplatesComponent({ handleError }) {
         try {
 
           await loadTemplates();
-
+          onReset();
           setState((prevState) => ({
             ...prevState,
             loaded: true
@@ -292,6 +305,7 @@ function ManageTemplatesComponent({ handleError }) {
   }, [handleError, loaded, loadTemplates, trigger, userId]);
 
   const templateCount = Object.keys(messages).length;
+  console.log('errors', errors);
 
   try {
 
@@ -350,18 +364,36 @@ function ManageTemplatesComponent({ handleError }) {
                   <div className="size-65 mb-2"><b>new template</b></div>
 
                   <TextInput
-                    errors={errors.TEST}
-                    inputName="TEST"
-                    label="TEST"
+                    errors={errors.messageName}
+                    inputName="messageName"
+                    label="name"
                     onChange={onChange}
-                    placeholder="the TEST cannot be empty"
+                    placeholder="add a name for this message template..."
+                    register={register}
+                  />
+                  
+                  <TextInput
+                    errors={errors.messageSubject}
+                    inputName="messageSubject"
+                    label="subject"
+                    onChange={onChange}
+                    placeholder="add a subject for this message template..."
                     register={register}
                   />
 
                   <TextArea
-                    inputName="TEST"
-                    label="TEST"
-                    placeholder="the TEST cannot be empty..."
+                    errors={errors.messageContent}
+                    inputName="messageContent"
+                    label="content"
+                    onChange={onChange}
+                    placeholder="add message content or template:reference here..."
+                    register={register}
+                  />
+
+                  <TextArea
+                    inputName="messageNotes"
+                    label="content"
+                    placeholder="optional notes about the message template..."
                     register={register}
                   />
 
@@ -372,8 +404,28 @@ function ManageTemplatesComponent({ handleError }) {
                     <div className="float-left mr-05">
 
                       <CheckBoxInput
-                        inputName="TEST"
-                        label="TEST"
+                        inputName="active"
+                        label="active"
+                        register={register}
+                      />
+
+                    </div>
+
+                     <div className="float-left mr-05">
+
+                      <CheckBoxInput
+                        inputName="locked"
+                        label="locked"
+                        register={register}
+                      />
+
+                    </div>
+
+                     <div className="float-left mr-05">
+
+                      <CheckBoxInput
+                        inputName="repeatable"
+                        label="repeatable"
                         register={register}
                       />
 

@@ -2,7 +2,7 @@ import { Button } from 'react-bootstrap';
 import Delete from './Delete';
 import Reset from './Reset';
 
-function FormButtons( props ) {
+function FormButtons(props) {
 
   let {
     deleteMessage,
@@ -19,7 +19,7 @@ function FormButtons( props ) {
     submitText
   } = props;
 
-  if (!errors ) errors = {}; // in case the form is not using validation
+  if (!errors) errors = {}; // In case the form is not using validation.
 
   return (
 
@@ -28,12 +28,12 @@ function FormButtons( props ) {
       <div className="no-mobile">
 
         <Button 
-          disabled={Object.keys( errors ).length > 0 || disableButtons}
+          disabled={Object.keys(errors).length > 0 || disableButtons}
           type="submit"
           variant="primary" 
         >
-          {Object.keys( errors ).length > 0 && ( <span>missing required inputs</span> )}
-          {Object.keys( errors ).length === 0 && ( <span>{submitText}</span> )}
+          {Object.keys(errors).length > 0 && (<span>missing required inputs</span>)}
+          {Object.keys(errors).length === 0 && (<span>{submitText}</span>)}
         </Button>
 
         {showDelete && !disableButtons && (
@@ -49,7 +49,7 @@ function FormButtons( props ) {
 
         )}
         
-        {!noReset && ( <Reset onReset = {onReset} /> ) }
+        {!noReset && (<Reset onReset = {onReset} />) }
 
       </div>
 
@@ -57,12 +57,12 @@ function FormButtons( props ) {
 
         <Button 
           className="mb-3 width-99"
-          disabled={Object.keys( errors ).length > 0}
+          disabled={Object.keys(errors).length > 0}
           type="submit"
           variant="primary" 
         >
-          {Object.keys( errors ).length > 0 && ( <span>missing required inputs</span> )}
-          {Object.keys( errors ).length === 0 && ( <span>{submitText}</span> )}
+          {Object.keys(errors).length > 0 && (<span>missing required inputs</span>)}
+          {Object.keys(errors).length === 0 && (<span>{submitText}</span>)}
         </Button>
 
         {showDelete && (
@@ -73,8 +73,8 @@ function FormButtons( props ) {
 
               () => {
 
-                setDeleteMessage( deleteMessage )
-                setDeletePayload( deletePayload )
+                setDeleteMessage(deleteMessage)
+                setDeletePayload(deletePayload)
                 showConfirmationModal(true);
 
               }
@@ -103,7 +103,7 @@ function FormButtons( props ) {
 
     </div>
 
-  );
+);
 
 }
 
