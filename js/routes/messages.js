@@ -156,7 +156,7 @@ router.post("/all", async (req, res) => {
       };
       messageList[messageId] = `${messageName}${active ? '' : '*'}`;
 
-    })
+    });
     
     console.log(`${nowRunning}: finished`)
     return res.status(200).send({ 
@@ -176,7 +176,7 @@ router.post("/all", async (req, res) => {
       })
     );
 
- }
+  }
 
 });
 
@@ -392,7 +392,7 @@ router.post("/duplicate", async (req, res) => {
 
     } 
 
-    // get the source message
+    // Get the source message.
 
     let queryText = `
       SELECT 
