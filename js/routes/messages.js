@@ -10,7 +10,6 @@ router.use(express.json())
 
 const { API_ACCESS_TOKEN } = process.env;
 const { 
-  getDynamicMessageReplacements,
   getUserLevel,
   stringCleaner,
   validateSchema
@@ -513,259 +512,6 @@ router.post("/duplicate", async (req, res) => {
 
 });
 
-router.post("/dynamic/all", async (req, res) => { 
-
-  const nowRunning = "/messages/dynamic/all";
-  console.log(`${nowRunning}: running`);
-
-  const errorNumber = 43;
-
-  try {
-
-    if (req.body.masterKey != API_ACCESS_TOKEN) {
-
-      console.log(`${nowRunning}: bad token\n`);
-      return res.status(403).send('unauthorized');
-
-    }
-
-    const schema = Joi.object({
-      campaignId: Joi.string().required().uuid(),
-      masterKey: Joi.any(),
-      userId: Joi.string().required().uuid()
-    });
-
-    const errorMessage = await validateSchema({ 
-      errorNumber, 
-      nowRunning, 
-      req,
-      schema 
-    });;
-  
-    if (errorMessage) {
-
-      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ 
-        failure: errorMessage, 
-        success 
-      });
-
-    }
-
-    let { 
-      campaignId,
-      userId 
-    } = req.body;
-
-    const { 
-      failure: getUserLevelFailure,
-      level: userLevel 
-    } = await getUserLevel(userId);
-
-    if (getUserLevelFailure) {
-
-      console.log(`${nowRunning }: aborted`);
-      return res.status(404).send({ 
-        failure: getUserLevelFailure, 
-        success 
-      });
-
-    } else if (userLevel < 1) {
-
-      console.log(`${nowRunning}: aborted, invalid user ID`);
-      return res.status(404).send({ 
-        failure: 'invalid user ID',
-        success 
-      });
-
-    } 
-
-    const {
-      dynamicValues,
-      failure: getDynamicValuesFailure
-    } = await getDynamicMessageReplacements({ 
-      campaignId,
-      errorNumber, 
-      userId 
-    });
-
-    if (getDynamicValuesFailure) {
-
-      console.log(`${nowRunning}: exited due to error on function getDynamicMessageReplacements`);
-      return res.status(200).send({ 
-        failure: getDynamicValuesFailure, 
-        success 
-      });
-
-    }
-
-    console.log(`${nowRunning}: finished`);
-    return res.status(200).send({ 
-      dynamicValues, 
-      success: true 
-    });
-
-  } catch (error) {
-    
-    return res.status(200).send(
-      await handleError({ 
-        error,
-        errorNumber, 
-        nowRunning, 
-        userId: req.body.userId || API_ACCESS_TOKEN
-      })
-    );
-
-  }
-
-});
-
-router.post("/dynamic/new", async (req, res) => { 
-
-  const nowRunning = "/messages/dynamic/new";
-  console.log(`${nowRunning}: running`);
-
-  const errorNumber = 42;
-
-  try {
-
-    if (req.body.masterKey != API_ACCESS_TOKEN) {
-
-      console.log(`${nowRunning}: bad token\n`);
-      return res.status(403).send('unauthorized');
-
-    }
-
-    const schema = Joi.object({
-      apiTesting: Joi.boolean().optional(),
-      locked: Joi.boolean().required(),
-      masterKey: Joi.any(),
-      messageId: Joi.string().required().uuid(),
-      newValue: Joi.alternatives().required().try(
-        Joi.number(),
-        Joi.string()
-     ),
-      target: Joi.string().required(),
-      userId: Joi.string().required().uuid()
-    });
-
-    const errorMessage = await validateSchema({ 
-      errorNumber, 
-      nowRunning, 
-      req,
-      schema 
-    });
-  
-    if (errorMessage) {
-
-      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
-      return res.status(422).send({ 
-        failure: errorMessage, 
-        success 
-      });
-
-    }
-
-    let { 
-      apiTesting,
-      locked,
-      messageId,
-      newValue,
-      target,
-      userId 
-    } = req.body;
-
-    const { 
-      failure: getUserLevelFailure,
-      level: userLevel 
-    } = await getUserLevel(userId);
-
-    if (getUserLevelFailure) {
-
-      console.log(`${nowRunning }: aborted`);
-      return res.status(404).send({ 
-        failure: getUserLevelFailure, 
-        success 
-      });
-
-    } else if (userLevel < 1) {
-
-      console.log(`${nowRunning}: aborted, invalid user ID`);
-      return res.status(404).send({ 
-        failure: 'invalid user ID',
-        success 
-      });
-
-    } 
-
-
-    // create the dynamic values record
-
-    const now = moment().format('X');
-    const queryText = `
-      INSERT INTO dynamic_values (
-        created, 
-        created_by, 
-        dynamic_id, 
-        last_used, 
-        ${locked !== undefined ? 'locked,' : ''} 
-        message_id, 
-        new_value, 
-        target_name, 
-        updated, 
-        updated_by
-      ) 
-      VALUES (
-        ${now}, 
-        '${userId}', 
-        '${uuidv4()}', 
-        0, 
-        ${locked ? userLevel : 0}, 
-        '${messageId}', 
-        '${stringCleaner(newValue, true)}', 
-        '${stringCleaner(target, true)}', 
-        ${now}, 
-        '${userId}'
-      ) 
-      RETURNING created;
-    `;
-
-    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
-
-    if (!results?.rowCount) {
-
-      const failure = 'database error when creating the dynamic values record'
-      console.log(`${nowRunning} : ${failure}`)
-      return res.status(200).send(
-        await handleError({ 
-          details: queryText,
-          errorNumber, 
-          failure, 
-          nowRunning, 
-          userId 
-        })
-      );
-      
-    }
-
-    console.log(`${nowRunning}: finished`)
-    return res.status(200).send({ success: true })
-
-  } catch (error) {
-    
-    return res.status(200).send(
-      await handleError({ 
-        error,
-        errorNumber, 
-        nowRunning, 
-        userId: req.body.userId || API_ACCESS_TOKEN
-      })
-    );
-
-  }
-
-});
-
 router.post("/load", async (req, res) => { 
 
   const nowRunning = "/messages/load";
@@ -875,7 +621,7 @@ router.post("/load", async (req, res) => {
       updated,
       updatedBy,
       user_name: updatedBy2
-    } = results.rows[0]
+    } = results.rows[0];
     
     console.log(`${nowRunning}: finished`); const a = results.rows
     return res.status(200).send({ 
@@ -888,6 +634,7 @@ router.post("/load", async (req, res) => {
       owner,
       repeatable,
       subject: stringCleaner(subject),
+      success: true,
       updated: +updated,
       updatedBy,
       updatedBy2: stringCleaner(updatedBy2)
@@ -1156,7 +903,7 @@ router.post("/update", async (req, res) => {
       SET 
         content = '${stringCleaner(messageContent, true)}',
         ${active !== undefined ? `active = ${active},` : ''}
-        ${locked !== undefined ? `locked = ${locked},` : ''}
+        ${locked !== undefined ? `locked = ${userLevel},` : ''}
         message_name = '${stringCleaner(messageName, true)}',
         ${messageNotes ? `notes = '${stringCleaner(messageNotes, true)}',` : ''}
         repeatable = ${repeatable},

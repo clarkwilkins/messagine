@@ -6,6 +6,7 @@ function TextInput ( props ) {
 
   let {
     className,
+    defaultValue,
     disabled,
     errors,
     handleKeyDown,
@@ -34,6 +35,7 @@ function TextInput ( props ) {
                   
       <Form.Control
         className={className}
+        defaultValue={defaultValue}
         disabled={disabled}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}

@@ -14,6 +14,7 @@ const {
   containsHTML,
   deleteCampaignMessage,
   getUserLevel,
+  getUsers,
   recordEvent,
   stringCleaner,
   validateSchema
@@ -577,6 +578,561 @@ router.post("/load", async (req, res) => {
       })
     );
   
+  }
+
+});
+
+router.post("/dynamic/all", async (req, res) => { 
+
+  const nowRunning = "/campaigns/dynamic/all";
+  console.log(`${nowRunning}: running`);
+
+  const errorNumber = 43;
+
+  try {
+
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
+
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
+
+    }
+
+    const schema = Joi.object({
+      masterKey: Joi.any(),
+      messageId: Joi.string().required().uuid(),
+      userId: Joi.string().required().uuid()
+    });
+
+    const errorMessage = await validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });;
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} aborted due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
+
+    }
+
+    let { 
+      messageId,
+      userId 
+    } = req.body;
+
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
+
+    if (getUserLevelFailure) {
+
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    } 
+
+    const { 
+      failure: getUsersFailure,
+      userList 
+    } = await getUsers(userId);
+
+    if (getUserLevelFailure) {
+
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUsersFailure, 
+        success 
+      });
+
+    }
+
+    const queryText = `
+      SELECT 
+        *
+      FROM
+        dynamic_values
+      WHERE 
+        message_id = '${messageId}'
+      ORDER BY 
+        target_name,
+        last_used
+      ;
+    `;
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
+
+    if (!results) {
+
+      const failure = 'database error when getting all messages'
+      console.log(`${nowRunning} : ${failure}`)
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId
+        })
+      );
+      
+    } 
+
+    const dynamicValues = {};
+    
+
+    Object.values(results.rows).forEach(row => {
+
+      const {
+        dynamic_id: dynamicId,
+        last_used: lastUsed,
+        locked,
+        message_id: messageId,
+        new_value: newValue,
+        target_name: targetName,
+        updated,
+        updated_by: updatedBy
+      } = row;
+
+      if (!dynamicValues[targetName]) { dynamicValues[targetName] = {}; }
+
+      dynamicValues[targetName][dynamicId] = {
+        lastUsed: moment.unix(lastUsed),
+        locked: +locked,
+        messageId,
+        newValue: stringCleaner(newValue),
+        targetName,
+        updated: moment.unix(updated),
+        updatedBy: userList[updatedBy]
+      };
+
+    });
+
+    console.log(`${nowRunning}: finished`);
+    return res.status(200).send({ 
+      dynamicValues, 
+      success: true
+    });
+
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+
+  }
+
+});
+
+router.post("/dynamic/delete", async (req, res) => { 
+
+  const nowRunning = "/campaigns/dynamic/delete";
+  console.log(`${nowRunning}: running`);
+
+  const errorNumber = 72;
+
+  try {
+
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
+
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
+
+    }
+
+    const schema = Joi.object({
+      apiTesting: Joi.boolean().optional(),
+      dynamicId: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      userId: Joi.string().required().uuid()
+    });
+
+    const errorMessage = await validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
+
+    }
+
+    let { 
+      apiTesting,
+      dynamicId,
+      userId 
+    } = req.body;
+
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
+
+    if (getUserLevelFailure) {
+
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    } 
+
+    // create the dynamic values record
+
+    const queryText = `
+      DELETE FROM
+        dynamic_values
+      WHERE
+        dynamic_id = '${dynamicId}'
+      AND 
+        locked <= ${userLevel}
+      ;
+    `;
+
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
+
+    if (!results?.rowCount) {
+
+      const failure = 'database error when deleting the dynamic values record'
+      console.log(`${nowRunning} : ${failure}`)
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
+      
+    }
+
+    console.log(`${nowRunning}: finished`)
+    return res.status(200).send({ success: true })
+
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+
+  }
+
+});
+
+router.post("/dynamic/new", async (req, res) => { 
+
+  const nowRunning = "/campaigns/dynamic/new";
+  console.log(`${nowRunning}: running`);
+
+  const errorNumber = 42;
+
+  try {
+
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
+
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
+
+    }
+
+    const schema = Joi.object({
+      apiTesting: Joi.boolean().optional(),
+      locked: Joi.boolean().required(),
+      masterKey: Joi.any(),
+      messageId: Joi.string().required().uuid(),
+      newValue: Joi.alternatives().required().try(
+        Joi.number(),
+        Joi.string()
+     ),
+      target: Joi.string().required(),
+      userId: Joi.string().required().uuid()
+    });
+
+    const errorMessage = await validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
+
+    }
+
+    let { 
+      apiTesting,
+      locked,
+      messageId,
+      newValue,
+      target,
+      userId 
+    } = req.body;
+
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
+
+    if (getUserLevelFailure) {
+
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    }
+
+    // create the dynamic values record
+
+    const now = moment().format('X');
+    const queryText = `
+      INSERT INTO dynamic_values (
+        created, 
+        created_by, 
+        dynamic_id, 
+        last_used, 
+        ${locked !== undefined ? 'locked,' : ''} 
+        message_id, 
+        new_value, 
+        target_name, 
+        updated, 
+        updated_by
+      ) 
+      VALUES (
+        ${now}, 
+        '${userId}', 
+        '${uuidv4()}', 
+        0, 
+        ${locked ? userLevel : 0}, 
+        '${messageId}', 
+        '${stringCleaner(newValue, true)}', 
+        '${stringCleaner(target, true)}', 
+        ${now}, 
+        '${userId}'
+      ) 
+      RETURNING created;
+    `;
+
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
+
+    if (!results?.rowCount) {
+
+      const failure = 'database error when creating the dynamic values record'
+      console.log(`${nowRunning} : ${failure}`)
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
+      
+    }
+
+    console.log(`${nowRunning}: finished`)
+    return res.status(200).send({ success: true })
+
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+
+  }
+
+});
+
+router.post("/dynamic/update", async (req, res) => { 
+
+  const nowRunning = "/campaigns/dynamic/update";
+  console.log(`${nowRunning}: running`);
+
+  const errorNumber = 71;
+
+  try {
+
+    if (req.body.masterKey != API_ACCESS_TOKEN) {
+
+      console.log(`${nowRunning}: bad token\n`);
+      return res.status(403).send('unauthorized');
+
+    }
+
+    const schema = Joi.object({
+      apiTesting: Joi.boolean().optional(),
+      dynamicId: Joi.string().required().uuid(),
+      masterKey: Joi.any(),
+      newValue: Joi.alternatives().required().try(
+        Joi.number(),
+        Joi.string()
+      ),
+      target: Joi.string().required(),
+      userId: Joi.string().required().uuid()
+    });
+
+    const errorMessage = await validateSchema({ 
+      errorNumber, 
+      nowRunning, 
+      req,
+      schema 
+    });
+  
+    if (errorMessage) {
+
+      console.log(`${nowRunning} exited due to a validation error: ${errorMessage}`);
+      return res.status(422).send({ 
+        failure: errorMessage, 
+        success 
+      });
+
+    }
+
+    let { 
+      apiTesting,
+      dynamicId,
+      newValue,
+      target,
+      userId 
+    } = req.body;
+
+    const { 
+      failure: getUserLevelFailure,
+      level: userLevel 
+    } = await getUserLevel(userId);
+
+    if (getUserLevelFailure) {
+
+      console.log(`${nowRunning }: aborted`);
+      return res.status(404).send({ 
+        failure: getUserLevelFailure, 
+        success 
+      });
+
+    } else if (userLevel < 1) {
+
+      console.log(`${nowRunning}: aborted, invalid user ID`);
+      return res.status(404).send({ 
+        failure: 'invalid user ID',
+        success 
+      });
+
+    } 
+
+    // create the dynamic values record
+
+    const now = moment().format('X');
+    const queryText = `
+      UPDATE
+        dynamic_values
+      SET
+        new_value = '${stringCleaner(newValue, true)}',
+        target_name = '${stringCleaner(target, true)}',
+        updated = ${now},
+        updated_by = '${userId}'
+      WHERE
+        dynamic_id = '${dynamicId}'
+      AND 
+        locked <= ${userLevel}
+      ;
+    `;
+
+    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
+
+    if (!results?.rowCount) {
+
+      const failure = 'database error when creating the dynamic values record'
+      console.log(`${nowRunning} : ${failure}`)
+      return res.status(200).send(
+        await handleError({ 
+          details: queryText,
+          errorNumber, 
+          failure, 
+          nowRunning, 
+          userId 
+        })
+      );
+      
+    }
+
+    console.log(`${nowRunning}: finished`)
+    return res.status(200).send({ success: true })
+
+  } catch (error) {
+    
+    return res.status(200).send(
+      await handleError({ 
+        error,
+        errorNumber, 
+        nowRunning, 
+        userId: req.body.userId || API_ACCESS_TOKEN
+      })
+    );
+
   }
 
 });

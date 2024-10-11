@@ -402,7 +402,7 @@ const getUserLevel = (() => {
 
 })();
 
-const getUsers = async () => {
+const getUsers = async userId => {
 
   const nowRunning = "functions/getUsers";
   console.log(`${nowRunning}: started`);
@@ -419,7 +419,7 @@ const getUsers = async () => {
         users
       ;
     `;
-    const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
+    const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });
 
     if (!results) {
 
@@ -435,7 +435,7 @@ const getUsers = async () => {
 
     let userList = {};
 
-    Object.values(rows).forEach(theRow => { userList[theRow.user_id] = stringCleaner(theRow.user_name); })
+    Object.values(results.rows).forEach(theRow => { userList[theRow.user_id] = stringCleaner(theRow.user_name); })
 
     console.log(nowRunning + ": finished"); 
     return ({ userList });
@@ -446,7 +446,7 @@ const getUsers = async () => {
       error, 
       errorNumber, 
       nowRunning, 
-      userId 
+      userId
     });
   
   }

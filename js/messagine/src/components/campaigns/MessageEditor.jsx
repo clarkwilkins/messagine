@@ -21,6 +21,7 @@ import {
 import { List } from '@phosphor-icons/react';
 import CheckBoxInput from '../common/CheckBoxInput';
 import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
+import DynamicValues from './DynamicValues';
 import ErrorBoundary from '../common/ErrorBoundary';
 import FormButtons from '../common/FormButtons';
 import Loading from '../common/Loading';
@@ -53,12 +54,14 @@ function MessageEditorComponent({ handleError }) {
   } = useLoadingMessages(setLoadingMessages);
 
   const [state, setState] = useState({
+    dynamicValues: {},
     loaded: false,
     message: {},
     showModal: false
   });
 
   const { 
+    dynamicValues,
     loaded, 
     message, 
     showModal 
@@ -102,29 +105,54 @@ function MessageEditorComponent({ handleError }) {
     try {
 
       addLoadingMessage(loadingMessage);
-      const api = 'campaigns/load';
-      const payload = { campaignId };
-      const { data } = await apiLoader({ api, payload });
+      let api = 'campaigns/load';
+      let payload = { campaignId };
+      let result = await apiLoader({ api, payload });
 
       const {
         campaignName,
         failure,
         messages,
         success
-      } = data;
+      } = result.data;
 
       if (!success) {
+
         handleError({
           error: failure,
           nowRunning: context,
           userId
         });
         return null;
+
       }
 
       messages[messageId].campaignName = campaignName; // this is used as a display element below
+
+      api = 'campaigns/dynamic/all';
+      payload = { messageId };
+      result = await apiLoader({ api, payload });
+
+      const {
+        dynamicValues,
+        failure: failure2,
+        success: success2
+      } = result.data;
+
+      if (!success2) {
+
+        handleError({
+          error: failure2,
+          nowRunning: context,
+          userId
+        });
+        return null;
+
+      }
+
       setState((prevState) => ({
         ...prevState,
+        dynamicValues,
         message: messages[messageId]
       }));      
       removeLoadingMessage(loadingMessage);
@@ -383,7 +411,7 @@ function MessageEditorComponent({ handleError }) {
               <>
 
                 <Form 
-                  className="bg-light p-3 mb-3"
+                  className="bg-light p-3 mt-3 mb-3"
                   onSubmit={handleSubmit( onSubmit)}
                 >
 
@@ -493,6 +521,12 @@ function MessageEditorComponent({ handleError }) {
                   hideModal={hideConfirmationModal}
                   message="Are you sure you want to remove this campaign message?"
                   showModal={showModal} 
+                />
+
+                <DynamicValues
+                  dynamicValues={dynamicValues}
+                  loadCampaignData={loadCampaignData}
+                  messageId={messageId}
                 />
 
               </>

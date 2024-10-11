@@ -5,6 +5,7 @@ function TextArea ( props ) {
 
 let {
   className,
+  defaultValue,
   disabled,
   errors,
   inputName,
@@ -29,6 +30,7 @@ if ( !className ) className = 'p-3 h-150';
       <Form.Control
         as="textarea"
         className={className}
+        defaultValue={defaultValue}
         disabled={disabled}
         placeholder={placeholder}
         { ...register( inputName, { onChange }) }

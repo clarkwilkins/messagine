@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import App from "./App";
 import EditCampaign from "./components/campaigns/EditCampaign"
+import EditTemplate from "./components/templates/EditTemplate"
 import LoginWithKey from "./components/users/LoginKey"
 import ManageCampaigns from "./components/campaigns/ManageCampaigns"
 import ManageContacts from "./components/contacts/ManageContacts"
@@ -38,6 +39,11 @@ root.render(
           <Route 
             element={ <EditCampaign /> }
             path="campaigns/edit/:campaignId/"
+          />
+
+          <Route 
+            element={ <EditTemplate /> }
+            path="templates/edit/:messageId/"
           />
 
           <Route 
