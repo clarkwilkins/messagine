@@ -262,7 +262,8 @@ const getDynamicMessageReplacements = async ({
         cm.campaign_id = '${campaignId}'
       ORDER BY 
         dv.target_name, 
-        dv.last_used
+        dv.last_used,
+        dv.updated DESC -- This is to ensure that the most recent dynamic value is used
       ;
     `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });

@@ -673,7 +673,8 @@ router.post("/dynamic/all", async (req, res) => {
         message_id = '${messageId}'
       ORDER BY 
         target_name,
-        last_used
+        last_used,
+        updated DESC
       ;
     `;
     const results = await db.noTransaction({ errorNumber, nowRunning, queryText, userId });

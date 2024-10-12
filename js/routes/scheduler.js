@@ -428,7 +428,7 @@ const processCampaigns = async ({
   dryRun, 
   eligibleRecipients, 
   errorNumber, 
-  messageContent, 
+  messageContent: unprocessedMessageContent, 
   messageId, 
   messageSubject, 
   nextMessage, 
@@ -436,12 +436,14 @@ const processCampaigns = async ({
   userId 
 }) => {
 
+  const nowRunning = 'scheduler.js:processCampaigns';
+  console.log(`${nowRunning}: processing campaign ${campaignId}`);
+
   const { 
     getDynamicMessageReplacements,
     sendMail,
     updateDynamicText
   } = require ('../functions');
-  const nowRunning = 'scheduler.js:processCampaigns';
 
   const dryRunInformation = []; // This holds events when dryRun is set.
 
@@ -476,9 +478,10 @@ const processCampaigns = async ({
 
     // This runs the dynamic replacements for the main message content.
 
-    const { messageContent } = updateDynamicText({ 
+    
+    let { messageContent } = await updateDynamicText({ 
       dynamicValues: allDynamicValues[messageId], 
-      messageContent 
+      messageContent: unprocessedMessageContent 
     });
     
     Object.entries(eligibleRecipients).forEach(async row => {
@@ -508,7 +511,7 @@ const processCampaigns = async ({
 
         // Update the content with any dynamic values associated with this particular message ID.
           
-        const { messageContent } = updateDynamicText({ 
+        let { messageContent } = updateDynamicText({ 
           dynamicValues: allDynamicValues[messageId], 
           messageContent 
         });
@@ -622,7 +625,7 @@ const processCampaigns = async ({
 
       if (dryRun) apiTesting = true // The values should NOT be rotated if this is not an actual run.
 
-      queryText = ''
+      let queryText = ''
 
       Object.keys(allDynamicValues[messageId]).forEach(value => { 
         
@@ -667,21 +670,17 @@ const processCampaigns = async ({
       dryRunInformation 
     });
 
-  } catch(e) {
+  } catch(error) {
 
-    const {
-      failure,
-      success
-    } = await handleError({ 
-      details: queryText,
+    await handleError({ 
+      error, 
       errorNumber, 
-      failure, 
       nowRunning, 
-      userId 
+      userId: API_ACCESS_TOKEN 
     });
-    console.log(`${nowRunning}: ${failure}`)
+    console.log(`${nowRunning}: failed, ${error.message}`)
     return ({ 
-      campaignsProcessedFailure: failure, 
+      campaignsProcessedFailure: error.message, 
       campaignsProcessedSuccess: false, 
     })
 
@@ -897,7 +896,7 @@ router.post("/run", async (req, res) => {
         SET 
           next_run = ${nextRunTime} -- ${moment.unix(nextRunTime).format('YYYY.MM.DD HH.mm')}
         WHERE 
-          campaign_id = '${campaignId}
+          campaign_id = '${campaignId}'
         ;
       `;
       const results = await db.transactionRequired({ apiTesting, errorNumber, nowRunning, queryText, userId });
@@ -977,7 +976,10 @@ router.post("/run", async (req, res) => {
         if (campaignLimiter.includes(campaignId)) {
 
           console.log(`${nowRunning}: campaign ${campaignId} was limited to sending just one message per cycle`);
-          return { campaignsProcessedSuccess: true } // Note that allCampaignsProcessedResults will only have this single value when the limiter is invoked.
+          return { 
+            campaignId,
+            limiterInvoked: true 
+          };
 
         }
 
@@ -1108,7 +1110,7 @@ router.post("/run", async (req, res) => {
 
           // Get all campaign messages ordered by position and message tracking info for this campaign.
 
-          queryText = `
+          let queryText = `
             SELECT 
               message_id 
             FROM 
@@ -1165,7 +1167,7 @@ router.post("/run", async (req, res) => {
         
           // Get every active message on the campaign and store in available messages (ordered by position).
 
-          const queryText = `
+          queryText = `
             SELECT 
               m.content, 
               m.message_id, 

@@ -329,7 +329,7 @@ function DynamicValuesComponent({
                         updated,
                         updatedBy
                       } = innerRow[1];
-                      const disabled = +locked < level;
+                      const disabled = +locked > level;
 
                       return (
 
@@ -339,7 +339,6 @@ function DynamicValuesComponent({
                         > 
 
                           <div
-                            className="hover" 
                             onClick={() => showDynamicValue(dynamicId)}
                           >
 
