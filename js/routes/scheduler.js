@@ -496,24 +496,23 @@ const processCampaigns = async ({
 
       if (nextMessage[contactId] && !campaignRepeats) {
 
-        const {
+        let {
           content: replacementContent,
           messageId: replacementId,
           subject: replacementSubject
         } = nextMessage[contactId];
-        messageContent = replacementContent;
         messageId = replacementId;
         messageSubject = replacementSubject;
 
         // Use a template where specified by messageContent.
 
-        if (messageContent.startsWith('template:')) messageContent = fs.readFileSync(`./assets/files/html/${messageContent.substring(9)}.html`, 'utf-8') ;
+        if (replacementContent.startsWith('template:')) replacementContent = fs.readFileSync(`./assets/files/html/${replacementContent.substring(9)}.html`, 'utf-8') ;
 
         // Update the content with any dynamic values associated with this particular message ID.
           
         let { messageContent } = updateDynamicText({ 
           dynamicValues: allDynamicValues[messageId], 
-          messageContent 
+          messageContent: replacementContent
         });
 
       }

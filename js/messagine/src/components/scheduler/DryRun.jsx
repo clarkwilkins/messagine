@@ -93,7 +93,7 @@ function DryRunComponent({ handleError }) {
 
     try {
 
-      const displayData = dryRunResults.map(campaignResult => {
+      const displayData = dryRunResults.map((campaignResult, key) => {
 
         const {
           campaignName,
@@ -112,7 +112,10 @@ function DryRunComponent({ handleError }) {
         
         return(
 
-          <div className="width-100 size-80 mt-3">
+          <div 
+            className="width-100 size-80 mt-3"
+            key={key}
+          >
 
             <Row className="mb-2">
 
@@ -141,7 +144,7 @@ function DryRunComponent({ handleError }) {
 
               <Container className="width-100 border-gray-2 mt-3">
 
-                {dryRunInformation.map(row => {
+                {dryRunInformation.map((row, index) => {
 
                   const {
                     contactName,
@@ -153,7 +156,10 @@ function DryRunComponent({ handleError }) {
 
                   return(
                   
-                    <Row className="alternate-1 p-3">
+                    <Row 
+                      className="alternate-1 p-3"
+                      key={index}
+                    >
 
                       <div className="size-65">messageId: {messageId}</div>
                       <div>to: {contactName} &lt;{email}&gt;</div>
@@ -165,6 +171,7 @@ function DryRunComponent({ handleError }) {
                   )
 
                 })}
+
               </Container>
 
             )}
