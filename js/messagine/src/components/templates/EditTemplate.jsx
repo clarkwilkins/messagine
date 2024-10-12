@@ -19,11 +19,7 @@ import {
   OverlayTrigger,
   Tooltip
 } from 'react-bootstrap';
-import { 
-  CaretDown,
-  CaretUp,
-  List 
-} from '@phosphor-icons/react';
+import { List } from '@phosphor-icons/react';
 import CheckBoxInput from '../common/CheckBoxInput';
 import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
 import ErrorBoundary from '../common/ErrorBoundary';
@@ -72,19 +68,11 @@ function EditTemplateComponent({ handleError }) {
   });
 
   const { 
-    active,
-    content,
     created,
     loaded,
     locked,
-    messageName,
-    notes,
-    owner,
-    repeatable,    
     showModal,
-    subject,
     updated,
-    updatedBy,
     updatedBy2
   } = state;
 
@@ -125,7 +113,7 @@ function EditTemplateComponent({ handleError }) {
     try {
 
       addLoadingMessage('loading the template...');
-      const api = 'messages/load';
+      const api = 'templates/load';
       const payload = { messageId };
       const { data } = await apiLoader({ api, payload });
 
@@ -182,7 +170,7 @@ function EditTemplateComponent({ handleError }) {
     
     }
 
-  }, [addLoadingMessage, handleError, messageId, removeLoadingMessage, userId]);
+  }, [addLoadingMessage, handleError, level, messageId, removeLoadingMessage, setValue, userId]);
 
   const onDelete = async () => {
 
@@ -191,7 +179,7 @@ function EditTemplateComponent({ handleError }) {
     try {
 
       hideConfirmationModal();
-      const api = 'messages/delete';
+      const api = 'templates/delete';
       const payload = { messageId };
       const { data } = await apiLoader({ api, payload });
       const {
@@ -241,7 +229,7 @@ function EditTemplateComponent({ handleError }) {
     try {
 
       addLoadingMessage(loadingMessage);
-      const api = 'messages/update';
+      const api = 'templates/update';
       const payload = { 
         ...data,
         messageId
@@ -318,7 +306,7 @@ function EditTemplateComponent({ handleError }) {
 
     });
 
-  }, [handleError, loaded, trigger, userId]);
+  }, [handleError, loaded, loadTemplate, trigger, userId]);
 
   try {
 

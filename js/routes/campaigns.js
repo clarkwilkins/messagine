@@ -1417,9 +1417,9 @@ router.post("/messages/remove", async (req, res) => {
 
 });
 
-router.post("/messages/update", async (req, res) => { 
+router.post("/templates/update", async (req, res) => { 
 
-  const nowRunning = "/campaigns/messages/update";
+  const nowRunning = "/campaigns/templates/update";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 55;

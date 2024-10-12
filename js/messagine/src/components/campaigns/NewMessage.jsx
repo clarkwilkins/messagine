@@ -129,7 +129,7 @@ function NewMessageComponent({
     try {
 
       addLoadingMessage('loading available messages...');
-      const api = 'messages/all';
+      const api = 'templates/all';
       const payload = {};
       const { data } = await apiLoader({ api, payload });
       const {
@@ -203,7 +203,7 @@ function NewMessageComponent({
 
       // Part 1: create the new message.
 
-      let api = 'messages/new';
+      let api = 'templates/new';
       let payload = { 
         ...data
       };

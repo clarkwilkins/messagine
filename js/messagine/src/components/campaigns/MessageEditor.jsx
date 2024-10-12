@@ -268,7 +268,7 @@ function MessageEditorComponent({ handleError }) {
     try {
 
       addLoadingMessage(loadingMessage);
-      const api = 'campaigns/messages/update';
+      const api = 'campaigns/templates/update';
       const payload = { 
         ...data,
         campaignId,

@@ -17,8 +17,8 @@ const campaigns = require( "./routes/campaigns" );
 const contacts = require( "./routes/contacts" );
 const email = require( "./routes/email" );
 const lists = require( "./routes/lists" );
-const messages = require( "./routes/messages" );
 const scheduler = require( "./routes/scheduler" );
+const templates = require( "./routes/templates" );
 const users = require( "./routes/users" );
 const utilities = require( "./routes/utilities" );
 
@@ -36,8 +36,8 @@ app.use( "/campaigns", campaigns ); // campaign services
 app.use( "/contacts", contacts ); // contact services
 app.use( "/email", email ); // email services
 app.use( "/lists", lists ); // list services
-app.use( "/messages", messages ); // message services
 app.use( "/scheduler", scheduler ); // scheduler services
+app.use( "/templates", templates ); // message template services
 app.use( "/users", users ); // user services
 app.use( "/utilities", utilities ); // utility services
 

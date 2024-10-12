@@ -1,4 +1,4 @@
-console.log("loading messages services now...");
+console.log("loading template services now...");
 const db = require('../db');
 const handleError = require('../handleError');
 const express = require('express');
@@ -19,7 +19,7 @@ const success = false;
 
 router.post("/all", async (req, res) => { 
 
-  const nowRunning = "/messages/all";
+  const nowRunning = "/templates/all";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 37;
@@ -181,7 +181,7 @@ router.post("/all", async (req, res) => {
 
 router.post("/delete", async (req, res) => { 
 
-  const nowRunning = "/messages/delete";
+  const nowRunning = "/templates/delete";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 36;
@@ -319,7 +319,7 @@ router.post("/delete", async (req, res) => {
 
 router.post("/duplicate", async (req, res) => { 
 
-  const nowRunning = "/messages/duplicate";
+  const nowRunning = "/templates/duplicate";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 35;
@@ -514,7 +514,7 @@ router.post("/duplicate", async (req, res) => {
 
 router.post("/load", async (req, res) => { 
 
-  const nowRunning = "/messages/load";
+  const nowRunning = "/templates/load";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 38;
@@ -657,7 +657,7 @@ router.post("/load", async (req, res) => {
 
 router.post("/new", async (req, res) => { 
 
-  const nowRunning = "/messages/new";
+  const nowRunning = "/templates/new";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 33;
@@ -815,7 +815,7 @@ router.post("/new", async (req, res) => {
 
 router.post("/update", async (req, res) => { 
 
-  const nowRunning = "/messages/update";
+  const nowRunning = "/templates/update";
   console.log(`${nowRunning}: running`);
 
   const errorNumber = 34;
@@ -951,4 +951,4 @@ router.post("/update", async (req, res) => {
 })
 
 module.exports = router;
-console.log('messages services loaded successfully!');
+console.log('template services loaded successfully!');

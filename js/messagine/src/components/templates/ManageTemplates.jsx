@@ -103,7 +103,7 @@ function ManageTemplatesComponent({ handleError }) {
 
     try {
 
-      const api = 'messages/all';
+      const api = 'templates/all';
       const payload = {}
       const { data } = await apiLoader({ api, payload });
       const {
@@ -149,7 +149,7 @@ function ManageTemplatesComponent({ handleError }) {
 
       hideConfirmationModal();
       addLoadingMessage(loadingMessage);
-      const api = 'messages/delete';
+      const api = 'templates/delete';
       const payload = { messageId: deleteTarget };
       const { data } = await apiLoader({ api, payload });
       const {
@@ -209,7 +209,7 @@ function ManageTemplatesComponent({ handleError }) {
     try {
 
       addLoadingMessage(loadingMessage);
-      const api = 'messages/new';
+      const api = 'templates/new';
       const payload = { 
         ...data
       };
