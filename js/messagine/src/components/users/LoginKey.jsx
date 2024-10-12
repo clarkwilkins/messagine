@@ -31,8 +31,7 @@ function LoginWithKeyComponent({ handleError }) {
 
         const api = 'users/login-key';
         const payload = { key };
-        const { data } = await apiLoader({ api, payload });
-        
+        const { data } = await apiLoader({ api, payload, userId }); // userId is bypassing the record check so you can log in.
         const { 
           failure, 
           success,
@@ -69,6 +68,7 @@ function LoginWithKeyComponent({ handleError }) {
 
       } catch (error) {
 
+        console.error(error);
         handleError({
           error,
           nowRunning: context,

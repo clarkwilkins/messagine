@@ -673,7 +673,7 @@ router.post("/load", async (req, res) => {
 
       fullName = contactName;
 
-      if (companyName) fullName += ',' + companyName;
+      if (companyName) fullName += ', ' + companyName;
 
       linkedContacts[contactId] = {
         contactNotes: stringCleaner(contactNotes, false, !containsHTML(contactNotes)),

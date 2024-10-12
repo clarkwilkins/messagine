@@ -1,13 +1,15 @@
 import { 
   useCallback,
   useEffect,
+  useRef,
   useState
 } from 'react';
-import { useOutletContext } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import Joi from 'joi'
-import { joiResolver } from '@hookform/resolvers/joi'
-import { toast } from 'react-toastify'
+import { useOutletContext } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import Joi from 'joi';
+import { joiResolver } from '@hookform/resolvers/joi';
+import moment from 'moment';
+import { toast } from 'react-toastify';
 import { 
   Breadcrumb,
   Col,
@@ -16,21 +18,21 @@ import {
   OverlayTrigger,
   Row,
   Tooltip
-} from 'react-bootstrap'
+} from 'react-bootstrap';
 import { 
   Gear,
   List,
   PlusSquare,
   UserGear
-} from '@phosphor-icons/react'
-import CheckBoxInput from '../common/CheckBoxInput'
+} from '@phosphor-icons/react';
+import CheckBoxInput from '../common/CheckBoxInput';
 import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
 import ErrorBoundary from '../common/ErrorBoundary';
-import FormButtons from '../common/FormButtons'
-import Loading from '../common/Loading'
-import Selector from '../common/Selector'
-import TextArea from '../common/TextArea'
-import TextInput from '../common/TextInput'
+import FormButtons from '../common/FormButtons';
+import Loading from '../common/Loading';
+import Selector from '../common/Selector';
+import TextArea from '../common/TextArea';
+import TextInput from '../common/TextInput';
 import apiLoader from '../../services/apiLoader';
 import useLoadingMessages from '../hooks/useLoadingMessages';
 import { 
@@ -44,11 +46,12 @@ function ManageListsComponent({ handleError }) {
   changeTitle ('messagine: lists management');
 
   const [state, setState] = useState({
-    allContacts: {},
-    linkedContacts: {},
+    availableContacts: {}, // The space of every active and unblocked contact.
+    eligibleContacts: {}, // The space of all available contacts that can be linked to this list.
+    linkedContacts: {}, // The space of all available contacts that are linked to this list.
     linkedContactsCount: 0,
     listData: {},
-    lists: [],
+    lists: {},
     loaded: false,
     showContacts: false,
     showEditor: false,
@@ -57,7 +60,8 @@ function ManageListsComponent({ handleError }) {
   });
 
   const {
-    allContacts,
+    availableContacts,
+    eligibleContacts,
     linkedContacts,
     linkedContactsCount,
     listData,
@@ -68,6 +72,7 @@ function ManageListsComponent({ handleError }) {
     showModal,
     showSettings
   } = state;
+  const [scrollTarget, setScrollTarget] = useState(null); // Track which contact to scroll to
 
   const { 
     level,
@@ -109,7 +114,7 @@ function ManageListsComponent({ handleError }) {
       const payload = { active: true };
       const { data } = await apiLoader({ api, payload });
       const { 
-        contacts, 
+        availableContacts, 
         failure, 
         success 
       } = data;
@@ -126,7 +131,7 @@ function ManageListsComponent({ handleError }) {
 
       setState(prevState => ({
         ...prevState,
-        allContacts: contacts
+        availableContacts
       }));
 
     } catch (error) {
@@ -150,8 +155,8 @@ function ManageListsComponent({ handleError }) {
       const payload = {};
       const { data } = await apiLoader({ api, payload });
       const { 
+        allLists: lists,
         failure, 
-        listsSelector, 
         success 
       } = data;
 
@@ -167,7 +172,7 @@ function ManageListsComponent({ handleError }) {
 
       setState(prevState => ({
         ...prevState,
-        lists: listsSelector
+        lists
       }));
 
     } catch (error) {
@@ -233,8 +238,15 @@ function ManageListsComponent({ handleError }) {
         return null;
       }
 
+      // Remove already linked contacts from available contacts.
+
+      const eligibleContacts = { ...availableContacts };
+
+      Object.keys(linkedContacts).forEach(contactId => { delete eligibleContacts[contactId]; });
+
       setState(prevState => ({
         ...prevState,
+        eligibleContacts,
         linkedContacts,
         linkedContactsCount: Object.keys(linkedContacts).length,
         listData: data,
@@ -270,20 +282,17 @@ function ManageListsComponent({ handleError }) {
   const manageLink = async (contactId, link) => {
 
     const context = `${nowRunning}.manageLink`;
-
+  
     try {
+
       const api = 'lists/contact-linking';
-      const payload = {
-        contactId,
-        link,
-        listId: getValues().listId
-      };
+      const payload = { contactId, link, listId: getValues().listId };
       const { data } = await apiLoader({ api, payload });
       const { 
-        failure, 
+        failure,
         success 
       } = data;
-
+  
       if (!success) {
 
         handleError({ 
@@ -294,10 +303,9 @@ function ManageListsComponent({ handleError }) {
         return null;
 
       }
-
-      await getListData();
   
-      if (!link) await getAllContacts();
+      await getListData(); // Refresh eligible and linked contacts
+      setScrollTarget(contactId); // Set the target to scroll to
 
     } catch (error) {
 
@@ -403,6 +411,7 @@ function ManageListsComponent({ handleError }) {
       }
 
       await getListData();
+      await getAllLists();
       toast.success('The list setup was updated.');
       removeLoadingMessage(loadingMessage);
 
@@ -417,6 +426,7 @@ function ManageListsComponent({ handleError }) {
     }
 
   };
+  
 
   const showConfirmationModal = () => {
 
@@ -493,6 +503,7 @@ function ManageListsComponent({ handleError }) {
     }
 
   };
+  
 
   useEffect(() => {
 
@@ -540,6 +551,30 @@ function ManageListsComponent({ handleError }) {
     runThis();
 
   }, [addLoadingMessage, getAllContacts, getAllLists, handleError, loaded, lists, removeLoadingMessage, userId]);
+
+
+
+  // Use useEffect to scroll when the scrollTarget changes. This will scroll to the row with the contact that was just linked or unlinked.
+
+  useEffect(() => {
+
+    if (scrollTarget) {
+
+      const row = contactRefs.current[scrollTarget];
+    
+      if (row) { // Scroll to this row.
+
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      }
+
+      setScrollTarget(null); // Reset scroll target after scrolling.
+
+    }
+  }, [scrollTarget]);
+
+
+  const contactRefs = useRef({}); // Store references to all rows
 
   try {
 
@@ -630,7 +665,6 @@ function ManageListsComponent({ handleError }) {
 
               <div className="bg-light p-3 mb-3">
                 <Selector
-                  complex={true}
                   inputName="listId"
                   label="mailing list"
                   onChange={() => { updateList(); }}
@@ -721,7 +755,7 @@ function ManageListsComponent({ handleError }) {
                     onReset={onReset}
                     showConfirmationModal={showConfirmationModal}
                     showDelete={true}
-                    submitText="update the expense"
+                    submitText="update the list"
                   />
 
                 )}
@@ -743,20 +777,86 @@ function ManageListsComponent({ handleError }) {
 
                 <div className="mb-3 size-80"><b>{listData.listName} contacts ({linkedContactsCount})</b></div>
 
-                <Container className="border-gray-1 size-80">
+                <Row>
 
-                  <Row className="p-2 alternate-1">
+                  <Col className="pr-1">
+                  
+                    <Container className="border-gray-2 p-0 size-80">
+                      
+                      <div className="p-1">in use ({Object.keys(linkedContacts).length})</div>
 
-                    <Col xs={12} sm={6}><b>available</b></Col>
+                      {Object.entries(linkedContacts).map((row, key) => {
 
-                    <Col xs={12} sm={6}><b>in use</b></Col>
+                        const [contactId, contactData] = row;
+                        const { 
+                          contactNotes,
+                          email,
+                          fullName,
+                          updated
+                        } = contactData;
 
-                  </Row>
+                        return (
 
-                  {/* Rows rendered here */}
+                          <div 
+                            className="alternate-1 p-3 hover"
+                            key={key}
+                            onClick={() => { manageLink(contactId, false); }}
+                            ref={(el) => (contactRefs.current[contactId] = el)} // Store reference to this row.
+                          >
+                            <div><b>{fullName}</b></div>
+                            <div>{email}</div>
+                            <div className="size-80">{contactNotes}</div>
+                            <div className="size-65">last updated {updated}</div>
+                          </div>
 
-                </Container>
+                        );
+                        
+                      })};
 
+                    </Container>
+
+                  </Col>
+
+                  <Col className="pr-1">
+                  
+                   <Container className="border-gray-2 p-0 size-80">
+
+                      <div className="p-1">eligible ({Object.keys(eligibleContacts).length})</div>
+
+                      {Object.entries(eligibleContacts).map((row, key) => {
+
+                        const [contactId, contactData] = row;
+                        const { 
+                          contactNotes,
+                          email,
+                          fullName,
+                          updated
+                        } = contactData;
+
+                        return (
+
+                          <div 
+                            className="alternate-1 p-3 hover"
+                            key={key}
+                            onClick={() => { manageLink(contactId, true); }}
+                            ref={(el) => (contactRefs.current[contactId] = el)} // Store reference to this row.
+                          >
+                            <div><b>{fullName}</b></div>
+                            <div>{email}</div>
+                            <div className="size-80">{contactNotes}</div>
+                            <div className="size-65">last updated {moment.unix(updated).format('YYYY.MM.DD')}</div>
+                          </div>
+
+                        );
+                        
+                      })};
+
+                    </Container>
+
+                  </Col>
+
+                </Row>
+                
               </div>
 
             )}

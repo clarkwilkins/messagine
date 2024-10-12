@@ -100,13 +100,7 @@ function App() {
 
     runThis();
 
-  }, [getUserRecord]);
-
-  // useEffect(() => {
-    
-  //   console.log('Updated loadingMessages:', state.loadingMessages);
-
-  // }, [state.loadingMessages]);
+  }, [getUserRecord, setState]);
 
   if (!isLoggedIn) return <Login />;
 

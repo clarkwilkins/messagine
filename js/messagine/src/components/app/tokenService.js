@@ -9,7 +9,7 @@ export function getToken() {
 export function decodeToken(token) {
 
   try {
-
+  
     return jwtDecode(token);
 
   } catch (e) {

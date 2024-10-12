@@ -1937,7 +1937,7 @@ router.post("/unsubscribe", async (req, res) => {
 
     contactName += `, using email: ${email}`;
 
-    const { campaign_name: campaignName } = results[3].rows[0];
+    const { campaign_name: campaignName } = results[3]?.rows[0] || 'name not available';
 
     if (preference === 1) {
 

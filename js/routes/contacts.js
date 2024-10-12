@@ -144,6 +144,7 @@ router.post("/all", async (req, res) => {
       
     }
 
+    const availableContacts = {};
     const contacts = {};
     const contactsSelector = [];
 
@@ -169,8 +170,7 @@ router.post("/all", async (req, res) => {
       if (companyName) fullName += ', ' + companyName;
 
       fullName = stringCleaner(fullName);
-
-      contacts[contactId] = {
+      const contactData = {
         active,
         blockAll,
         companyName: stringCleaner(companyName),
@@ -184,7 +184,11 @@ router.post("/all", async (req, res) => {
         updated: +updated,
         updatedBy,
         updatedBy2: stringCleaner(updatedBy2)
-      };
+      }
+      
+      if (active && !blockAll) { availableContacts[contactId] = contactData; }
+
+      contacts[contactId] = contactData;
       contactsSelector.push({
         label: fullName,
         value: contactId
@@ -194,6 +198,7 @@ router.post("/all", async (req, res) => {
     
     console.log(`${nowRunning}: finished`);
     return res.status(200).send({ 
+      availableContacts,
       contacts, 
       contactsSelector, 
       success: true 
